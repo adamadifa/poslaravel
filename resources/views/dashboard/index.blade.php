@@ -3,151 +3,168 @@
 @section('content')
 <div class="space-y-6">
 
-    <!-- STOCK WARNING ALERTS BANNER (If any alerts exist) -->
-    @if(($lowStockCount ?? 0) > 0 || ($expiringCount ?? 0) > 0)
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <!-- WARNING ALERTS BANNER (Stok Kritis & Piutang / Hutang Jatuh Tempo) -->
+    @if(($lowStockCount ?? 0) > 0 || ($overdueReceivables ?? 0) > 0 || ($overduePayables ?? 0) > 0)
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             @if(($lowStockCount ?? 0) > 0)
-                <div class="p-4 rounded-2xl bg-rose-50 border border-rose-200/80 flex items-center justify-between shadow-2xs">
+                <div class="p-4 rounded-2xl bg-rose-50 dark:bg-rose-500/10 border border-rose-200/80 dark:border-rose-500/20 flex items-center justify-between shadow-2xs">
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded-xl bg-rose-500 text-white flex items-center justify-center shrink-0 shadow-xs">
-                            <i data-lucide="package-x" class="w-5 h-5"></i>
+                            <i data-lucide="alert-triangle" class="w-5 h-5"></i>
                         </div>
                         <div>
-                            <div class="font-bold text-xs text-rose-900">Peringatan: {{ $lowStockCount }} Produk Stok Menipis!</div>
-                            <p class="text-[11px] text-rose-700 mt-0.5">Stok fisik produk telah berada di bawah batas minimum.</p>
+                            <div class="font-bold text-xs text-rose-900 dark:text-rose-300">{{ $lowStockCount }} Produk Stok Kritis!</div>
+                            <p class="text-[11px] text-rose-700 dark:text-rose-400 mt-0.5">Kuantitas di bawah stok minimum.</p>
                         </div>
                     </div>
-                    <a href="{{ route('stocks.alerts', ['tab' => 'low_stock']) }}" class="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-xs transition shrink-0">
-                        Cek Produk
+                    <a href="{{ route('reports.stocks', ['filter_stock' => 'low']) }}" class="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-xs transition shrink-0">
+                        Cek Stok
                     </a>
                 </div>
             @endif
 
-            @if(($expiringCount ?? 0) > 0)
-                <div class="p-4 rounded-2xl bg-amber-50 border border-amber-200/80 flex items-center justify-between shadow-2xs">
+            @if(($overdueReceivables ?? 0) > 0)
+                <div class="p-4 rounded-2xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200/80 dark:border-amber-500/20 flex items-center justify-between shadow-2xs">
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-xs">
-                            <i data-lucide="clock-alert" class="w-5 h-5"></i>
+                            <i data-lucide="coins" class="w-5 h-5"></i>
                         </div>
                         <div>
-                            <div class="font-bold text-xs text-amber-900">Perhatian: {{ $expiringCount }} Batch Mendekati Expired!</div>
-                            <p class="text-[11px] text-amber-700 mt-0.5">Ada kelompok batch stok yang kedaluwarsa $\le$ 30 hari ke depan.</p>
+                            <div class="font-bold text-xs text-amber-900 dark:text-amber-300">Piutang Overdue (>30 Hari)</div>
+                            <p class="text-[11px] text-amber-700 dark:text-amber-400 mt-0.5">Rp {{ number_format($overdueReceivables, 0, ',', '.') }} perlu ditagih.</p>
                         </div>
                     </div>
-                    <a href="{{ route('stocks.alerts', ['tab' => 'expiring']) }}" class="px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-xs transition shrink-0">
-                        Cek Batch
+                    <a href="{{ route('reports.receivables') }}" class="px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-xs transition shrink-0">
+                        Lihat AR
+                    </a>
+                </div>
+            @endif
+
+            @if(($overduePayables ?? 0) > 0)
+                <div class="p-4 rounded-2xl bg-blue-50 dark:bg-blue-500/10 border border-blue-200/80 dark:border-blue-500/20 flex items-center justify-between shadow-2xs">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-blue-500 text-white flex items-center justify-center shrink-0 shadow-xs">
+                            <i data-lucide="truck" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <div class="font-bold text-xs text-blue-900 dark:text-blue-300">Hutang Supplier Jatuh Tempo</div>
+                            <p class="text-[11px] text-blue-700 dark:text-blue-400 mt-0.5">Rp {{ number_format($overduePayables, 0, ',', '.') }} tagihan PO.</p>
+                        </div>
+                    </div>
+                    <a href="{{ route('reports.payables') }}" class="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs transition shrink-0">
+                        Lihat AP
                     </a>
                 </div>
             @endif
         </div>
     @endif
 
-    <!-- ROW 1: TOP 4 STAT CARDS (Real Business Operational Metrics) -->
+    <!-- ROW 1: TOP 4 STAT CARDS (Daily, Weekly, Monthly Sales & Active Transactions) -->
     <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         
         <!-- Card 1: Penjualan Hari Ini -->
-        <div class="rounded-2xl bg-white border border-slate-200/90 p-5 shadow-2xs flex flex-col justify-between min-h-[135px]">
+        <div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 p-5 shadow-2xs flex flex-col justify-between min-h-[135px]">
             <div class="flex items-center justify-between">
                 <div>
-                    <h4 class="text-xs font-bold text-slate-800">Penjualan Hari Ini</h4>
+                    <h4 class="text-xs font-bold text-slate-800 dark:text-slate-200">Penjualan Hari Ini</h4>
                     <p class="text-[11px] text-slate-400">Total omset kasir terbayar</p>
                 </div>
-                <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
-                    <i data-lucide="banknote" class="w-4 h-4"></i>
+                <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 flex items-center justify-center border border-emerald-100 dark:border-emerald-500/20">
+                    <i data-lucide="wallet" class="w-4 h-4"></i>
                 </div>
             </div>
 
             <div class="my-2">
-                <div class="text-2xl font-black text-slate-900 font-mono-num tracking-tight">
+                <div class="text-2xl font-black text-slate-900 dark:text-white font-mono-num tracking-tight">
                     Rp {{ number_format($todaySales ?? 0, 0, ',', '.') }}
                 </div>
             </div>
 
-            <div class="flex items-center justify-between text-[11px] border-t border-slate-100 pt-2 text-slate-500">
-                <span>{{ $todayTransactions ?? 0 }} transaksi berhasil</span>
-                <a href="{{ url('/sales') }}" class="text-brand-600 hover:text-brand-700 font-bold flex items-center gap-0.5">
+            <div class="flex items-center justify-between text-[11px] border-t border-slate-100 dark:border-slate-800 pt-2 text-slate-500">
+                <span>{{ $todayTransactions ?? 0 }} transaksi struk</span>
+                <a href="{{ route('reports.sales') }}" class="text-brand-600 hover:text-brand-700 dark:text-brand-400 font-bold flex items-center gap-0.5">
+                    <span>Laporan</span>
+                    <i data-lucide="chevron-right" class="w-3 h-3"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- Card 2: Penjualan Minggu Ini -->
+        <div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 p-5 shadow-2xs flex flex-col justify-between min-h-[135px]">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h4 class="text-xs font-bold text-slate-800 dark:text-slate-200">Penjualan Minggu Ini</h4>
+                    <p class="text-[11px] text-slate-400">Akumulasi minggu berjalan</p>
+                </div>
+                <div class="w-9 h-9 rounded-xl bg-brand-50 text-brand-500 dark:bg-brand-500/10 dark:text-brand-400 flex items-center justify-center border border-brand-100 dark:border-brand-500/20">
+                    <i data-lucide="calendar" class="w-4 h-4"></i>
+                </div>
+            </div>
+
+            <div class="my-2">
+                <div class="text-2xl font-black text-slate-900 dark:text-white font-mono-num tracking-tight">
+                    Rp {{ number_format($thisWeekSales ?? 0, 0, ',', '.') }}
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between text-[11px] border-t border-slate-100 dark:border-slate-800 pt-2 text-slate-500">
+                <span>Senin - Minggu</span>
+                <a href="{{ route('reports.sales') }}" class="text-brand-600 hover:text-brand-700 dark:text-brand-400 font-bold flex items-center gap-0.5">
                     <span>Detail</span>
                     <i data-lucide="chevron-right" class="w-3 h-3"></i>
                 </a>
             </div>
         </div>
 
-        <!-- Card 2: Transaksi Kasir Hari Ini -->
-        <div class="rounded-2xl bg-white border border-slate-200/90 p-5 shadow-2xs flex flex-col justify-between min-h-[135px]">
+        <!-- Card 3: Penjualan Bulan Ini -->
+        <div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 p-5 shadow-2xs flex flex-col justify-between min-h-[135px]">
             <div class="flex items-center justify-between">
                 <div>
-                    <h4 class="text-xs font-bold text-slate-800">Transaksi Kasir</h4>
-                    <p class="text-[11px] text-slate-400">Aktivitas struk penjualan POS</p>
+                    <h4 class="text-xs font-bold text-slate-800 dark:text-slate-200">Penjualan Bulan Ini</h4>
+                    <p class="text-[11px] text-slate-400">Omset bulan kalender</p>
                 </div>
-                <div class="w-9 h-9 rounded-xl bg-brand-50 text-brand-500 flex items-center justify-center border border-brand-100">
-                    <i data-lucide="receipt" class="w-4 h-4"></i>
+                <div class="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400 flex items-center justify-center border border-blue-100 dark:border-blue-500/20">
+                    <i data-lucide="line-chart" class="w-4 h-4"></i>
                 </div>
             </div>
 
             <div class="my-2">
-                <div class="text-2xl font-black text-slate-900 font-mono-num tracking-tight">
-                    {{ number_format($todayTransactions ?? 0, 0, ',', '.') }} <span class="text-sm font-semibold text-slate-400">Struk</span>
+                <div class="text-2xl font-black text-slate-900 dark:text-white font-mono-num tracking-tight">
+                    Rp {{ number_format($thisMonthSales ?? 0, 0, ',', '.') }}
                 </div>
             </div>
 
-            <div class="flex items-center justify-between text-[11px] border-t border-slate-100 pt-2 text-slate-500">
-                <span>Kasir aktif POS</span>
-                <a href="{{ route('pos.index') }}" class="text-brand-600 hover:text-brand-700 font-bold flex items-center gap-0.5">
-                    <span>Buka POS</span>
+            <div class="flex items-center justify-between text-[11px] border-t border-slate-100 dark:border-slate-800 pt-2 text-slate-500">
+                <span>{{ now()->translatedFormat('F Y') }}</span>
+                <a href="{{ route('reports.profit-loss') }}" class="text-brand-600 hover:text-brand-700 dark:text-brand-400 font-bold flex items-center gap-0.5">
+                    <span>Laba Rugi</span>
                     <i data-lucide="chevron-right" class="w-3 h-3"></i>
                 </a>
             </div>
         </div>
 
-        <!-- Card 3: Katalog Produk Aktif -->
-        <div class="rounded-2xl bg-white border border-slate-200/90 p-5 shadow-2xs flex flex-col justify-between min-h-[135px]">
+        <!-- Card 4: Total Produk & Member -->
+        <div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 p-5 shadow-2xs flex flex-col justify-between min-h-[135px]">
             <div class="flex items-center justify-between">
                 <div>
-                    <h4 class="text-xs font-bold text-slate-800">Katalog Produk</h4>
-                    <p class="text-[11px] text-slate-400">Total SKU produk aktif</p>
+                    <h4 class="text-xs font-bold text-slate-800 dark:text-slate-200">Katalog Produk & Member</h4>
+                    <p class="text-[11px] text-slate-400">Data master aktif</p>
                 </div>
-                <div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100">
+                <div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400 flex items-center justify-center border border-amber-100 dark:border-amber-500/20">
                     <i data-lucide="package" class="w-4 h-4"></i>
                 </div>
             </div>
 
             <div class="my-2">
-                <div class="text-2xl font-black text-slate-900 font-mono-num tracking-tight">
-                    {{ number_format($totalProducts ?? 0, 0, ',', '.') }} <span class="text-sm font-semibold text-slate-400">Item</span>
+                <div class="text-2xl font-black text-slate-900 dark:text-white font-mono-num tracking-tight">
+                    {{ number_format($totalProducts ?? 0, 0, ',', '.') }} <span class="text-xs font-normal text-slate-400">SKU ({{ $totalCustomers ?? 0 }} Member)</span>
                 </div>
             </div>
 
-            <div class="flex items-center justify-between text-[11px] border-t border-slate-100 pt-2 text-slate-500">
-                <span>Multi satuan & barcode</span>
-                <a href="{{ route('products.index') }}" class="text-brand-600 hover:text-brand-700 font-bold flex items-center gap-0.5">
-                    <span>Kelola</span>
-                    <i data-lucide="chevron-right" class="w-3 h-3"></i>
-                </a>
-            </div>
-        </div>
-
-        <!-- Card 4: Pelanggan Terdaftar -->
-        <div class="rounded-2xl bg-white border border-slate-200/90 p-5 shadow-2xs flex flex-col justify-between min-h-[135px]">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h4 class="text-xs font-bold text-slate-800">Total Pelanggan</h4>
-                    <p class="text-[11px] text-slate-400">Member & customer retail</p>
-                </div>
-                <div class="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
-                    <i data-lucide="users" class="w-4 h-4"></i>
-                </div>
-            </div>
-
-            <div class="my-2">
-                <div class="text-2xl font-black text-slate-900 font-mono-num tracking-tight">
-                    {{ number_format($totalCustomers ?? 0, 0, ',', '.') }} <span class="text-sm font-semibold text-slate-400">Member</span>
-                </div>
-            </div>
-
-            <div class="flex items-center justify-between text-[11px] border-t border-slate-100 pt-2 text-slate-500">
-                <span>Tier member & poin</span>
-                <a href="{{ route('customers.index') }}" class="text-brand-600 hover:text-brand-700 font-bold flex items-center gap-0.5">
-                    <span>Lihat</span>
+            <div class="flex items-center justify-between text-[11px] border-t border-slate-100 dark:border-slate-800 pt-2 text-slate-500">
+                <span>Persediaan siap jual</span>
+                <a href="{{ route('reports.stocks') }}" class="text-brand-600 hover:text-brand-700 dark:text-brand-400 font-bold flex items-center gap-0.5">
+                    <span>Stok</span>
                     <i data-lucide="chevron-right" class="w-3 h-3"></i>
                 </a>
             </div>
@@ -155,318 +172,296 @@
 
     </div>
 
-    <!-- ROW 2: WORKFLOW PERFORMANCE & BUSINESS TRAFFICS -->
+    <!-- ROW 2: 30 DAYS SALES TREND (STEP-LINE & AREA STYLED CHART) & BUSINESS TRAFFIC METRICS -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
         
-        <!-- Left Column: Workflow Performance Chart (7 cols) -->
-        <div class="lg:col-span-7 rounded-2xl bg-white border border-slate-200/70 p-6 shadow-2xs transition-colors duration-200">
+        <!-- Left: Stepline & Gradient Sales Trend Chart (7 cols) -->
+        <div class="lg:col-span-7 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-6 shadow-2xs relative">
             <div class="flex items-center justify-between mb-4">
                 <div class="flex items-center gap-2.5">
-                    <div class="w-7 h-7 rounded-lg bg-orange-50 border border-orange-100 flex items-center justify-center text-brand-500">
-                        <i data-lucide="trending-up" class="w-3.5 h-3.5"></i>
+                    <div class="w-8 h-8 rounded-xl bg-brand-50 dark:bg-brand-500/10 border border-brand-100 dark:border-brand-500/20 flex items-center justify-center text-brand-500">
+                        <i data-lucide="trending-up" class="w-4 h-4"></i>
                     </div>
                     <div>
-                        <h3 class="text-sm font-bold text-slate-900">Workflow Performance</h3>
-                        <p class="text-[11px] text-slate-400">Performance of your active automations</p>
+                        <h3 class="text-sm font-bold text-slate-900 dark:text-white">Tren Performa Penjualan (30 Hari)</h3>
+                        <p class="text-[11px] text-slate-400">Grafik omset harian kasir & transaksi POS</p>
                     </div>
                 </div>
-                <button class="text-slate-400 hover:text-slate-600 p-1">
-                    <i data-lucide="more-vertical" class="w-4 h-4"></i>
-                </button>
-            </div>
-
-            <!-- Custom Interactive Chart Area -->
-            <div class="relative w-full">
-                <div id="workflowChart" class="w-full -ml-3"></div>
-
-                <!-- Highlight Floating Tooltip Card -->
-                <div class="absolute top-12 left-1/2 -translate-x-12 bg-white/95 backdrop-blur-xs border border-orange-200 rounded-xl p-3 shadow-md text-xs w-48 pointer-events-none hidden md:block">
-                    <div class="flex items-center justify-between pb-1.5 border-b border-slate-100 mb-1.5">
-                        <span class="text-[10px] text-slate-400 font-medium">05 December 25</span>
-                    </div>
-                    <div class="flex items-center justify-between mb-1">
-                        <span class="font-bold text-slate-800">98% Success</span>
-                        <span class="text-[11px] text-emerald-600 font-bold flex items-center">↑ 16.2%</span>
-                    </div>
-                    <div class="space-y-0.5 text-[11px] text-slate-600">
-                        <div class="flex items-center justify-between">
-                            <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-orange-500"></span> Automation</span>
-                            <span class="text-red-500 font-semibold">↓ 4.7%</span>
-                        </div>
-                        <div class="flex items-center justify-between">
-                            <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Revenue</span>
-                            <span class="text-emerald-600 font-semibold">↑ 20.9%</span>
-                        </div>
-                    </div>
+                <div class="flex items-center gap-2">
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold text-xs">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        Realtime Live
+                    </span>
                 </div>
             </div>
+
+            <div id="salesTrendChart" class="w-full -ml-2"></div>
         </div>
 
-        <!-- Right Column: Business Traffics Progress & Breakdown (5 cols) -->
-        <div class="lg:col-span-5 rounded-2xl bg-white border border-slate-200/70 p-6 shadow-2xs flex flex-col justify-between transition-colors duration-200">
+        <!-- Right: Business Traffics, Jam Ramai, & Metode Pembayaran (5 cols) -->
+        <div class="lg:col-span-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-6 shadow-2xs flex flex-col justify-between">
             <div>
                 <div class="flex items-center justify-between mb-4">
                     <div class="flex items-center gap-2.5">
-                        <div class="w-7 h-7 rounded-lg bg-orange-50 border border-orange-100 flex items-center justify-center text-brand-500">
-                            <i data-lucide="bar-chart-2" class="w-3.5 h-3.5"></i>
+                        <div class="w-8 h-8 rounded-xl bg-orange-50 dark:bg-orange-500/10 border border-orange-100 dark:border-orange-500/20 flex items-center justify-center text-brand-500">
+                            <i data-lucide="clock" class="w-4 h-4"></i>
                         </div>
                         <div>
-                            <h3 class="text-sm font-bold text-slate-900">Business Traffics</h3>
-                            <p class="text-[11px] text-slate-400">Keep an eye to your business orders</p>
+                            <h3 class="text-sm font-bold text-slate-900 dark:text-white">Jam Ramai Kasir (Peak Hours)</h3>
+                            <p class="text-[11px] text-slate-400">Intensitas transaksi per jam operasional</p>
                         </div>
                     </div>
-                    <button class="text-slate-400 hover:text-slate-600 p-1">
-                        <i data-lucide="more-vertical" class="w-4 h-4"></i>
-                    </button>
+                    <span class="text-xs font-semibold text-slate-400">08:00 - 22:00</span>
                 </div>
 
+                <!-- Bar Chart: Hourly Rush Traffic -->
+                <div id="hourlyRushChart" class="w-full"></div>
+            </div>
+
+            <!-- Payment Method Multi-segment Breakdown Bar -->
+            <div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
                 <div class="flex items-center justify-between text-xs mb-2">
-                    <span class="font-bold text-slate-900">240K / 500K <span class="font-normal text-slate-400">M Traffic targets</span></span>
-                    <span class="text-emerald-600 font-bold flex items-center gap-0.5">
-                        <i data-lucide="arrow-up-right" class="w-3 h-3"></i> 5.2% vs yesterday
-                    </span>
+                    <span class="font-bold text-slate-800 dark:text-slate-200">Distribusi Metode Bayar</span>
+                    <span class="text-[11px] text-slate-400">Semua Waktu</span>
                 </div>
 
-                <!-- Multi-segment Strip Progress Bar -->
-                <div class="flex h-6 rounded-lg overflow-hidden gap-1 p-1 bg-slate-50 border border-slate-100 mb-6">
-                    <div class="h-full bg-gradient-to-r from-orange-500 to-amber-500 rounded-sm" style="width: 72%"></div>
-                    <div class="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-sm" style="width: 28%"></div>
+                @php
+                    $totalPayCount = $paymentDistribution->sum('count');
+                @endphp
+                <div class="flex h-3 rounded-full overflow-hidden gap-0.5 bg-slate-100 dark:bg-slate-800 mb-3">
+                    @foreach($paymentDistribution as $idx => $pay)
+                        @php
+                            $pct = $totalPayCount > 0 ? (($pay->count / $totalPayCount) * 100) : 0;
+                            $bgColors = ['bg-orange-500', 'bg-emerald-500', 'bg-blue-500', 'bg-purple-500'];
+                            $bg = $bgColors[$idx % count($bgColors)];
+                        @endphp
+                        <div class="h-full {{ $bg }}" style="width: {{ $pct }}%" title="{{ strtoupper($pay->payment_method) }}: {{ number_format($pct, 1) }}%"></div>
+                    @endforeach
                 </div>
 
-                <!-- Platforms Table -->
-                <div class="space-y-3">
-                    <div class="grid grid-cols-12 text-[11px] font-semibold text-slate-400 pb-2 border-b border-slate-100">
-                        <div class="col-span-5">Platforms</div>
-                        <div class="col-span-2 text-right">Yesterday</div>
-                        <div class="col-span-3 text-right">Today</div>
-                        <div class="col-span-2 text-right">Growth</div>
-                    </div>
-
-                    <!-- Row 1: Website -->
-                    <div class="grid grid-cols-12 items-center text-xs py-1.5 hover:bg-slate-50 rounded-lg px-1 transition">
-                        <div class="col-span-5 flex items-center gap-2 font-medium text-slate-800">
-                            <span class="w-2 h-2 rounded-full bg-orange-500"></span>
-                            <i data-lucide="globe" class="w-3.5 h-3.5 text-slate-400"></i>
-                            <span>Website</span>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                    @foreach($paymentDistribution as $idx => $pay)
+                        @php
+                            $dotColors = ['bg-orange-500', 'bg-emerald-500', 'bg-blue-500', 'bg-purple-500'];
+                            $dot = $dotColors[$idx % count($dotColors)];
+                        @endphp
+                        <div class="flex items-center gap-1.5 min-w-0">
+                            <span class="w-2 h-2 rounded-full {{ $dot }} shrink-0"></span>
+                            <span class="truncate text-[11px] text-slate-600 dark:text-slate-400">{{ strtoupper($pay->payment_method) }}: <strong class="text-slate-900 dark:text-white">{{ $pay->count }}</strong></span>
                         </div>
-                        <div class="col-span-2 text-right text-slate-500 font-medium">1,23K</div>
-                        <div class="col-span-3 text-right text-slate-800 font-bold">10,24K</div>
-                        <div class="col-span-2 text-right text-emerald-600 font-bold text-[11px]">↑ 34.7%</div>
-                    </div>
-
-                    <!-- Row 2: Marketplace -->
-                    <div class="grid grid-cols-12 items-center text-xs py-1.5 hover:bg-slate-50 rounded-lg px-1 transition">
-                        <div class="col-span-5 flex items-center gap-2 font-medium text-slate-800">
-                            <span class="w-2 h-2 rounded-full bg-amber-400"></span>
-                            <i data-lucide="shopping-bag" class="w-3.5 h-3.5 text-slate-400"></i>
-                            <span>Marketplace</span>
-                        </div>
-                        <div class="col-span-2 text-right text-slate-500 font-medium">590</div>
-                        <div class="col-span-3 text-right text-slate-800 font-bold">180K</div>
-                        <div class="col-span-2 text-right text-emerald-600 font-bold text-[11px]">↑ 80.5%</div>
-                    </div>
-
-                    <!-- Row 3: Retail POS -->
-                    <div class="grid grid-cols-12 items-center text-xs py-1.5 hover:bg-slate-50 rounded-lg px-1 transition">
-                        <div class="col-span-5 flex items-center gap-2 font-medium text-slate-800">
-                            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                            <i data-lucide="store" class="w-3.5 h-3.5 text-slate-400"></i>
-                            <span>Retail POS</span>
-                        </div>
-                        <div class="col-span-2 text-right text-slate-500 font-medium">986</div>
-                        <div class="col-span-3 text-right text-slate-800 font-bold">598</div>
-                        <div class="col-span-2 text-right text-red-500 font-bold text-[11px]">↓ 15.6%</div>
-                    </div>
+                    @endforeach
                 </div>
             </div>
         </div>
 
     </div>
 
-    <!-- ROW 3: CONVERSION FUNNEL, CUSTOMER SENTIMENT, & ACTIVITIES FEEDS -->
-    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+    <!-- ROW 3: CATEGORY PERFORMANCE & RECENT ACTIVITY TRANSACTIONS -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
         
-        <!-- Card 1: Conversion Funnel -->
-        <div class="rounded-2xl bg-white border border-slate-200/70 p-6 shadow-2xs flex flex-col justify-between transition-colors duration-200">
+        <!-- Left: Donut Chart Penjualan per Kategori (5 cols) -->
+        <div class="lg:col-span-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-6 shadow-2xs flex flex-col justify-between">
             <div>
-                <div class="flex items-center gap-2.5 mb-4">
-                    <div class="w-7 h-7 rounded-lg bg-orange-50 border border-orange-100 flex items-center justify-center text-brand-500">
-                        <i data-lucide="filter" class="w-3.5 h-3.5"></i>
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-xl bg-orange-50 dark:bg-orange-500/10 border border-orange-100 dark:border-orange-500/20 flex items-center justify-center text-brand-500">
+                            <i data-lucide="pie-chart" class="w-4 h-4"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-900 dark:text-white">Kontribusi Kategori Produk</h3>
+                            <p class="text-[11px] text-slate-400">Pangsa omset per kategori produk</p>
+                        </div>
                     </div>
-                    <div>
-                        <h3 class="text-sm font-bold text-slate-900">Conversion Funnel</h3>
-                        <p class="text-[11px] text-slate-400">Track how users move through your business flow</p>
-                    </div>
+                    <a href="{{ route('reports.sales.categories') }}" class="text-xs font-bold text-brand-600 hover:text-brand-700 dark:text-brand-400">
+                        Detail
+                    </a>
                 </div>
 
-                <!-- Tabs Filter -->
-                <div class="flex items-center gap-1.5 p-1 bg-slate-100/80 rounded-xl mb-6 text-xs font-medium">
-                    <button class="flex-1 py-1.5 rounded-lg bg-white shadow-2xs text-slate-800 font-semibold text-center">Website</button>
-                    <button class="flex-1 py-1.5 rounded-lg text-slate-500 hover:text-slate-800 text-center">Marketplace</button>
-                    <button class="flex-1 py-1.5 rounded-lg text-slate-500 hover:text-slate-800 text-center">Retails</button>
-                </div>
-
-                <!-- Funnel Stats Grid -->
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="p-3.5 bg-slate-50/70 rounded-xl border border-slate-100">
-                        <div class="flex items-center gap-1.5 text-xs text-slate-400 mb-1">
-                            <i data-lucide="users" class="w-3.5 h-3.5"></i>
-                            <span>Visitors</span>
-                        </div>
-                        <div class="text-xl font-bold text-slate-900">3,218</div>
-                    </div>
-
-                    <div class="p-3.5 bg-slate-50/70 rounded-xl border border-slate-100">
-                        <div class="flex items-center gap-1.5 text-xs text-slate-400 mb-1">
-                            <i data-lucide="shopping-cart" class="w-3.5 h-3.5"></i>
-                            <span>Added to Cart</span>
-                        </div>
-                        <div class="text-xl font-bold text-slate-900">412</div>
-                    </div>
-
-                    <div class="p-3.5 bg-slate-50/70 rounded-xl border border-slate-100">
-                        <div class="flex items-center gap-1.5 text-xs text-slate-400 mb-1">
-                            <i data-lucide="credit-card" class="w-3.5 h-3.5"></i>
-                            <span>Checkout Started</span>
-                        </div>
-                        <div class="text-xl font-bold text-slate-900">184</div>
-                    </div>
-
-                    <div class="p-3.5 bg-slate-50/70 rounded-xl border border-slate-100">
-                        <div class="flex items-center gap-1.5 text-xs text-slate-400 mb-1">
-                            <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-500"></i>
-                            <span>Completed Orders</span>
-                        </div>
-                        <div class="text-xl font-bold text-slate-900">118</div>
-                    </div>
-                </div>
+                <div id="categoryDonutChart" class="w-full flex justify-center py-2"></div>
             </div>
 
-            <a href="#" class="mt-6 flex items-center justify-between text-xs font-semibold text-slate-700 hover:text-brand-600 transition pt-3 border-t border-slate-100">
-                <span>See monthly reports</span>
-                <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400"></i>
+            <div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                @foreach($categorySales as $idx => $cat)
+                @php
+                    $colors = ['#f97316', '#10b981', '#3b82f6', '#f59e0b', '#8b5cf6'];
+                    $c = $colors[$idx % count($colors)];
+                @endphp
+                <div class="flex items-center justify-between text-xs">
+                    <span class="font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full" style="background-color: {{ $c }}"></span>
+                        {{ $cat->category_name }}
+                    </span>
+                    <span class="font-bold text-slate-900 dark:text-white">Rp {{ number_format($cat->total_revenue, 0, ',', '.') }}</span>
+                </div>
+                @endforeach
+            </div>
+        </div>
+
+        <!-- Right: Realtime Transaksi Kasir Terbaru (7 cols) -->
+        <div class="lg:col-span-7 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-6 shadow-2xs flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20 flex items-center justify-center text-blue-600 dark:text-blue-400">
+                            <i data-lucide="receipt" class="w-4 h-4"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-900 dark:text-white">Aktivitas Transaksi Kasir Terkini</h3>
+                            <p class="text-[11px] text-slate-400">Daftar struk penjualan real-time terbaru</p>
+                        </div>
+                    </div>
+                    <a href="{{ route('reports.sales') }}" class="text-xs font-bold text-brand-600 hover:text-brand-700 dark:text-brand-400">
+                        Lihat Semua
+                    </a>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="text-slate-400 text-[10px] font-bold uppercase border-b border-slate-100 dark:border-slate-800 pb-2">
+                                <th class="pb-2">Invoice</th>
+                                <th class="pb-2">Pelanggan</th>
+                                <th class="pb-2 text-center">Metode</th>
+                                <th class="pb-2 text-right">Total</th>
+                                <th class="pb-2 text-right">Waktu</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                            @forelse($recentSales as $sale)
+                            <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition">
+                                <td class="py-2.5 font-bold font-mono text-brand-600 dark:text-brand-400">
+                                    {{ $sale->invoice_number }}
+                                </td>
+                                <td class="py-2.5 text-slate-700 dark:text-slate-300">
+                                    {{ $sale->customer->name ?? 'Pelanggan Umum' }}
+                                </td>
+                                <td class="py-2.5 text-center">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-extrabold uppercase {{ $sale->payment_method === 'cash' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400' : 'bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400' }}">
+                                        {{ $sale->payment_method ?? 'CASH' }}
+                                    </span>
+                                </td>
+                                <td class="py-2.5 text-right font-black font-mono-num text-slate-900 dark:text-white">
+                                    Rp {{ number_format($sale->grand_total, 0, ',', '.') }}
+                                </td>
+                                <td class="py-2.5 text-right text-slate-400 text-[11px]">
+                                    {{ $sale->sale_date ? \Carbon\Carbon::parse($sale->sale_date)->diffForHumans() : '-' }}
+                                </td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="5" class="py-6 text-center text-slate-400">
+                                    Belum ada transaksi hari ini.
+                                </td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ROW 3.5: PERBANDINGAN PER CABANG / GUDANG (MULTI-CABANG ANALYTICS) -->
+    @if(isset($outletSales) && count($outletSales) > 0)
+    <div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-6 shadow-2xs">
+        <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                    <i data-lucide="store" class="w-4 h-4"></i>
+                </div>
+                <div>
+                    <h3 class="text-sm font-bold text-slate-900 dark:text-white">Perbandingan Penjualan per Cabang / Outlet</h3>
+                    <p class="text-[11px] text-slate-400">Kontribusi omset dan volume struk tiap titik penjualan</p>
+                </div>
+            </div>
+            <span class="text-xs font-bold text-slate-400">{{ count($outletSales) }} Cabang Aktif</span>
+        </div>
+
+        @php
+            $maxSales = $outletSales->max('total_sales') ?: 1;
+        @endphp
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            @foreach($outletSales as $outlet)
+            @php
+                $pct = ($outlet->total_sales / $maxSales) * 100;
+            @endphp
+            <div class="p-4 rounded-xl bg-slate-50/70 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/60 space-y-2">
+                <div class="flex items-center justify-between text-xs">
+                    <span class="font-bold text-slate-800 dark:text-slate-200">{{ $outlet->outlet_name }}</span>
+                    <span class="text-emerald-600 font-extrabold">Rp {{ number_format($outlet->total_sales, 0, ',', '.') }}</span>
+                </div>
+                <div class="w-full h-2 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-brand-500 to-emerald-500 rounded-full" style="width: {{ $pct }}%"></div>
+                </div>
+                <div class="flex items-center justify-between text-[11px] text-slate-400">
+                    <span>{{ $outlet->total_tx }} Transaksi Selesai</span>
+                    <span>{{ number_format($pct, 1) }}% Kapasitas</span>
+                </div>
+            </div>
+            @endforeach
+        </div>
+    </div>
+    @endif
+
+    <!-- ROW 4: TOP 10 PRODUK TERLARIS TABLE CARD (Solid Orange Header Theme) -->
+    <div class="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl shadow-xs overflow-hidden">
+        <div class="px-6 pt-5 pb-3 bg-brand-500 text-white flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+                <i data-lucide="award" class="w-5 h-5 text-white"></i>
+                <h3 class="font-black text-sm tracking-tight text-white">Top 10 Produk Terlaris (Best Sellers)</h3>
+            </div>
+            <a href="{{ route('reports.sales.products') }}" class="text-xs font-bold text-white/90 hover:text-white underline">
+                Lihat Laporan Margin Produk
             </a>
         </div>
 
-        <!-- Card 2: Customer Sentiment -->
-        <div class="rounded-2xl bg-white border border-slate-200/70 p-6 shadow-2xs flex flex-col justify-between transition-colors duration-200">
-            <div>
-                <div class="flex items-center gap-2.5 mb-2">
-                    <div class="w-7 h-7 rounded-lg bg-orange-50 border border-orange-100 flex items-center justify-center text-brand-500">
-                        <i data-lucide="smile" class="w-3.5 h-3.5"></i>
-                    </div>
-                    <div>
-                        <h3 class="text-sm font-bold text-slate-900">Customer Sentiment</h3>
-                        <p class="text-[11px] text-slate-400">Aggregated from emails + reviews + chats</p>
-                    </div>
-                </div>
-
-                <!-- Gauge Chart -->
-                <div class="relative flex flex-col items-center justify-center my-2">
-                    <div id="sentimentGauge" class="w-full"></div>
-                    <div class="absolute inset-x-0 bottom-6 flex flex-col items-center justify-center">
-                        <div class="text-3xl font-extrabold text-slate-900 tracking-tight">4.6 <span class="text-base font-semibold text-slate-400">/ 5.0</span></div>
-                        <div class="text-[11px] font-medium text-slate-400">This month's score</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Sentiment Breakdown Tags -->
-            <div class="grid grid-cols-3 gap-2 text-center pt-3 border-t border-slate-100 text-xs">
-                <div class="p-2 rounded-xl bg-orange-50/50">
-                    <div class="flex items-center justify-center gap-1 text-[11px] text-slate-500 mb-0.5">
-                        <span class="w-1.5 h-1.5 rounded-full bg-orange-500"></span> Positive
-                    </div>
-                    <div class="font-bold text-slate-800 text-sm">82%</div>
-                </div>
-
-                <div class="p-2 rounded-xl bg-amber-50/50">
-                    <div class="flex items-center justify-center gap-1 text-[11px] text-slate-500 mb-0.5">
-                        <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span> Neutral
-                    </div>
-                    <div class="font-bold text-slate-800 text-sm">11%</div>
-                </div>
-
-                <div class="p-2 rounded-xl bg-slate-50">
-                    <div class="flex items-center justify-center gap-1 text-[11px] text-slate-500 mb-0.5">
-                        <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span> Negative
-                    </div>
-                    <div class="font-bold text-slate-800 text-sm">5%</div>
-                </div>
-            </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                    <tr class="bg-brand-500 text-white/95 font-bold text-xs">
+                        <th class="py-3 px-5 border-b border-white/10 w-12 text-center">Rank</th>
+                        <th class="py-3 px-4 border-b border-white/10">Produk & SKU</th>
+                        <th class="py-3 px-4 border-b border-white/10 text-center">Total Kuantitas Terjual</th>
+                        <th class="py-3 px-5 border-b border-white/10 text-right">Total Nilai Omset (Rp)</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                    @forelse($topProducts as $rank => $prod)
+                    <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition">
+                        <td class="py-3 px-5 text-center">
+                            @if($rank === 0)
+                                <span class="w-6 h-6 rounded-full bg-amber-500 text-white font-black text-xs inline-flex items-center justify-center">1</span>
+                            @elseif($rank === 1)
+                                <span class="w-6 h-6 rounded-full bg-slate-400 text-white font-black text-xs inline-flex items-center justify-center">2</span>
+                            @elseif($rank === 2)
+                                <span class="w-6 h-6 rounded-full bg-amber-700 text-white font-black text-xs inline-flex items-center justify-center">3</span>
+                            @else
+                                <span class="text-slate-400 font-bold font-mono">{{ $rank + 1 }}</span>
+                            @endif
+                        </td>
+                        <td class="py-3 px-4">
+                            <div class="font-bold text-slate-900 dark:text-white">{{ $prod->product_name }}</div>
+                            <div class="text-[10px] text-slate-400 font-mono">{{ $prod->product_code }}</div>
+                        </td>
+                        <td class="py-3 px-4 text-center font-bold text-slate-800 dark:text-slate-200">
+                            {{ number_format($prod->total_qty, 0, ',', '.') }} Unit
+                        </td>
+                        <td class="py-3 px-5 text-right font-black text-brand-600 dark:text-brand-400">
+                            Rp {{ number_format($prod->total_revenue, 0, ',', '.') }}
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="4" class="py-8 text-center text-slate-400">
+                            Belum ada data penjualan produk.
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
-
-        <!-- Card 3: Activities Feeds -->
-        <div class="rounded-2xl bg-white border border-slate-200/70 p-6 shadow-2xs flex flex-col justify-between transition-colors duration-200">
-            <div>
-                <div class="flex items-center gap-2.5 mb-5">
-                    <div class="w-7 h-7 rounded-lg bg-orange-50 border border-orange-100 flex items-center justify-center text-brand-500">
-                        <i data-lucide="bell" class="w-3.5 h-3.5"></i>
-                    </div>
-                    <div>
-                        <h3 class="text-sm font-bold text-slate-900">Activities Feeds</h3>
-                        <p class="text-[11px] text-slate-400">Stay updated with your business is doing in real time</p>
-                    </div>
-                </div>
-
-                <!-- Feed Items -->
-                <div class="space-y-4">
-                    
-                    <!-- Item 1: AI Generated Report -->
-                    <div class="flex items-start gap-3 text-xs">
-                        <div class="w-7 h-7 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-600 shrink-0 mt-0.5">
-                            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-brand-500"></i>
-                        </div>
-                        <div class="min-w-0 flex-1">
-                            <p class="text-slate-700 leading-snug">AI generated a performance report for <strong class="text-slate-900 font-semibold">Sales Overview</strong>.</p>
-                            <span class="text-[10px] text-slate-400">2m ago</span>
-                        </div>
-                    </div>
-
-                    <!-- Item 2: User Action -->
-                    <div class="flex items-start gap-3 text-xs">
-                        <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=80" alt="Avatar" class="w-7 h-7 rounded-full object-cover shrink-0 mt-0.5">
-                        <div class="min-w-0 flex-1">
-                            <p class="text-slate-700 leading-snug"><strong class="text-slate-900 font-semibold">Mike Rowen</strong> changed the execution time in <span class="text-slate-900 font-medium">Sales</span>.</p>
-                            <span class="text-[10px] text-slate-400">10m ago</span>
-                        </div>
-                    </div>
-
-                    <!-- Item 3: Workflow Sync -->
-                    <div class="flex items-start gap-3 text-xs">
-                        <div class="w-7 h-7 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-600 shrink-0 mt-0.5">
-                            <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-slate-500"></i>
-                        </div>
-                        <div class="min-w-0 flex-1">
-                            <p class="text-slate-700 leading-snug">Workflow <strong class="text-slate-900 font-semibold">Invoice Sync</strong> completed successfully.</p>
-                            <span class="text-[10px] text-slate-400">17m ago</span>
-                        </div>
-                    </div>
-
-                    <!-- Item 4: AI Anomaly -->
-                    <div class="flex items-start gap-3 text-xs">
-                        <div class="w-7 h-7 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-600 shrink-0 mt-0.5">
-                            <i data-lucide="trending-down" class="w-3.5 h-3.5 text-red-500"></i>
-                        </div>
-                        <div class="min-w-0 flex-1">
-                            <p class="text-slate-700 leading-snug">AI flagged an anomaly in <span class="text-slate-900 font-medium">Monthly Revenue Trend</span>.</p>
-                            <span class="text-[10px] text-slate-400">45m ago</span>
-                        </div>
-                    </div>
-
-                    <!-- Item 5: Another User -->
-                    <div class="flex items-start gap-3 text-xs">
-                        <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=80" alt="Avatar" class="w-7 h-7 rounded-full object-cover shrink-0 mt-0.5">
-                        <div class="min-w-0 flex-1">
-                            <p class="text-slate-700 leading-snug"><strong class="text-slate-900 font-semibold">Natalie</strong> set revenue gap up to 10% in <span class="text-slate-900 font-medium">Sales Automation</span>.</p>
-                            <span class="text-[10px] text-slate-400">1h ago</span>
-                        </div>
-                    </div>
-
-                </div>
-            </div>
-        </div>
-
     </div>
 
 </div>
@@ -474,136 +469,199 @@
 
 @push('scripts')
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        
-        function getChartColors() {
-            const isDark = document.documentElement.classList.contains('dark');
-            return {
-                gridColor: isDark ? '#1e293b' : '#f1f5f9',
-                textColor: isDark ? '#64748b' : '#94a3b8',
-                trackColor: isDark ? '#1e293b' : '#f1f5f9'
-            };
-        }
+    document.addEventListener("DOMContentLoaded", function () {
+        // Theme Colors Adapter
+        const isDark = document.documentElement.classList.contains('dark');
+        const gridColor = isDark ? '#1e293b' : '#f1f5f9';
+        const textColor = isDark ? '#64748b' : '#94a3b8';
 
-        let themeColors = getChartColors();
+        // 1. Line / Area Stepline Chart: Tren Penjualan 30 Hari
+        const trendDates = @json($trendDates);
+        const trendSales = @json($trendSales);
 
-        // 1. Workflow Performance Stepped Chart
-        var workflowOptions = {
+        const salesTrendOptions = {
             series: [{
-                name: 'Automation',
-                data: [30, 80, 20, 85, 20, 60, 60]
+                name: 'Total Omset (Rp)',
+                data: trendSales
             }],
             chart: {
-                type: 'line',
-                height: 230,
+                type: 'area',
+                height: 290,
                 toolbar: { show: false },
-                zoom: { enabled: false },
                 fontFamily: 'Plus Jakarta Sans, sans-serif'
             },
+            colors: ['#f97316'],
             stroke: {
                 curve: 'stepline',
                 width: 2.5,
                 colors: ['#f97316']
             },
-            colors: ['#f97316'],
+            fill: {
+                type: 'gradient',
+                gradient: {
+                    shadeIntensity: 1,
+                    opacityFrom: 0.45,
+                    opacityTo: 0.05,
+                    stops: [20, 100],
+                    colorStops: [
+                        { offset: 0, color: '#f97316', opacity: 0.4 },
+                        { offset: 100, color: '#f97316', opacity: 0.0 }
+                    ]
+                }
+            },
+            dataLabels: { enabled: false },
             grid: {
-                borderColor: themeColors.gridColor,
+                borderColor: gridColor,
                 strokeDashArray: 4,
                 yaxis: { lines: { show: true } },
                 xaxis: { lines: { show: false } }
             },
             xaxis: {
-                categories: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-                axisBorder: { show: false },
-                axisTicks: { show: false },
+                categories: trendDates,
                 labels: {
-                    style: { colors: themeColors.textColor, fontSize: '11px', fontWeight: 500 }
-                }
+                    rotate: -45,
+                    style: { fontSize: '10px', colors: textColor, fontWeight: 500 }
+                },
+                axisBorder: { show: false },
+                axisTicks: { show: false }
             },
             yaxis: {
-                min: 0,
-                max: 100,
-                tickAmount: 5,
                 labels: {
-                    style: { colors: themeColors.textColor, fontSize: '11px', fontWeight: 500 }
+                    formatter: function (val) {
+                        return 'Rp ' + (val / 1000).toLocaleString('id-ID') + 'k';
+                    },
+                    style: { fontSize: '10px', colors: textColor, fontWeight: 500 }
                 }
             },
             tooltip: {
-                theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
+                theme: isDark ? 'dark' : 'light',
                 y: {
                     formatter: function (val) {
-                        return val + "% Performance";
+                        return 'Rp ' + parseInt(val).toLocaleString('id-ID');
                     }
                 }
             }
         };
 
-        var workflowChart = new ApexCharts(document.querySelector("#workflowChart"), workflowOptions);
-        workflowChart.render();
+        const salesChart = new ApexCharts(document.querySelector("#salesTrendChart"), salesTrendOptions);
+        salesChart.render();
 
+        // 2. Bar Chart: Hourly Rush Traffic POS
+        const hourlyLabels = @json($hourlyLabels);
+        const hourlyData = @json($hourlyData);
 
-        // 2. Customer Sentiment Radial Gauge
-        var gaugeOptions = {
-            series: [92],
+        const hourlyOptions = {
+            series: [{
+                name: 'Jumlah Transaksi',
+                data: hourlyData
+            }],
             chart: {
-                type: 'radialBar',
-                height: 250,
-                offsetY: -10,
-                sparkline: { enabled: true }
+                type: 'bar',
+                height: 180,
+                toolbar: { show: false },
+                fontFamily: 'Plus Jakarta Sans, sans-serif'
             },
             plotOptions: {
-                radialBar: {
-                    startAngle: -90,
-                    endAngle: 90,
-                    track: {
-                        background: themeColors.trackColor,
-                        strokeWidth: '97%',
-                        margin: 5,
-                    },
-                    dataLabels: {
-                        name: { show: false },
-                        value: { show: false }
-                    }
+                bar: {
+                    borderRadius: 4,
+                    columnWidth: '55%',
+                    distributed: false
                 }
             },
+            colors: ['#3b82f6'],
+            dataLabels: { enabled: false },
             grid: {
-                padding: { top: -10 }
+                borderColor: gridColor,
+                strokeDashArray: 4,
+                yaxis: { lines: { show: true } },
+                xaxis: { lines: { show: false } }
             },
-            fill: {
-                type: 'gradient',
-                gradient: {
-                    shade: 'light',
-                    shadeIntensity: 0.4,
-                    inverseColors: false,
-                    gradientToColors: ['#f97316'],
-                    stops: [0, 50, 65, 91]
+            xaxis: {
+                categories: hourlyLabels,
+                labels: {
+                    style: { fontSize: '9px', colors: textColor }
                 },
-                colors: ['#fb923c']
+                axisBorder: { show: false },
+                axisTicks: { show: false }
             },
-            labels: ['Sentiment'],
+            yaxis: {
+                labels: {
+                    style: { fontSize: '10px', colors: textColor }
+                }
+            },
+            tooltip: {
+                theme: isDark ? 'dark' : 'light',
+                y: {
+                    formatter: function (val) {
+                        return val + ' Transaksi';
+                    }
+                }
+            }
         };
 
-        var sentimentChart = new ApexCharts(document.querySelector("#sentimentGauge"), gaugeOptions);
-        sentimentChart.render();
+        const hourlyChart = new ApexCharts(document.querySelector("#hourlyRushChart"), hourlyOptions);
+        hourlyChart.render();
 
-        // Listen for theme toggle to adapt chart grid & colors
-        window.addEventListener('themeChanged', function (e) {
-            const isDark = e.detail.theme === 'dark';
-            workflowChart.updateOptions({
-                grid: { borderColor: isDark ? '#1e293b' : '#f1f5f9' },
-                xaxis: { labels: { style: { colors: isDark ? '#64748b' : '#94a3b8' } } },
-                yaxis: { labels: { style: { colors: isDark ? '#64748b' : '#94a3b8' } } },
-                tooltip: { theme: isDark ? 'dark' : 'light' }
-            });
-            sentimentChart.updateOptions({
-                plotOptions: {
-                    radialBar: {
-                        track: { background: isDark ? '#1e293b' : '#f1f5f9' }
+        // 3. Donut Chart: Penjualan per Kategori
+        const categoryNames = @json($categorySales->pluck('category_name'));
+        const categoryAmounts = @json($categorySales->pluck('total_revenue')->map(fn($v) => (float)$v));
+
+        const donutOptions = {
+            series: categoryAmounts.length > 0 ? categoryAmounts : [1],
+            labels: categoryNames.length > 0 ? categoryNames : ['Belum Ada Transaksi'],
+            chart: {
+                type: 'donut',
+                height: 220,
+                fontFamily: 'Plus Jakarta Sans, sans-serif'
+            },
+            colors: ['#f97316', '#10b981', '#3b82f6', '#f59e0b', '#8b5cf6'],
+            legend: { show: false },
+            dataLabels: { enabled: false },
+            plotOptions: {
+                pie: {
+                    donut: {
+                        size: '72%'
                     }
                 }
+            },
+            tooltip: {
+                theme: isDark ? 'dark' : 'light',
+                y: {
+                    formatter: function (val) {
+                        return 'Rp ' + parseInt(val).toLocaleString('id-ID');
+                    }
+                }
+            }
+        };
+
+        const donutChart = new ApexCharts(document.querySelector("#categoryDonutChart"), donutOptions);
+        donutChart.render();
+
+        // Listen to Theme Toggle Event and update charts instantly
+        window.addEventListener('themeChanged', function (e) {
+            const isDarkNow = e.detail.theme === 'dark';
+            const newGridColor = isDarkNow ? '#1e293b' : '#f1f5f9';
+            const newTextColor = isDarkNow ? '#64748b' : '#94a3b8';
+            const newTheme = isDarkNow ? 'dark' : 'light';
+
+            salesChart.updateOptions({
+                grid: { borderColor: newGridColor },
+                xaxis: { labels: { style: { colors: newTextColor } } },
+                yaxis: { labels: { style: { colors: newTextColor } } },
+                tooltip: { theme: newTheme }
+            });
+
+            hourlyChart.updateOptions({
+                grid: { borderColor: newGridColor },
+                xaxis: { labels: { style: { colors: newTextColor } } },
+                yaxis: { labels: { style: { colors: newTextColor } } },
+                tooltip: { theme: newTheme }
+            });
+
+            donutChart.updateOptions({
+                tooltip: { theme: newTheme }
             });
         });
-
     });
 </script>
 @endpush

@@ -69,11 +69,60 @@ Route::middleware(['auth'])->group(function () {
     Route::post('payables', [\App\Http\Controllers\PaymentController::class, 'storePayable'])->name('payables.store');
     Route::get('receivables', [\App\Http\Controllers\PaymentController::class, 'receivables'])->name('receivables.index');
     Route::post('receivables', [\App\Http\Controllers\PaymentController::class, 'storeReceivable'])->name('receivables.store');
+    Route::resource('cash-flows', \App\Http\Controllers\CashFlowController::class)->only(['index', 'store']);
+    Route::resource('account-transfers', \App\Http\Controllers\AccountTransferController::class)->only(['index', 'store']);
 
-    // 7. User & Role Management
+    // 7. Retur Penjualan (Phase 5.6)
+    Route::get('sale-returns/search-invoice', [\App\Http\Controllers\SaleReturnController::class, 'searchInvoice'])->name('sale-returns.search-invoice');
+    Route::get('sale-returns/list-invoices', [\App\Http\Controllers\SaleReturnController::class, 'listInvoices'])->name('sale-returns.list-invoices');
+    Route::resource('sale-returns', \App\Http\Controllers\SaleReturnController::class)->only(['index', 'store', 'destroy']);
+
+    // 8. User & Role Management
     Route::resource('users', UserController::class)->except(['create', 'show', 'edit']);
 
-    // 5. User Profile
+    // 9. Laporan & Analytics (Phase 6)
+    Route::prefix('reports')->name('reports.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\ReportController::class, 'index'])->name('index');
+        Route::get('/sales', [\App\Http\Controllers\ReportController::class, 'sales'])->name('sales');
+        Route::get('/sales/products', [\App\Http\Controllers\ReportController::class, 'salesByProduct'])->name('sales.products');
+        Route::get('/sales/categories', [\App\Http\Controllers\ReportController::class, 'salesByCategory'])->name('sales.categories');
+        Route::get('/sales/customers', [\App\Http\Controllers\ReportController::class, 'salesByCustomer'])->name('sales.customers');
+        Route::get('/sales/export-pdf', [\App\Http\Controllers\ReportController::class, 'exportSalesPdf'])->name('sales.export-pdf');
+        Route::get('/sales/export-excel', [\App\Http\Controllers\ReportController::class, 'exportSalesExcel'])->name('sales.export-excel');
+        
+        // 6.2 Laporan Pembelian
+        Route::get('/purchases', [\App\Http\Controllers\ReportController::class, 'purchases'])->name('purchases');
+        Route::get('/purchases/export-pdf', [\App\Http\Controllers\ReportController::class, 'exportPurchasesPdf'])->name('purchases.export-pdf');
+        Route::get('/purchases/export-excel', [\App\Http\Controllers\ReportController::class, 'exportPurchasesExcel'])->name('purchases.export-excel');
+
+        // 6.3 Laporan Stok & Inventori
+        Route::get('/stocks', [\App\Http\Controllers\ReportController::class, 'stocks'])->name('stocks');
+        Route::get('/stock-opnames', [\App\Http\Controllers\ReportController::class, 'stockOpnames'])->name('stock-opnames');
+        Route::get('/stocks/export-pdf', [\App\Http\Controllers\ReportController::class, 'exportStocksPdf'])->name('stocks.export-pdf');
+        Route::get('/stocks/export-excel', [\App\Http\Controllers\ReportController::class, 'exportStocksExcel'])->name('stocks.export-excel');
+
+        // 6.4 Laporan Keuangan (Finance)
+        Route::get('/payables', [\App\Http\Controllers\ReportController::class, 'payables'])->name('payables');
+        Route::get('/receivables', [\App\Http\Controllers\ReportController::class, 'receivables'])->name('receivables');
+        Route::get('/cash-flows', [\App\Http\Controllers\ReportController::class, 'cashFlows'])->name('cash-flows');
+        Route::get('/profit-loss', [\App\Http\Controllers\ReportController::class, 'profitLoss'])->name('profit-loss');
+        Route::get('/cashier-shifts', [\App\Http\Controllers\ReportController::class, 'cashierShifts'])->name('cashier-shifts');
+    });
+
+    // 10. Pengaturan Toko & Konfigurasi (Phase 6.6)
+    Route::prefix('settings')->name('settings.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\SettingController::class, 'index'])->name('index');
+        Route::post('/profile', [\App\Http\Controllers\SettingController::class, 'updateProfile'])->name('profile');
+        Route::post('/prefixes', [\App\Http\Controllers\SettingController::class, 'updatePrefixes'])->name('prefixes');
+        Route::post('/tax', [\App\Http\Controllers\SettingController::class, 'updateTaxCurrency'])->name('tax');
+        Route::post('/receipt', [\App\Http\Controllers\SettingController::class, 'updateReceipt'])->name('receipt');
+    });
+
+    // 11. Audit Trail (Phase 6.7)
+    Route::get('/audit-trails', [\App\Http\Controllers\AuditTrailController::class, 'index'])->name('audit-trails.index');
+    Route::get('/audit-trails/{auditTrail}', [\App\Http\Controllers\AuditTrailController::class, 'show'])->name('audit-trails.show');
+
+    // User Profile
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');

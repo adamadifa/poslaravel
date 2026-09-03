@@ -28,9 +28,13 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://npmcdn.com/flatpickr/dist/l10n/id.js"></script>
 
-    <!-- Force Light Mode on Admin -->
+    <!-- Dark Mode Initializer (Prevents Flash of Wrong Theme) -->
     <script>
-        document.documentElement.classList.remove('dark');
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
     </script>
 
     <style>
@@ -111,16 +115,16 @@
     </style>
     @stack('styles')
 </head>
-<body class="h-screen w-screen overflow-hidden text-slate-800 antialiased bg-[#f8fafc] p-0 m-0 transition-colors duration-200">
+<body class="h-screen w-screen overflow-hidden text-slate-800 dark:text-slate-100 antialiased bg-[#f8fafc] dark:bg-slate-950 p-0 m-0 transition-colors duration-200">
 
     <!-- Mobile Backdrop Overlay -->
-    <div id="sidebarBackdrop" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-40 hidden lg:hidden transition-opacity"></div>
+    <div id="sidebarBackdrop" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-40 hidden lg:hidden transition-opacity"></div>
 
     <!-- Edge-to-Edge True Full Screen Flex Layout -->
-    <div class="h-full w-full bg-[#f8fafc] flex overflow-hidden">
+    <div class="h-full w-full bg-[#f8fafc] dark:bg-slate-950 flex overflow-hidden">
         
         <!-- SIDEBAR -->
-        <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 lg:static w-64 bg-white border-r border-slate-200/80 flex flex-col justify-between shrink-0 p-6 select-none -translate-x-full lg:translate-x-0 h-full overflow-y-auto overflow-x-hidden transition-colors duration-200">
+        <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 lg:static w-64 bg-white dark:bg-slate-900 border-r border-slate-200/80 dark:border-slate-800 flex flex-col justify-between shrink-0 p-6 select-none -translate-x-full lg:translate-x-0 h-full overflow-y-auto overflow-x-hidden transition-colors duration-200">
             <div>
                 <!-- Brand Header -->
                 <div class="brand-header flex items-center justify-between px-1 h-12 mb-6">
@@ -240,9 +244,14 @@
                             <span class="nav-text truncate">Peringatan Stok</span>
                         </a>
 
-                        <a href="{{ url('/sales') }}" title="Riwayat Penjualan" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60">
+                        <a href="{{ url('/sales') }}" title="Riwayat Penjualan" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->is('sales*') ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
                             <i data-lucide="receipt" class="w-4 h-4 shrink-0 text-slate-400"></i>
                             <span class="nav-text truncate">Riwayat Penjualan</span>
+                        </a>
+
+                        <a href="{{ route('sale-returns.index') }}" title="Retur Penjualan" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->is('sale-returns*') ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
+                            <i data-lucide="rotate-ccw" class="w-4 h-4 shrink-0 text-slate-400"></i>
+                            <span class="nav-text truncate">Retur Penjualan</span>
                         </a>
                     </div>
 
@@ -264,13 +273,23 @@
                             <i data-lucide="coins" class="w-4 h-4 shrink-0 text-slate-400"></i>
                             <span class="nav-text truncate">Piutang Penjualan (AR)</span>
                         </a>
+
+                        <a href="{{ route('cash-flows.index') }}" title="Arus Kas" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->is('cash-flows*') ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
+                            <i data-lucide="arrow-down-up" class="w-4 h-4 shrink-0 text-slate-400"></i>
+                            <span class="nav-text truncate">Arus Kas Masuk & Keluar</span>
+                        </a>
+
+                        <a href="{{ route('account-transfers.index') }}" title="Transfer Kas/Bank" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->is('account-transfers*') ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
+                            <i data-lucide="arrow-left-right" class="w-4 h-4 shrink-0 text-slate-400"></i>
+                            <span class="nav-text truncate">Transfer Kas & Bank</span>
+                        </a>
                     </div>
 
                     <!-- Section: Laporan & User -->
                     <div class="pt-3">
                         <p class="section-header px-3 text-[10px] font-extrabold tracking-wider text-slate-400 dark:text-slate-500 uppercase mb-1.5">Laporan & Pengaturan</p>
 
-                        <a href="{{ url('/reports') }}" title="Laporan & Laba Rugi" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60">
+                        <a href="{{ route('reports.sales') }}" title="Laporan & Laba Rugi" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->is('reports*') ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
                             <i data-lucide="bar-chart-3" class="w-4 h-4 shrink-0 text-slate-400"></i>
                             <span class="nav-text truncate">Laporan & Analitik</span>
                         </a>
@@ -280,9 +299,14 @@
                             <span class="nav-text truncate">Staf & Pengguna</span>
                         </a>
 
-                        <a href="{{ url('/settings') }}" title="Pengaturan Toko" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60">
+                        <a href="{{ route('settings.index') }}" title="Pengaturan Toko" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->routeIs('settings*') ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
                             <i data-lucide="settings" class="w-4 h-4 shrink-0 text-slate-400"></i>
                             <span class="nav-text truncate">Pengaturan Toko</span>
+                        </a>
+
+                        <a href="{{ route('audit-trails.index') }}" title="Log Aktivitas & Audit Trail" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->routeIs('audit-trails*') ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
+                            <i data-lucide="shield-check" class="w-4 h-4 shrink-0 text-slate-400"></i>
+                            <span class="nav-text truncate">Audit Trail (Log)</span>
                         </a>
                     </div>
                 </div>
@@ -322,37 +346,43 @@
         </aside>
 
         <!-- MAIN CONTENT AREA -->
-        <main class="flex-1 flex flex-col min-w-0 bg-[#f8fafc] h-full overflow-y-auto transition-colors duration-200">
+        <main class="flex-1 flex flex-col min-w-0 bg-[#f8fafc] dark:bg-slate-950 h-full overflow-y-auto transition-colors duration-200">
             
             <!-- TOP NAVBAR -->
-            <header class="px-8 lg:px-10 py-4 flex items-center justify-between gap-4 border-b border-slate-200/80 shrink-0 bg-white sticky top-0 z-30 transition-colors duration-200">
+            <header class="px-8 lg:px-10 py-4 flex items-center justify-between gap-4 border-b border-slate-200/80 dark:border-slate-800 shrink-0 bg-white dark:bg-slate-900 sticky top-0 z-30 transition-colors duration-200">
                 <div class="flex items-center gap-3.5">
                     <!-- Mobile Hamburger Menu Button -->
-                    <button id="openMobileSidebarBtn" class="lg:hidden p-2.5 rounded-xl text-slate-600 hover:bg-slate-100 border border-slate-200">
+                    <button id="openMobileSidebarBtn" class="lg:hidden p-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700">
                         <i data-lucide="menu" class="w-5 h-5"></i>
                     </button>
-                    <span class="text-sm font-bold text-slate-800 tracking-tight sm:hidden">{{ $headerTitle ?? 'Dashboard' }}</span>
+                    <span class="text-sm font-bold text-slate-800 dark:text-white tracking-tight sm:hidden">{{ $headerTitle ?? 'Dashboard' }}</span>
                 </div>
 
                 <div class="flex items-center gap-3.5 ml-auto">
                     <!-- Search Input -->
                     <div class="relative hidden sm:flex items-center">
                         <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 pointer-events-none"></i>
-                        <input type="text" placeholder="Search" class="pl-10 pr-16 py-2 bg-slate-50 hover:bg-slate-100/80 focus:bg-white border border-slate-200/80 rounded-xl text-xs font-medium text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition w-64">
-                        <div class="absolute right-3 flex items-center gap-0.5 text-[10px] font-semibold text-slate-400 bg-white border border-slate-200 px-1.5 py-0.5 rounded-md shadow-2xs">
+                        <input type="text" placeholder="Search" class="pl-10 pr-16 py-2 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100/80 focus:bg-white dark:focus:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition w-64">
+                        <div class="absolute right-3 flex items-center gap-0.5 text-[10px] font-semibold text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-1.5 py-0.5 rounded-md shadow-2xs">
                             ⌘ + F
                         </div>
                     </div>
 
+                    <!-- Dark / Light Theme Toggle Button -->
+                    <button id="themeToggleBtn" title="Toggle Tema Gelap / Terang" class="p-2 text-slate-500 dark:text-slate-300 hover:text-slate-700 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200/70 dark:border-slate-700 rounded-xl transition flex items-center justify-center">
+                        <i data-lucide="moon" class="w-4 h-4 hidden dark:block text-amber-400"></i>
+                        <i data-lucide="sun" class="w-4 h-4 block dark:hidden text-amber-500"></i>
+                    </button>
+
                     <!-- Action Icons -->
-                    <button class="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-50 border border-slate-200/70 rounded-xl transition">
+                    <a href="{{ route('reports.sales.export-excel') }}" title="Download Laporan Excel" class="p-2 text-slate-500 dark:text-slate-300 hover:text-slate-700 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200/70 dark:border-slate-700 rounded-xl transition">
                         <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
-                    </button>
+                    </a>
                     
-                    <button class="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-50 border border-slate-200/70 rounded-xl transition relative">
+                    <a href="{{ route('stocks.alerts') }}" title="Peringatan Stok" class="p-2 text-slate-500 dark:text-slate-300 hover:text-slate-700 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200/70 dark:border-slate-700 rounded-xl transition relative">
                         <i data-lucide="bell" class="w-4 h-4"></i>
-                        <span class="w-2 h-2 rounded-full bg-brand-500 absolute top-2 right-2 ring-2 ring-white"></span>
-                    </button>
+                        <span class="w-2 h-2 rounded-full bg-brand-500 absolute top-2 right-2 ring-2 ring-white dark:ring-slate-900"></span>
+                    </a>
 
                     <!-- AI Support Button -->
                     <button class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gradient-to-r from-brand-500 to-amber-500 hover:from-brand-600 hover:to-amber-600 text-white text-xs font-bold shadow-sm shadow-brand-500/30 transition">
@@ -365,29 +395,29 @@
             <!-- PAGE HEADER: TITLE (LEFT) & BREADCRUMBS (RIGHT) -->
             <div class="px-8 lg:px-10 pt-6 pb-2 shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">{{ $headerTitle ?? 'Dashboard' }}</h1>
+                    <h1 class="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">{{ $headerTitle ?? 'Dashboard' }}</h1>
                     @if(isset($headerDescription) && $headerDescription)
-                        <p class="text-xs text-slate-500 mt-1">{{ $headerDescription }}</p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">{{ $headerDescription }}</p>
                     @endif
                 </div>
 
                 <!-- Breadcrumbs on the right -->
-                <nav class="flex items-center gap-1.5 text-xs font-medium text-slate-400 bg-white border border-slate-200/80 px-3.5 py-1.5 rounded-xl shadow-2xs shrink-0 self-start sm:self-auto">
-                    <a href="{{ route('dashboard') }}" class="hover:text-brand-500 transition flex items-center gap-1 text-slate-500">
+                <nav class="flex items-center gap-1.5 text-xs font-medium text-slate-400 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 px-3.5 py-1.5 rounded-xl shadow-2xs shrink-0 self-start sm:self-auto">
+                    <a href="{{ route('dashboard') }}" class="hover:text-brand-500 transition flex items-center gap-1 text-slate-500 dark:text-slate-400">
                         <i data-lucide="home" class="w-3.5 h-3.5 text-slate-400"></i>
                         <span>Home</span>
                     </a>
-                    <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-300"></i>
+                    <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-300 dark:text-slate-600"></i>
                     @if(isset($breadcrumbParent))
-                        <span class="text-slate-500">{{ $breadcrumbParent }}</span>
-                        <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-300"></i>
+                        <span class="text-slate-500 dark:text-slate-400">{{ $breadcrumbParent }}</span>
+                        <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-300 dark:text-slate-600"></i>
                     @endif
-                    <span class="text-slate-800 font-bold">{{ $breadcrumbCurrent ?? ($headerTitle ?? 'Dashboard') }}</span>
+                    <span class="text-slate-800 dark:text-slate-200 font-bold">{{ $breadcrumbCurrent ?? ($headerTitle ?? 'Dashboard') }}</span>
                 </nav>
             </div>
 
             <!-- VIEW CONTENT -->
-            <div class="p-8 lg:px-10 space-y-7 flex-1 bg-[#f8fafc] transition-colors duration-200">
+            <div class="p-8 lg:px-10 space-y-7 flex-1 bg-[#f8fafc] dark:bg-slate-950 transition-colors duration-200">
                 @yield('content')
             </div>
 

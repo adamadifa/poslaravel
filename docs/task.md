@@ -327,90 +327,90 @@
 - [x] Auto: catat cash_flow (type: income)
 
 ### 5.4 Kas Masuk / Keluar
-- [ ] Migration `cash_flows`
-- [ ] Model `CashFlow` + relationships
-- [ ] CRUD Kas Masuk — index, create (kategori, nominal, akun, keterangan)
-- [ ] CRUD Kas Keluar — index, create (kategori, nominal, akun, keterangan)
-- [ ] Auto: update saldo akun
-- [ ] Kategori kas: gaji, listrik, sewa, transport, operasional, dll
+- [x] Migration `cash_flows`
+- [x] Model `CashFlow` + relationships
+- [x] CRUD Kas Masuk — index, create (kategori, nominal, akun, keterangan)
+- [x] CRUD Kas Keluar — index, create (kategori, nominal, akun, keterangan)
+- [x] Auto: update saldo akun
+- [x] Kategori kas: gaji, listrik, sewa, transport, operasional, dll
 
 ### 5.5 Transfer Antar Kas/Bank
-- [ ] Migration `account_transfers`
-- [ ] Model `AccountTransfer` + relationships
-- [ ] CRUD Transfer — index, create (dari akun, ke akun, nominal, biaya transfer)
-- [ ] Auto: kurangi saldo akun asal, tambah saldo akun tujuan
+- [x] Migration `account_transfers`
+- [x] Model `AccountTransfer` + relationships
+- [x] CRUD Transfer — index, create (dari akun, ke akun, nominal, biaya transfer)
+- [x] Auto: kurangi saldo akun asal, tambah saldo akun tujuan
 
 ### 5.6 Retur Penjualan
-- [ ] Migration `sale_returns`
-- [ ] Migration `sale_return_items`
-- [ ] Model `SaleReturn` + relationships
-- [ ] Model `SaleReturnItem` + relationships
-- [ ] CRUD Retur — index (tabel + filter)
-- [ ] CRUD Retur — create: cari invoice, pilih item & qty retur, alasan
-- [ ] CRUD Retur — pilih metode refund (cash/credit note/transfer)
-- [ ] CRUD Retur — confirm
-- [ ] Auto: tambah stok + catat stock_movement
-- [ ] Auto: refund kas (jika cash) atau kurangi piutang (jika kredit)
-- [ ] Generate nomor retur otomatis (SR-2026-0001)
+- [x] Migration `sale_returns`
+- [x] Migration `sale_return_items`
+- [x] Model `SaleReturn` + relationships
+- [x] Model `SaleReturnItem` + relationships
+- [x] CRUD Retur — index (tabel + filter)
+- [x] CRUD Retur — create: cari invoice, pilih item & qty retur, alasan
+- [x] CRUD Retur — pilih metode refund (cash/credit note/transfer)
+- [x] CRUD Retur — confirm & restore stok
+- [x] Auto: tambah stok + catat stock_movement
+- [x] Auto: refund kas (jika cash) atau kurangi piutang (jika kredit)
+- [x] Generate nomor retur otomatis (SR-2026-0001)
 
 ---
 
 ## Phase 6 — Reports & Polish (Week 11-12)
 
 ### 6.1 Laporan Penjualan
-- [ ] Laporan Penjualan Harian (filter: tanggal, kasir, shift, outlet)
-- [ ] Laporan Penjualan per Produk (filter: periode, kategori)
-- [ ] Laporan Penjualan per Kategori
-- [ ] Laporan Penjualan per Customer
-- [ ] Laporan Margin / Laba Kotor per Produk
-- [ ] Export semua laporan ke PDF & Excel
+- [x] Laporan Penjualan Harian (filter: tanggal, kasir, shift, outlet)
+- [x] Laporan Penjualan per Produk (filter: periode, kategori)
+- [x] Laporan Penjualan per Kategori
+- [x] Laporan Penjualan per Customer
+- [x] Laporan Margin / Laba Kotor per Produk
+- [x] Export semua laporan ke PDF & Excel
 
 ### 6.2 Laporan Pembelian
-- [ ] Laporan Pembelian per Supplier per Periode
-- [ ] Export PDF & Excel
+- [x] Laporan Pembelian per Supplier per Periode
+- [x] Export PDF & Excel
 
 ### 6.3 Laporan Stok
-- [ ] Kartu Stok (sudah ada di Phase 4, polish tampilan)
-- [ ] Laporan Stok Saat Ini (semua produk per gudang)
-- [ ] Laporan Stok Minimum / Kritis
-- [ ] Laporan Nilai Persediaan (qty × HPP)
-- [ ] Laporan Hasil Stok Opname
-- [ ] Export PDF & Excel
+- [x] Kartu Stok (sudah ada di Phase 4, polish tampilan)
+- [x] Laporan Stok Saat Ini (semua produk per gudang)
+- [x] Laporan Stok Minimum / Kritis
+- [x] Laporan Nilai Persediaan (qty × HPP)
+- [x] Laporan Hasil Stok Opname
+- [x] Export PDF & Excel
 
 ### 6.4 Laporan Keuangan
-- [ ] Laporan Hutang Supplier (outstanding + aging)
-- [ ] Laporan Piutang Customer (outstanding + aging)
-- [ ] Laporan Mutasi Kas/Bank per Periode
-- [ ] Laporan Laba Rugi Sederhana (Pendapatan - HPP - Biaya)
-- [ ] Rekap Shift Kasir
-- [ ] Export PDF & Excel
+- [x] Laporan Hutang Supplier (outstanding + aging)
+- [x] Laporan Piutang Customer (outstanding + aging)
+- [x] Laporan Mutasi Kas/Bank per Periode
+- [x] Laporan Laba Rugi Sederhana (Pendapatan - HPP - Biaya)
+- [x] Rekap Shift Kasir
+- [x] Export PDF & Excel
 
 ### 6.5 Dashboard Analytics
-- [ ] Widget: total penjualan hari ini / minggu / bulan
-- [ ] Widget: jumlah transaksi hari ini
-- [ ] Widget: stok kritis (warning)
-- [ ] Widget: hutang & piutang jatuh tempo
-- [ ] Chart: tren penjualan 30 hari (line chart)
-- [ ] Chart: top 10 produk terlaris (bar chart)
-- [ ] Chart: penjualan per kategori (pie chart)
-- [ ] Chart: perbandingan per outlet (jika multi-cabang)
+- [x] Widget: total penjualan hari ini / minggu / bulan
+- [x] Widget: jumlah transaksi hari ini
+- [x] Widget: stok kritis (warning)
+- [x] Widget: hutang & piutang jatuh tempo
+- [x] Chart: tren penjualan 30 hari (line chart)
+- [x] Chart: top 10 produk terlaris (bar chart)
+- [x] Chart: penjualan per kategori (pie chart)
+- [x] Chart: perbandingan per outlet (jika multi-cabang)
 
 ### 6.6 Settings & Configuration
-- [ ] Migration `settings`
-- [ ] Model `Setting` + helper functions
-- [ ] Halaman Profil Toko (nama, alamat, logo, telepon, NPWP)
-- [ ] Halaman Format Nomor Transaksi (prefix per jenis dokumen)
-- [ ] Halaman Pajak Default (PPN %)
-- [ ] Halaman Template Struk (header, footer, ukuran)
-- [ ] Logo toko muncul di struk & laporan
+- [x] Migration `settings`
+- [x] Model `Setting` + helper functions
+- [x] Halaman Profil Toko (nama, alamat, logo, telepon, NPWP)
+- [x] Halaman Format Nomor Transaksi (prefix per jenis dokumen)
+- [x] Halaman Pajak Default (PPN %)
+- [x] Halaman Template Struk (header, footer, ukuran)
+- [x] Logo toko muncul di struk & laporan
 
 ### 6.7 Audit Trail
-- [ ] Migration `audit_trails`
-- [ ] Model `AuditTrail`
-- [ ] Trait `Auditable` — auto-log create/update/delete
-- [ ] Log login/logout
-- [ ] Halaman Audit Trail — index (filter user, action, model, tanggal)
-- [ ] Detail: old values vs new values
+- [x] Migration `audit_trails`
+- [x] Model `AuditTrail`
+- [x] Trait `Auditable` — auto-log create/update/delete
+- [x] Log login/logout
+- [x] Halaman Audit Trail — index (filter user, action, model, tanggal)
+- [x] Detail: old values vs new values
 
 ### 6.8 Final Polish
 - [ ] Review semua halaman — konsistensi UI

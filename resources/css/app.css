@@ -20,3 +20,111 @@
 .dark ::-webkit-scrollbar-thumb {
     background: #334155;
 }
+
+/* ==========================================================================
+   GLOBAL DARK MODE ADAPTATIONS FOR FORMS, FLOATING LABELS, TABLES, & MODALS
+   ========================================================================== */
+
+/* 1. Global Table Card & Table Rows in Dark Mode */
+.dark .bg-white {
+    background-color: #0f172a !important;
+}
+
+.dark .bg-slate-50,
+.dark .bg-slate-50\/50,
+.dark .bg-slate-50\/60,
+.dark .bg-slate-50\/70,
+.dark .bg-slate-50\/80 {
+    background-color: #1e293b !important;
+}
+
+.dark .border-slate-200,
+.dark .border-slate-200\/60,
+.dark .border-slate-200\/70,
+.dark .border-slate-200\/80,
+.dark .border-slate-200\/90,
+.dark .border-slate-100 {
+    border-color: #334155 !important;
+}
+
+.dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
+.dark .divide-slate-200 > :not([hidden]) ~ :not([hidden]) {
+    border-color: #334155 !important;
+}
+
+/* 2. Text Colors in Dark Mode */
+.dark .text-slate-900,
+.dark .text-slate-800 {
+    color: #f8fafc !important;
+}
+
+.dark .text-slate-700 {
+    color: #e2e8f0 !important;
+}
+
+.dark .text-slate-600 {
+    color: #cbd5e1 !important;
+}
+
+.dark .text-slate-500 {
+    color: #94a3b8 !important;
+}
+
+/* 3. Form Outset Floating Labels in Dark Mode */
+.dark .relative > label.bg-white,
+.dark label.bg-white {
+    background-color: #0f172a !important;
+    color: #cbd5e1 !important;
+}
+
+.dark .relative:focus-within > label.bg-white,
+.dark label.bg-white:focus-within {
+    color: #fb923c !important;
+}
+
+/* 4. Inputs, Textareas, & Selects in Dark Mode */
+.dark input[type="text"],
+.dark input[type="search"],
+.dark input[type="number"],
+.dark input[type="email"],
+.dark input[type="password"],
+.dark input[type="date"],
+.dark select,
+.dark textarea {
+    color: #f8fafc !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+    color: #64748b !important;
+}
+
+.dark select option {
+    background-color: #0f172a !important;
+    color: #f8fafc !important;
+}
+
+/* 5. Table Hover State in Dark Mode */
+.dark tbody tr:hover {
+    background-color: rgba(30, 41, 59, 0.7) !important;
+}
+
+/* 6. Badges & Tag Backgrounds in Dark Mode */
+.dark .bg-slate-100 {
+    background-color: #1e293b !important;
+    color: #cbd5e1 !important;
+}
+
+.dark .hover\:bg-slate-50:hover,
+.dark .hover\:bg-slate-100:hover {
+    background-color: #1e293b !important;
+}
+
+/* Ensure Brand color text & badges stay bright */
+.dark .text-white {
+    color: #ffffff !important;
+}
+.dark .bg-brand-500 {
+    background-color: #f97316 !important;
+}
+

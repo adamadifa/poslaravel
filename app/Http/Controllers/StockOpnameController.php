@@ -89,12 +89,17 @@ class StockOpnameController extends Controller
     }
 
     /**
-     * Get Opname Details via AJAX (for viewing modal & editing)
+     * Get Opname Details (Blade View for regular requests, JSON for AJAX)
      */
-    public function show(StockOpname $stockOpname)
+    public function show(Request $request, StockOpname $stockOpname)
     {
         $stockOpname->load(['warehouse', 'conductor', 'approver', 'items.product.baseUnit']);
-        return response()->json($stockOpname);
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json($stockOpname);
+        }
+
+        return view('stocks.opnames.show', compact('stockOpname'));
     }
 
     /**

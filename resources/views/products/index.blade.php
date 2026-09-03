@@ -8,8 +8,8 @@
         <form method="GET" action="{{ route('products.index') }}" class="flex flex-wrap sm:flex-nowrap items-center gap-3 flex-1 w-full">
             
             <!-- Outset Floating-label Search Input -->
-            <div class="relative flex-1 min-w-[200px] w-full rounded-xl border border-slate-200 hover:border-slate-300 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/20 bg-white transition px-4 pt-3 pb-2.5">
-                <label class="absolute -top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold text-slate-700">
+            <div class="relative flex-1 min-w-[200px] w-full rounded-xl border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/20 bg-white dark:bg-slate-900 transition px-4 pt-3 pb-2.5">
+                <label class="absolute -top-2.5 left-3.5 bg-white dark:bg-slate-900 px-1.5 text-[11px] font-bold text-slate-700 dark:text-slate-300">
                     Cari Produk
                 </label>
                 <div class="flex items-center gap-3">
@@ -18,18 +18,18 @@
                            name="search" 
                            value="{{ request('search') }}" 
                            placeholder="Ketik nama, SKU, atau barcode..." 
-                           class="w-full bg-transparent border-0 p-0 text-xs font-semibold text-slate-800 placeholder-slate-400 focus:ring-0 focus:outline-none">
+                           class="w-full bg-transparent border-0 p-0 text-xs font-semibold text-slate-800 dark:text-white placeholder-slate-400 focus:ring-0 focus:outline-none">
                 </div>
             </div>
 
             <!-- Outset Floating-label Category Filter -->
-            <div class="relative min-w-[170px] rounded-xl border border-slate-200 hover:border-slate-300 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/20 bg-white transition px-4 pt-3 pb-2.5">
-                <label class="absolute -top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold text-slate-700">
+            <div class="relative min-w-[170px] rounded-xl border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/20 bg-white dark:bg-slate-900 transition px-4 pt-3 pb-2.5">
+                <label class="absolute -top-2.5 left-3.5 bg-white dark:bg-slate-900 px-1.5 text-[11px] font-bold text-slate-700 dark:text-slate-300">
                     Filter Kategori
                 </label>
                 <div class="flex items-center gap-2">
                     <i data-lucide="tag" class="w-4 h-4 text-slate-400 shrink-0"></i>
-                    <select name="category_id" onchange="this.form.submit()" class="w-full bg-transparent border-0 p-0 text-xs font-semibold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
+                    <select name="category_id" onchange="this.form.submit()" class="w-full bg-transparent border-0 p-0 text-xs font-semibold text-slate-800 dark:text-white focus:ring-0 focus:outline-none cursor-pointer">
                         <option value="">Semua Kategori</option>
                         @foreach($categories as $category)
                             <option value="{{ $category->id }}" {{ request('category_id') == $category->id ? 'selected' : '' }}>
@@ -54,7 +54,7 @@
     </div>
 
     <!-- Products Table Card (Solid Orange Unified Header) -->
-    <div class="bg-white border border-slate-200/90 rounded-2xl shadow-sm overflow-hidden">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
         
         <!-- Table Card Header (Solid Orange Theme) -->
         <div class="px-6 pt-5 pb-3 bg-brand-500 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-white">

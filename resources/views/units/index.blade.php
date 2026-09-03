@@ -6,13 +6,13 @@
     <!-- Action & Filter Bar (Frameless & Full Width matching /categories) -->
     <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 w-full">
         <form method="GET" action="{{ route('units.index') }}" class="flex items-center gap-3 flex-1 w-full">
-            <div class="relative w-full rounded-xl border border-slate-200 hover:border-slate-300 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/20 bg-white transition px-4 pt-3 pb-2.5">
-                <label class="absolute -top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold text-slate-700">
+            <div class="relative w-full rounded-xl border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/20 bg-white dark:bg-slate-900 transition px-4 pt-3 pb-2.5">
+                <label class="absolute -top-2.5 left-3.5 bg-white dark:bg-slate-900 px-1.5 text-[11px] font-bold text-slate-700 dark:text-slate-300">
                     Cari Satuan
                 </label>
                 <div class="flex items-center gap-3">
                     <i data-lucide="search" class="w-4 h-4 text-slate-400 shrink-0"></i>
-                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Ketik nama satuan atau simbol (Pcs, Box, Kg)..." class="w-full bg-transparent border-0 p-0 text-xs font-semibold text-slate-800 placeholder-slate-400 focus:ring-0 focus:outline-none">
+                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Ketik nama satuan atau simbol (Pcs, Box, Kg)..." class="w-full bg-transparent border-0 p-0 text-xs font-semibold text-slate-800 dark:text-white placeholder-slate-400 focus:ring-0 focus:outline-none">
                     @if(request('search'))
                         <a href="{{ route('units.index') }}" class="text-[11px] font-semibold text-rose-500 hover:text-rose-600 shrink-0">Reset</a>
                     @endif
@@ -27,7 +27,7 @@
     </div>
 
     <!-- Units Table Card -->
-    <div class="bg-white border border-slate-200/90 rounded-2xl shadow-xs overflow-hidden">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl shadow-xs overflow-hidden">
         
         <!-- Integrated Solid Orange Card Header -->
         <div class="px-6 pt-5 pb-3 bg-brand-500 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -51,14 +51,14 @@
                         <th class="py-2.5 px-6 text-right">Aksi</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100 dark:divide-slate-800/80 font-medium text-slate-700 dark:text-slate-200">
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900">
                     @forelse($units as $unit)
-                        <tr class="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition">
-                            <td class="py-3.5 px-5 font-bold text-slate-900 dark:text-white">
+                        <tr class="hover:bg-slate-50/70 dark:hover:bg-slate-800/60 transition">
+                            <td class="py-3.5 px-6 font-bold text-slate-900 dark:text-white">
                                 {{ $unit->name }}
                             </td>
                             <td class="py-3.5 px-5">
-                                <span class="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono font-bold">
+                                <span class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono font-bold text-[11px] border border-slate-200/60 dark:border-slate-700">
                                     {{ $unit->short_name }}
                                 </span>
                             </td>
@@ -67,11 +67,11 @@
                             </td>
                             <td class="py-3.5 px-5 text-center">
                                 @if($unit->is_active)
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
                                         Aktif
                                     </span>
                                 @else
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-500">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 border border-slate-200 dark:border-slate-700">
                                         Nonaktif
                                     </span>
                                 @endif
@@ -79,7 +79,7 @@
                             <!-- Aksi -->
                             <td class="py-2.5 px-6 text-right">
                                 <div class="flex items-center justify-end gap-1.5">
-                                    <button onclick="openEditUnitModal({{ json_encode($unit) }})" class="p-1.5 rounded-lg text-slate-400 hover:text-brand-600 hover:bg-brand-50 transition" title="Edit Satuan">
+                                    <button onclick="openEditUnitModal({{ json_encode($unit) }})" class="p-1.5 rounded-lg text-slate-400 hover:text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-950/30 transition" title="Edit Satuan">
                                         <i data-lucide="pencil" class="w-4 h-4"></i>
                                     </button>
                                     
@@ -90,7 +90,7 @@
                                             <button 
                                                 type="button" 
                                                 onclick="confirmDelete('delete-unit-{{ $unit->id }}', 'Hapus Satuan?', 'Satuan {{ $unit->name }} akan dihapus dari data master!')" 
-                                                class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition" 
+                                                class="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition" 
                                                 title="Hapus Satuan"
                                             >
                                                 <i data-lucide="trash-2" class="w-4 h-4"></i>
@@ -104,10 +104,10 @@
                         <tr>
                             <td colspan="5" class="py-12 text-center text-slate-400">
                                 <div class="flex flex-col items-center justify-center gap-2">
-                                    <div class="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400">
+                                    <div class="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
                                         <i data-lucide="scale" class="w-6 h-6"></i>
                                     </div>
-                                    <span class="font-bold text-slate-700 text-sm">Belum Ada Data Satuan</span>
+                                    <span class="font-bold text-slate-700 dark:text-slate-200 text-sm">Belum Ada Data Satuan</span>
                                     <span class="text-xs text-slate-400 max-w-xs">Data satuan barang belum ditambahkan atau tidak sesuai kata kunci pencarian.</span>
                                 </div>
                             </td>
@@ -118,7 +118,7 @@
         </div>
 
         @if($units->hasPages())
-            <div class="px-5 py-3.5 border-t border-slate-100 bg-slate-50/50">
+            <div class="px-5 py-3.5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40">
                 {{ $units->links() }}
             </div>
         @endif
