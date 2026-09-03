@@ -18,6 +18,8 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <!-- Theme Initializer -->
     <script>

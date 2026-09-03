@@ -25,7 +25,10 @@ class UnitController extends Controller
 
         return view('units.index', [
             'title' => 'Master Satuan',
-            'headerTitle' => 'Master Satuan Ukuran',
+            'headerTitle' => 'Master Satuan (Units)',
+            'headerDescription' => 'Kelola satuan takaran eceran dan grosir (Pcs, Box, Dus, Kg) untuk inventori produk.',
+            'breadcrumbParent' => 'Master Data',
+            'breadcrumbCurrent' => 'Satuan (Units)',
             'units' => $units,
             'search' => $search,
         ]);

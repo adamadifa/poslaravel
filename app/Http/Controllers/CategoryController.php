@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreCategoryRequest;
+use App\Http\Requests\UpdateCategoryRequest;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -30,6 +32,9 @@ class CategoryController extends Controller
         return view('categories.index', [
             'title' => 'Master Kategori',
             'headerTitle' => 'Master Kategori Produk',
+            'headerDescription' => 'Kelola hierarki kategori produk, sub-kategori, serta pengaturan klasifikasi barang dagangan.',
+            'breadcrumbParent' => 'Master Data',
+            'breadcrumbCurrent' => 'Kategori Produk',
             'categories' => $categories,
             'parentCategories' => $parentCategories,
             'search' => $search,
@@ -39,13 +44,9 @@ class CategoryController extends Controller
     /**
      * Store a newly created category.
      */
-    public function store(Request $request)
+    public function store(StoreCategoryRequest $request)
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:100'],
-            'parent_id' => ['nullable', 'exists:categories,id'],
-            'description' => ['nullable', 'string'],
-        ]);
+        $validated = $request->validated();
 
         Category::create([
             'name' => $validated['name'],
@@ -61,21 +62,16 @@ class CategoryController extends Controller
     /**
      * Update the specified category.
      */
-    public function update(Request $request, Category $category)
+    public function update(UpdateCategoryRequest $request, Category $category)
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:100'],
-            'parent_id' => ['nullable', 'exists:categories,id'],
-            'description' => ['nullable', 'string'],
-            'is_active' => ['nullable', 'boolean'],
-        ]);
+        $validated = $request->validated();
 
         $category->update([
             'name' => $validated['name'],
             'slug' => Str::slug($validated['name']),
             'parent_id' => $validated['parent_id'] ?? null,
             'description' => $validated['description'] ?? null,
-            'is_active' => $request->has('is_active'),
+            'is_active' => $request->boolean('is_active'),
         ]);
 
         return redirect()->route('categories.index')->with('success', 'Kategori berhasil diperbarui.');

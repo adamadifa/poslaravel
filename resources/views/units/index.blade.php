@@ -3,56 +3,52 @@
 @section('content')
 <div class="space-y-6">
 
-    <!-- Action & Filter Bar -->
-    <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
-        <form method="GET" action="{{ route('units.index') }}" class="flex items-center gap-3 flex-1">
-            <div class="relative flex-1 min-w-[220px]">
-                <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
-                <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari satuan..." class="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition">
+    <!-- Action & Filter Bar (Frameless & Full Width matching /categories) -->
+    <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 w-full">
+        <form method="GET" action="{{ route('units.index') }}" class="flex items-center gap-3 flex-1 w-full">
+            <div class="relative w-full rounded-xl border border-slate-200 hover:border-slate-300 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/20 bg-white transition px-4 pt-3 pb-2.5">
+                <label class="absolute -top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold text-slate-700">
+                    Cari Satuan
+                </label>
+                <div class="flex items-center gap-3">
+                    <i data-lucide="search" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Ketik nama satuan atau simbol (Pcs, Box, Kg)..." class="w-full bg-transparent border-0 p-0 text-xs font-semibold text-slate-800 placeholder-slate-400 focus:ring-0 focus:outline-none">
+                    @if(request('search'))
+                        <a href="{{ route('units.index') }}" class="text-[11px] font-semibold text-rose-500 hover:text-rose-600 shrink-0">Reset</a>
+                    @endif
+                </div>
             </div>
-            @if(request('search'))
-                <a href="{{ route('units.index') }}" class="px-3 py-2 rounded-xl text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition">Reset</a>
-            @endif
         </form>
 
-        <button onclick="openCreateUnitModal()" class="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-brand-500 to-amber-500 hover:from-brand-600 hover:to-amber-600 text-white font-bold text-xs shadow-md shadow-brand-500/25 transition shrink-0">
+        <button onclick="openCreateUnitModal()" class="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-brand-500 to-amber-500 hover:from-brand-600 hover:to-amber-600 text-white font-bold text-xs shadow-md shadow-brand-500/25 transition shrink-0 whitespace-nowrap cursor-pointer">
             <i data-lucide="plus-circle" class="w-4 h-4"></i>
             <span>Tambah Satuan</span>
         </button>
     </div>
 
-    <!-- Alert Success / Error -->
-    @if(session('success'))
-        <div class="p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-2xl text-xs font-semibold text-emerald-800 dark:text-emerald-300 flex items-center justify-between">
-            <div class="flex items-center gap-2">
-                <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-500"></i>
-                <span>{{ session('success') }}</span>
+    <!-- Units Table Card -->
+    <div class="bg-white border border-slate-200/90 rounded-2xl shadow-xs overflow-hidden">
+        
+        <!-- Integrated Solid Orange Card Header -->
+        <div class="px-6 pt-5 pb-3 bg-brand-500 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="flex items-center gap-2.5">
+                <i data-lucide="scale" class="w-5 h-5 text-white"></i>
+                <h3 class="font-black text-sm tracking-tight text-white uppercase">Daftar Satuan (Units)</h3>
+                <span class="px-2 py-0.5 rounded-md bg-white/20 text-white font-bold text-xs">
+                    {{ $units->total() }} Satuan
+                </span>
             </div>
-            <button onclick="this.parentElement.remove()" class="text-emerald-600 hover:text-emerald-800"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
         </div>
-    @endif
 
-    @if(session('error'))
-        <div class="p-4 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 rounded-2xl text-xs font-semibold text-rose-800 dark:text-rose-300 flex items-center justify-between">
-            <div class="flex items-center gap-2">
-                <i data-lucide="alert-circle" class="w-4 h-4 text-rose-500"></i>
-                <span>{{ session('error') }}</span>
-            </div>
-            <button onclick="this.parentElement.remove()" class="text-rose-600 hover:text-rose-800"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
-        </div>
-    @endif
-
-    <!-- Units Table -->
-    <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-2xs overflow-hidden">
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse text-xs">
                 <thead>
-                    <tr class="border-b border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-850 text-slate-400 uppercase font-bold tracking-wider text-[10px]">
-                        <th class="py-3.5 px-5">Nama Satuan</th>
-                        <th class="py-3.5 px-5">Simbol / Singkatan</th>
-                        <th class="py-3.5 px-5 text-center">Jumlah Produk</th>
-                        <th class="py-3.5 px-5 text-center">Status</th>
-                        <th class="py-3.5 px-5 text-right">Aksi</th>
+                    <tr class="bg-brand-500 text-white/95 uppercase font-extrabold text-[10px] tracking-wider">
+                        <th class="py-2.5 px-6">Nama Satuan</th>
+                        <th class="py-2.5 px-5">Simbol / Singkatan</th>
+                        <th class="py-2.5 px-5 text-center">Jumlah Produk</th>
+                        <th class="py-2.5 px-5 text-center">Status</th>
+                        <th class="py-2.5 px-6 text-right">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 dark:divide-slate-800/80 font-medium text-slate-700 dark:text-slate-200">
@@ -80,17 +76,24 @@
                                     </span>
                                 @endif
                             </td>
-                            <td class="py-3.5 px-5 text-right">
+                            <!-- Aksi -->
+                            <td class="py-2.5 px-6 text-right">
                                 <div class="flex items-center justify-end gap-1.5">
-                                    <button onclick="openEditUnitModal({{ json_encode($unit) }})" class="p-1.5 rounded-lg text-slate-400 hover:text-brand-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="Edit Satuan">
-                                        <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                                    <button onclick="openEditUnitModal({{ json_encode($unit) }})" class="p-1.5 rounded-lg text-slate-400 hover:text-brand-600 hover:bg-brand-50 transition" title="Edit Satuan">
+                                        <i data-lucide="pencil" class="w-4 h-4"></i>
                                     </button>
+                                    
                                     @if($unit->products_count === 0)
-                                        <form action="{{ route('units.destroy', $unit) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus satuan ini?')" class="inline">
+                                        <form id="delete-unit-{{ $unit->id }}" action="{{ route('units.destroy', $unit) }}" method="POST" class="inline">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition" title="Hapus Satuan">
-                                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                            <button 
+                                                type="button" 
+                                                onclick="confirmDelete('delete-unit-{{ $unit->id }}', 'Hapus Satuan?', 'Satuan {{ $unit->name }} akan dihapus dari data master!')" 
+                                                class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition" 
+                                                title="Hapus Satuan"
+                                            >
+                                                <i data-lucide="trash-2" class="w-4 h-4"></i>
                                             </button>
                                         </form>
                                     @endif
@@ -99,8 +102,14 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="py-8 text-center text-slate-400 text-xs">
-                                Belum ada data satuan.
+                            <td colspan="5" class="py-12 text-center text-slate-400">
+                                <div class="flex flex-col items-center justify-center gap-2">
+                                    <div class="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400">
+                                        <i data-lucide="scale" class="w-6 h-6"></i>
+                                    </div>
+                                    <span class="font-bold text-slate-700 text-sm">Belum Ada Data Satuan</span>
+                                    <span class="text-xs text-slate-400 max-w-xs">Data satuan barang belum ditambahkan atau tidak sesuai kata kunci pencarian.</span>
+                                </div>
                             </td>
                         </tr>
                     @endforelse
@@ -109,103 +118,60 @@
         </div>
 
         @if($units->hasPages())
-            <div class="px-5 py-3.5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-850">
+            <div class="px-5 py-3.5 border-t border-slate-100 bg-slate-50/50">
                 {{ $units->links() }}
             </div>
         @endif
     </div>
 
 </div>
-
-<!-- MODAL CREATE UNIT -->
-<div id="createUnitModal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs hidden items-center justify-center p-4">
-    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-7 max-w-md w-full shadow-xl space-y-5 transition-colors">
-        <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-            <h3 class="font-bold text-base text-slate-900 dark:text-white">Tambah Satuan</h3>
-            <button onclick="closeCreateUnitModal()" class="text-slate-400 hover:text-slate-600 p-1"><i data-lucide="x" class="w-4 h-4"></i></button>
-        </div>
-
-        <form action="{{ route('units.store') }}" method="POST" class="space-y-4">
-            @csrf
-            <div class="space-y-1">
-                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">Nama Satuan</label>
-                <input type="text" name="name" required placeholder="Contoh: Karton" class="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-100 focus:outline-none focus:border-brand-500">
-            </div>
-
-            <div class="space-y-1">
-                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">Simbol / Singkatan</label>
-                <input type="text" name="short_name" required placeholder="Contoh: krt" class="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-100 focus:outline-none focus:border-brand-500">
-            </div>
-
-            <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
-                <button type="button" onclick="closeCreateUnitModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition">Batal</button>
-                <button type="submit" class="px-4 py-2 rounded-xl bg-gradient-to-r from-brand-500 to-amber-500 text-white text-xs font-bold shadow-md shadow-brand-500/25 hover:from-brand-600 hover:to-amber-600 transition">Simpan Satuan</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<!-- MODAL EDIT UNIT -->
-<div id="editUnitModal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs hidden items-center justify-center p-4">
-    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-7 max-w-md w-full shadow-xl space-y-5 transition-colors">
-        <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-            <h3 class="font-bold text-base text-slate-900 dark:text-white">Edit Satuan</h3>
-            <button onclick="closeEditUnitModal()" class="text-slate-400 hover:text-slate-600 p-1"><i data-lucide="x" class="w-4 h-4"></i></button>
-        </div>
-
-        <form id="editUnitForm" method="POST" class="space-y-4">
-            @csrf
-            @method('PUT')
-            <div class="space-y-1">
-                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">Nama Satuan</label>
-                <input type="text" id="edit_unit_name" name="name" required class="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-100 focus:outline-none focus:border-brand-500">
-            </div>
-
-            <div class="space-y-1">
-                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">Simbol / Singkatan</label>
-                <input type="text" id="edit_unit_short_name" name="short_name" required class="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-100 focus:outline-none focus:border-brand-500">
-            </div>
-
-            <div class="flex items-center gap-2 pt-1">
-                <input type="checkbox" id="edit_unit_is_active" name="is_active" value="1" class="w-4 h-4 rounded text-brand-500 focus:ring-brand-500 border-slate-300">
-                <label for="edit_unit_is_active" class="text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer">Satuan Aktif</label>
-            </div>
-
-            <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
-                <button type="button" onclick="closeEditUnitModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition">Batal</button>
-                <button type="submit" class="px-4 py-2 rounded-xl bg-gradient-to-r from-brand-500 to-amber-500 text-white text-xs font-bold shadow-md shadow-brand-500/25 hover:from-brand-600 hover:to-amber-600 transition">Simpan Perubahan</button>
-            </div>
-        </form>
-    </div>
-</div>
 @endsection
+
+@push('modals')
+<!-- CREATE & EDIT MODALS -->
+@include('units._create_modal')
+@include('units._edit_modal')
+@endpush
 
 @push('scripts')
 <script>
     function openCreateUnitModal() {
-        const modal = document.getElementById('createUnitModal');
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
+        document.getElementById('createUnitModal').classList.remove('hidden');
+        document.getElementById('createUnitModal').classList.add('flex');
+        lucide.createIcons();
     }
-    function closeCreateUnitModal() {
-        const modal = document.getElementById('createUnitModal');
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-    }
-    function openEditUnitModal(unit) {
-        document.getElementById('editUnitForm').action = `/units/${unit.id}`;
-        document.getElementById('edit_unit_name').value = unit.name || '';
-        document.getElementById('edit_unit_short_name').value = unit.short_name || '';
-        document.getElementById('edit_unit_is_active').checked = unit.is_active ? true : false;
 
-        const modal = document.getElementById('editUnitModal');
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
+    function closeCreateUnitModal() {
+        document.getElementById('createUnitModal').classList.add('hidden');
+        document.getElementById('createUnitModal').classList.remove('flex');
     }
+
+    function openEditUnitModal(unit) {
+        const form = document.getElementById('editUnitForm');
+        form.action = `/units/${unit.id}`;
+        document.getElementById('edit_form_action').value = `/units/${unit.id}`;
+        document.getElementById('edit_unit_id').value = unit.id;
+
+        document.getElementById('edit_input_name').value = unit.name || '';
+        document.getElementById('edit_input_short_name').value = unit.short_name || '';
+        document.getElementById('edit_input_is_active').checked = unit.is_active ? true : false;
+
+        document.getElementById('editUnitModal').classList.remove('hidden');
+        document.getElementById('editUnitModal').classList.add('flex');
+        lucide.createIcons();
+    }
+
     function closeEditUnitModal() {
-        const modal = document.getElementById('editUnitModal');
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
+        document.getElementById('editUnitModal').classList.add('hidden');
+        document.getElementById('editUnitModal').classList.remove('flex');
     }
+
+    // Close on Escape
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closeCreateUnitModal();
+            closeEditUnitModal();
+        }
+    });
 </script>
 @endpush

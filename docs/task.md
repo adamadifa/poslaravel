@@ -56,135 +56,136 @@
 - [x] Model `Product` + relationships
 - [x] Model `ProductBarcode` + relationships
 - [x] Model `UnitConversion` + relationships
-- [ ] CRUD Produk — index (tabel + search + filter kategori + filter status)
-- [ ] CRUD Produk — create (form: info dasar, kategori, satuan dasar, harga beli/jual, min stok, gambar)
-- [ ] CRUD Produk — tab Multi-Barcode (tambah/hapus barcode per satuan)
-- [ ] CRUD Produk — tab Konversi Satuan (tambah/edit konversi: 1 Karton = 40 Pcs)
-- [ ] CRUD Produk — edit & delete (soft delete)
-- [ ] Generate kode produk otomatis
-- [ ] Upload & preview gambar produk
+- [x] CRUD Produk — index (tabel + search + filter kategori + filter status)
+- [x] CRUD Produk — create (form: info dasar, kategori, satuan dasar, harga beli/jual, min stok, gambar)
+- [x] CRUD Produk — tab Multi-Barcode (tambah/hapus barcode per satuan)
+- [x] CRUD Produk — tab Konversi Satuan (tambah/edit konversi: 1 Karton = 40 Pcs)
+- [x] CRUD Produk — edit & delete (soft delete)
+- [x] Generate kode produk otomatis
+- [x] Upload & preview gambar produk
 - [ ] Import produk dari Excel (opsional Phase 1)
 
 ### 1.7 Master Supplier
-- [ ] Migration `suppliers`
-- [ ] Model `Supplier` + relationships
-- [ ] CRUD Supplier — index (tabel + search)
-- [ ] CRUD Supplier — create/edit (form lengkap)
-- [ ] CRUD Supplier — delete (cek relasi PO)
-- [ ] Generate kode supplier otomatis
+- [x] Migration `suppliers`
+- [x] Model `Supplier` + relationships
+- [x] CRUD Supplier — index (tabel + search)
+- [x] CRUD Supplier — create/edit (form lengkap)
+- [x] CRUD Supplier — delete (cek relasi PO)
+- [x] Generate kode supplier otomatis
+
 
 ### 1.8 Master Customer & Customer Group
-- [ ] Migration `customer_groups`
-- [ ] Migration `customers`
-- [ ] Model `CustomerGroup` + relationships
-- [ ] Model `Customer` + relationships
-- [ ] CRUD Customer Group — index, create, edit, delete
-- [ ] CRUD Customer — index (tabel + search + filter grup)
-- [ ] CRUD Customer — create/edit (form + pilih grup + credit limit)
-- [ ] CRUD Customer — delete (cek relasi transaksi)
-- [ ] Generate kode customer otomatis
-- [ ] Seeder: customer group default (Umum, Member, Reseller, Grosir)
+- [x] Migration `customer_groups`
+- [x] Migration `customers`
+- [x] Model `CustomerGroup` + relationships
+- [x] Model `Customer` + relationships
+- [x] CRUD Customer Group — index, create, edit, delete
+- [x] CRUD Customer — index (tabel + search + filter grup)
+- [x] CRUD Customer — create/edit (form + pilih grup + credit limit)
+- [x] CRUD Customer — delete (cek relasi transaksi)
+- [x] Generate kode customer otomatis
+- [x] Seeder: customer group default (Umum, Member, Reseller, Grosir)
 
 ### 1.9 Master Gudang/Outlet
-- [ ] Migration `warehouses`
-- [ ] Model `Warehouse` + relationships
-- [ ] CRUD Gudang — index, create, edit, delete
-- [ ] Set gudang default
-- [ ] Assign user ke gudang (pivot `user_warehouse`)
+- [x] Migration `warehouses`
+- [x] Model `Warehouse` + relationships
+- [x] CRUD Gudang — index, create, edit, delete
+- [x] Set gudang default
+- [x] Assign user ke gudang (pivot `user_warehouse`)
 
 ### 1.10 Stok Awal
-- [ ] Migration `product_stocks`
-- [ ] Migration `stock_movements`
-- [ ] Model `ProductStock` + relationships
-- [ ] Model `StockMovement` + relationships
-- [ ] Inisialisasi stok per produk per gudang (saat produk dibuat)
+- [x] Migration `product_stocks`
+- [x] Migration `stock_movements`
+- [x] Model `ProductStock` + relationships
+- [x] Model `StockMovement` + relationships
+- [x] Inisialisasi stok per produk per gudang (saat produk dibuat)
 
 ---
 
 ## Phase 2 — Core Transaction (Week 3-4)
 
 ### 2.1 Price List (Harga per Satuan)
-- [ ] Migration `price_lists`
-- [ ] Model `PriceList` + relationships
-- [ ] Tab Harga di halaman produk (daftar harga per satuan)
-- [ ] Auto-generate price list dari konversi satuan
-- [ ] AJAX: ambil harga berdasarkan satuan yang dipilih
+- [x] Migration `price_lists`
+- [x] Model `PriceList` + relationships
+- [x] Tab Harga di halaman produk (daftar harga per satuan)
+- [x] Auto-generate price list dari konversi satuan
+- [x] AJAX: ambil harga berdasarkan satuan yang dipilih
 
 ### 2.2 Harga Berjenjang (Tiered Pricing)
-- [ ] Migration `tiered_prices`
-- [ ] Model `TieredPrice` + relationships
-- [ ] Tab Harga Berjenjang di halaman produk
-- [ ] Form: min qty, max qty, harga, customer group, periode
-- [ ] Service: `PricingService` — resolve harga berdasarkan qty + customer group + satuan
+- [x] Migration `tiered_prices`
+- [x] Model `TieredPrice` + relationships
+- [x] Tab Harga Berjenjang di halaman produk
+- [x] Form: min qty, max qty, harga, customer group, periode
+- [x] Service: `PricingService` — resolve harga berdasarkan qty + customer group + satuan
 
 ### 2.3 Discount Engine
-- [ ] Migration `discounts`
-- [ ] Migration `discount_items`
-- [ ] Model `Discount` + relationships
-- [ ] Model `DiscountItem` + relationships
-- [ ] CRUD Diskon — index (tabel + filter tipe + filter status)
-- [ ] CRUD Diskon — create: diskon persentase per item
-- [ ] CRUD Diskon — create: diskon nominal per item
-- [ ] CRUD Diskon — create: diskon per transaksi
-- [ ] CRUD Diskon — create: Buy X Get Y
-- [ ] CRUD Diskon — create: diskon bersyarat (min belanja)
-- [ ] CRUD Diskon — pengaturan periode, customer group, combinable
-- [ ] Service: `DiscountService` — resolve diskon aktif untuk item/transaksi
+- [x] Migration `discounts`
+- [x] Migration `discount_items`
+- [x] Model `Discount` + relationships
+- [x] Model `DiscountItem` + relationships
+- [x] CRUD Diskon — index (tabel + filter tipe + filter status)
+- [x] CRUD Diskon — create: diskon persentase per item
+- [x] CRUD Diskon — create: diskon nominal per item
+- [x] CRUD Diskon — create: diskon per transaksi
+- [x] CRUD Diskon — create: Buy X Get Y
+- [x] CRUD Diskon — create: diskon bersyarat (min belanja)
+- [x] CRUD Diskon — pengaturan periode, customer group, combinable
+- [x] Service: `DiscountService` — resolve diskon aktif untuk item/transaksi
 
 ### 2.4 Shift Kasir
-- [ ] Migration `cashier_shifts`
-- [ ] Model `CashierShift` + relationships
-- [ ] Halaman Buka Shift — input modal awal
-- [ ] Halaman Tutup Shift — input kas fisik, hitung selisih
-- [ ] Rekap Shift — total transaksi, total penjualan, selisih kas
-- [ ] Middleware: kasir harus buka shift sebelum transaksi
+- [x] Migration `cashier_shifts`
+- [x] Model `CashierShift` + relationships
+- [x] Halaman Buka Shift — input modal awal
+- [x] Halaman Tutup Shift — input kas fisik, hitung selisih
+- [x] Rekap Shift — total transaksi, total penjualan, selisih kas
+- [x] Middleware: kasir harus buka shift sebelum transaksi
 
 ### 2.5 POS / Halaman Kasir
-- [ ] Migration `sales`
-- [ ] Migration `sale_items`
-- [ ] Migration `held_transactions`
-- [ ] Model `Sale` + relationships
-- [ ] Model `SaleItem` + relationships
-- [ ] Model `HeldTransaction` + relationships
-- [ ] UI Kasir — layout full-screen (kiri: produk, kanan: cart)
-- [ ] UI Kasir — search produk (by nama/kode/barcode) via AJAX
-- [ ] UI Kasir — grid produk per kategori (tab/filter)
-- [ ] UI Kasir — tambah item ke cart (klik/scan)
-- [ ] UI Kasir — pilih satuan jual (dropdown per item)
-- [ ] UI Kasir — ubah qty (input/+/-)
-- [ ] UI Kasir — harga otomatis (dari PricingService)
-- [ ] UI Kasir — diskon per item (manual input / apply promo)
-- [ ] UI Kasir — pilih customer (search AJAX, load harga khusus)
-- [ ] UI Kasir — diskon transaksi (% atau nominal)
-- [ ] UI Kasir — ringkasan: subtotal, diskon, pajak, grand total
-- [ ] UI Kasir — tombol Hold (simpan transaksi sementara)
-- [ ] UI Kasir — tombol Recall (ambil transaksi yang di-hold)
-- [ ] UI Kasir — tombol Void item / clear cart
+- [x] Migration `sales`
+- [x] Migration `sale_items`
+- [x] Migration `held_transactions`
+- [x] Model `Sale` + relationships
+- [x] Model `SaleItem` + relationships
+- [x] Model `HeldTransaction` + relationships
+- [x] UI Kasir — layout full-screen (kiri: produk, kanan: cart)
+- [x] UI Kasir — search produk (by nama/kode/barcode) via AJAX
+- [x] UI Kasir — grid produk per kategori (tab/filter)
+- [x] UI Kasir — tambah item ke cart (klik/scan)
+- [x] UI Kasir — pilih satuan jual (dropdown per item)
+- [x] UI Kasir — ubah qty (input/+/-)
+- [x] UI Kasir — harga otomatis (dari PricingService)
+- [x] UI Kasir — diskon per item (manual input / apply promo)
+- [x] UI Kasir — pilih customer (search AJAX, load harga khusus)
+- [x] UI Kasir — diskon transaksi (% atau nominal)
+- [x] UI Kasir — ringkasan: subtotal, diskon, pajak, grand total
+- [x] UI Kasir — tombol Hold (simpan transaksi sementara)
+- [x] UI Kasir — tombol Recall (ambil transaksi yang di-hold)
+- [x] UI Kasir — tombol Void item / clear cart
 
 ### 2.6 Proses Pembayaran
-- [ ] Modal pembayaran — pilih metode (cash/transfer/QRIS/multi)
-- [ ] Cash: input nominal, hitung kembalian otomatis
-- [ ] Transfer/QRIS: input nomor referensi
-- [ ] Multi payment: split ke beberapa metode
-- [ ] Penjualan kredit: jika customer dipilih & payment_status = unpaid
-- [ ] Service: `SaleService` — simpan transaksi + items dalam DB transaction
-- [ ] Auto: kurangi stok (via StockService)
-- [ ] Auto: catat stock_movement (type: out)
-- [ ] Auto: catat piutang jika kredit
-- [ ] Auto: generate nomor invoice (INV-2026-09-0001)
+- [x] Modal pembayaran — pilih metode (cash/transfer/QRIS/multi)
+- [x] Cash: input nominal, hitung kembalian otomatis
+- [x] Transfer/QRIS: input nomor referensi
+- [x] Multi payment: split ke beberapa metode
+- [x] Penjualan kredit: jika customer dipilih & payment_status = unpaid
+- [x] Service: `SaleService` — simpan transaksi + items dalam DB transaction
+- [x] Auto: kurangi stok (via StockService)
+- [x] Auto: catat stock_movement (type: out)
+- [x] Auto: catat piutang jika kredit
+- [x] Auto: generate nomor invoice (INV-2026-09-0001)
 
 ### 2.7 Cetak Struk
-- [ ] Template struk thermal 58mm
-- [ ] Template struk thermal 80mm
-- [ ] Isi struk: nama toko, alamat, kasir, tanggal, daftar item, total, bayar, kembalian
-- [ ] Print via browser (window.print) atau library ESC/POS
-- [ ] Preview struk setelah transaksi
+- [x] Template struk thermal 58mm
+- [x] Template struk thermal 80mm
+- [x] Isi struk: nama toko, alamat, kasir, tanggal, daftar item, total, bayar, kembalian
+- [x] Print via browser (window.print) atau library ESC/POS
+- [x] Preview struk setelah transaksi
 
 ### 2.8 Void Transaksi
-- [ ] Void penjualan yang sudah completed
-- [ ] Stok dikembalikan otomatis
-- [ ] Kas disesuaikan
-- [ ] Perlu approval manager (opsional)
+- [x] Void penjualan yang sudah completed
+- [x] Stok dikembalikan otomatis
+- [x] Kas disesuaikan
+- [x] Perlu approval manager (opsional)
 
 ---
 
