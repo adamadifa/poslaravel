@@ -22,6 +22,11 @@
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Flatpickr (Modern Datepicker) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://npmcdn.com/flatpickr/dist/themes/airbnb.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/id.js"></script>
 
     <!-- Force Light Mode on Admin -->
     <script>
@@ -49,6 +54,28 @@
         }
         .dark ::-webkit-scrollbar-thumb {
             background: #334155;
+        }
+
+        /* Custom Flatpickr Airbnb Theme Tweaks */
+        .flatpickr-calendar {
+            font-family: 'Plus Jakarta Sans', sans-serif !important;
+            border-radius: 1rem !important;
+            border: 1px solid #e2e8f0 !important;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+            z-index: 99999 !important;
+        }
+        .flatpickr-day.selected, .flatpickr-day.startRange, .flatpickr-day.endRange {
+            background: #f97316 !important;
+            border-color: #f97316 !important;
+        }
+        .flatpickr-day.today {
+            border-color: #f97316 !important;
+        }
+        .flatpickr-day:hover {
+            background: #ffedd5 !important;
+        }
+        .flatpickr-current-month .flatpickr-monthDropdown-months, .flatpickr-current-month input.cur-year {
+            font-weight: 700 !important;
         }
 
         /* Sidebar collapse transition */
@@ -173,19 +200,69 @@
                             <span class="nav-text truncate">Diskon & Promo</span>
                         </a>
 
-                        <a href="{{ url('/purchases') }}" title="Pembelian / PO" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60">
-                            <i data-lucide="shopping-bag" class="w-4 h-4 shrink-0 text-slate-400"></i>
-                            <span class="nav-text truncate">Pembelian & PO</span>
+                        <a href="{{ route('purchase-orders.index') }}" title="Purchase Order (PO)" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->is('purchase-orders*') ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
+                            <i data-lucide="clipboard-list" class="w-4 h-4 shrink-0 text-slate-400"></i>
+                            <span class="nav-text truncate">Purchase Order (PO)</span>
                         </a>
 
-                        <a href="{{ url('/stocks') }}" title="Stok & Opname" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60">
+                        <a href="{{ route('purchase-receipts.index') }}" title="Penerimaan Barang (GRN)" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->is('purchase-receipts*') ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
+                            <i data-lucide="package-check" class="w-4 h-4 shrink-0 text-slate-400"></i>
+                            <span class="nav-text truncate">Penerimaan Barang (GRN)</span>
+                        </a>
+
+                        <a href="{{ route('purchase-returns.index') }}" title="Retur Pembelian" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->is('purchase-returns*') ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
+                            <i data-lucide="rotate-ccw" class="w-4 h-4 shrink-0 text-slate-400"></i>
+                            <span class="nav-text truncate">Retur Pembelian</span>
+                        </a>
+
+                        <a href="{{ route('stocks.index') }}" title="Kartu Stok" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->is('stocks*') ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
                             <i data-lucide="boxes" class="w-4 h-4 shrink-0 text-slate-400"></i>
-                            <span class="nav-text truncate">Stok & Opname (FIFO)</span>
+                            <span class="nav-text truncate">Kartu Stok (FIFO)</span>
+                        </a>
+
+                        <a href="{{ route('stock-opnames.index') }}" title="Stok Opname" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->is('stock-opnames*') ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
+                            <i data-lucide="clipboard-check" class="w-4 h-4 shrink-0 text-slate-400"></i>
+                            <span class="nav-text truncate">Stok Opname</span>
+                        </a>
+
+                        <a href="{{ route('stock-transfers.index') }}" title="Transfer Stok" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->is('stock-transfers*') ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
+                            <i data-lucide="arrow-left-right" class="w-4 h-4 shrink-0 text-slate-400"></i>
+                            <span class="nav-text truncate">Transfer Antar Gudang</span>
+                        </a>
+
+                        <a href="{{ route('stock-adjustments.index') }}" title="Penyesuaian Stok" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->is('stock-adjustments*') ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
+                            <i data-lucide="sliders-horizontal" class="w-4 h-4 shrink-0 text-slate-400"></i>
+                            <span class="nav-text truncate">Penyesuaian Stok (Adj)</span>
+                        </a>
+
+                        <a href="{{ route('stocks.alerts') }}" title="Peringatan Stok" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->is('stock-alerts*') ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
+                            <i data-lucide="alert-triangle" class="w-4 h-4 shrink-0 text-amber-500"></i>
+                            <span class="nav-text truncate">Peringatan Stok</span>
                         </a>
 
                         <a href="{{ url('/sales') }}" title="Riwayat Penjualan" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60">
                             <i data-lucide="receipt" class="w-4 h-4 shrink-0 text-slate-400"></i>
                             <span class="nav-text truncate">Riwayat Penjualan</span>
+                        </a>
+                    </div>
+
+                    <!-- Section: Keuangan & Finansial (Phase 5) -->
+                    <div class="pt-3">
+                        <p class="section-header px-3 text-[10px] font-extrabold tracking-wider text-slate-400 dark:text-slate-500 uppercase mb-1.5">Keuangan & Kas</p>
+
+                        <a href="{{ route('accounts.index') }}" title="Akun Kas & Bank" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->is('accounts*') ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
+                            <i data-lucide="wallet" class="w-4 h-4 shrink-0 text-slate-400"></i>
+                            <span class="nav-text truncate">Akun Kas & Bank</span>
+                        </a>
+
+                        <a href="{{ route('payables.index') }}" title="Hutang Usaha" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->is('payables*') ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
+                            <i data-lucide="receipt-text" class="w-4 h-4 shrink-0 text-slate-400"></i>
+                            <span class="nav-text truncate">Hutang Pembelian (AP)</span>
+                        </a>
+
+                        <a href="{{ route('receivables.index') }}" title="Piutang Usaha" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->is('receivables*') ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
+                            <i data-lucide="coins" class="w-4 h-4 shrink-0 text-slate-400"></i>
+                            <span class="nav-text truncate">Piutang Penjualan (AR)</span>
                         </a>
                     </div>
 
@@ -381,6 +458,119 @@
 
     <!-- Global Toast & SweetAlert Helpers -->
     <style>
+        /* Modal dialog backdrop (only for modal popups, never for toasts) */
+        .swal2-container.swal2-backdrop-show {
+            backdrop-filter: blur(4px) !important;
+            -webkit-backdrop-filter: blur(4px) !important;
+            background: rgba(15, 23, 42, 0.6) !important;
+        }
+        /* Completely clear backdrop when showing toast notifications */
+        .swal2-toast-shown .swal2-container,
+        .swal2-container:has(.swal2-toast),
+        .swal2-container.swal2-top-end:not(:has(.swal2-modal)) {
+            background: transparent !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            pointer-events: none !important;
+        }
+        .swal2-toast {
+            pointer-events: auto !important;
+        }
+        .swal2-popup:not(.swal2-toast) {
+            border-radius: 1.75rem !important;
+            padding: 2rem 1.75rem !important;
+            border: 1px solid rgba(226, 232, 240, 0.8) !important;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.05) !important;
+            font-family: 'Plus Jakarta Sans', sans-serif !important;
+            background: #ffffff !important;
+            max-width: 24rem !important;
+        }
+        .dark .swal2-popup {
+            background: #0f172a !important;
+            border-color: #334155 !important;
+            color: #f8fafc !important;
+        }
+        .swal2-title {
+            font-size: 1.15rem !important;
+            font-weight: 800 !important;
+            color: #0f172a !important;
+            letter-spacing: -0.02em !important;
+            margin-bottom: 0.5rem !important;
+            padding: 0 !important;
+        }
+        .dark .swal2-title {
+            color: #f8fafc !important;
+        }
+        .swal2-html-container {
+            font-size: 0.8125rem !important;
+            font-weight: 500 !important;
+            color: #64748b !important;
+            line-height: 1.5 !important;
+            margin: 0 0 1.5rem 0 !important;
+        }
+        .dark .swal2-html-container {
+            color: #94a3b8 !important;
+        }
+        .swal2-icon {
+            transform: scale(0.9) !important;
+            margin: 0.5rem auto 1.25rem !important;
+            border-width: 3px !important;
+        }
+        .swal2-icon.swal2-warning {
+            border-color: #f59e0b !important;
+            color: #f59e0b !important;
+            background: #fffbeb !important;
+        }
+        .swal2-icon.swal2-error {
+            border-color: #f43f5e !important;
+            color: #f43f5e !important;
+            background: #fff1f2 !important;
+        }
+        .swal2-icon.swal2-success {
+            border-color: #10b981 !important;
+            color: #10b981 !important;
+            background: #ecfdf5 !important;
+        }
+        .swal2-icon.swal2-info {
+            border-color: #3b82f6 !important;
+            color: #3b82f6 !important;
+            background: #eff6ff !important;
+        }
+        .swal2-actions {
+            margin-top: 0.5rem !important;
+            gap: 0.75rem !important;
+            width: 100% !important;
+        }
+        .swal2-styled {
+            border-radius: 0.875rem !important;
+            font-size: 0.8125rem !important;
+            font-weight: 700 !important;
+            padding: 0.65rem 1.5rem !important;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            outline: none !important;
+            box-shadow: none !important;
+        }
+        .swal2-confirm {
+            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%) !important;
+            color: #ffffff !important;
+            box-shadow: 0 4px 14px -2px rgba(249, 115, 22, 0.4) !important;
+            flex: 1 !important;
+            border: none !important;
+        }
+        .swal2-confirm:hover {
+            transform: translateY(-1px) !important;
+            box-shadow: 0 6px 18px -2px rgba(249, 115, 22, 0.5) !important;
+        }
+        .swal2-cancel {
+            background: #f1f5f9 !important;
+            color: #475569 !important;
+            border: 1px solid #e2e8f0 !important;
+            flex: 1 !important;
+        }
+        .swal2-cancel:hover {
+            background: #e2e8f0 !important;
+            color: #1e293b !important;
+        }
         .swal2-toast.toast-success {
             background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
             color: #ffffff !important;
@@ -410,12 +600,11 @@
         .swal2-toast .swal2-icon {
             border-color: rgba(255, 255, 255, 0.8) !important;
             color: #ffffff !important;
+            margin: 0 !important;
+            background: transparent !important;
         }
         .swal2-toast .swal2-close {
             color: rgba(255, 255, 255, 0.8) !important;
-        }
-        .swal2-toast .swal2-close:hover {
-            color: #ffffff !important;
         }
         .swal2-toast .swal2-timer-progress-bar {
             background: rgba(255, 255, 255, 0.4) !important;
@@ -453,24 +642,35 @@
                 showCancelButton: true,
                 scrollbarPadding: false,
                 heightAuto: false,
-                confirmButtonColor: '#f97316', // Mare Brand Orange
-                cancelButtonColor: '#94a3b8',
-                confirmButtonText: '<i class="lucide lucide-trash-2 mr-1"></i> Ya, Hapus!',
+                confirmButtonText: 'Ya, Hapus!',
                 cancelButtonText: 'Batal',
-                reverseButtons: true,
-                customClass: {
-                    popup: 'rounded-3xl border border-slate-200 p-6 shadow-2xl',
-                    title: 'text-lg font-bold text-slate-900',
-                    htmlContainer: 'text-xs text-slate-500 font-medium',
-                    confirmButton: 'px-5 py-2.5 rounded-xl text-xs font-bold text-white shadow-md shadow-brand-500/25',
-                    cancelButton: 'px-5 py-2.5 rounded-xl text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200'
-                }
+                reverseButtons: true
             }).then((result) => {
                 if (result.isConfirmed) {
                     const form = document.getElementById(formId);
                     if (form) form.submit();
                 }
             });
+        }
+
+        // Global Modal Helper Functions
+        function openModal(modalId) {
+            const el = document.getElementById(modalId);
+            if (el) {
+                el.classList.remove('hidden');
+                el.classList.add('flex');
+                if (window.lucide) {
+                    lucide.createIcons();
+                }
+            }
+        }
+
+        function closeModal(modalId) {
+            const el = document.getElementById(modalId);
+            if (el) {
+                el.classList.add('hidden');
+                el.classList.remove('flex');
+            }
         }
 
         // Auto trigger toast on flash session messages

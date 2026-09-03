@@ -153,14 +153,17 @@ class SaleService
                     'subtotal' => $lineSubtotal,
                 ]);
 
-                // Deduct stock via StockService (FIFO ready)
+                // Deduct stock via StockService (FIFO ready) and consume FIFO batches
+                $fifoCogs = $this->stockService->consumeFifoBatches($product->id, $warehouseId, $qtyInBaseUnit);
+                $effectiveUnitCost = $qtyInBaseUnit > 0 ? ($fifoCogs / $qtyInBaseUnit) : $unitCost;
+
                 $this->stockService->deductStock(
                     $product->id,
                     $warehouseId,
                     $qtyInBaseUnit,
                     'Sale',
                     $sale->id,
-                    $unitCost,
+                    $effectiveUnitCost,
                     "Penjualan POS Faktur {$sale->invoice_number}",
                     $userId
                 );

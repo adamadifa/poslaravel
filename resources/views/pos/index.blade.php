@@ -25,16 +25,38 @@
                 </div>
             </div>
 
-            <!-- Customer Picker -->
-            <div class="relative">
-                <select id="posCustomerSelect" onchange="onCustomerChange()" class="px-3.5 py-2.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 transition shadow-2xs cursor-pointer focus:outline-none focus:border-brand-500">
-                    <option value="">Pelanggan Umum (Retail)</option>
-                    @foreach($customers as $c)
-                        <option value="{{ $c->id }}" data-group="{{ $c->group?->name ?? 'Member' }}" data-discount="{{ floatval($c->group?->discount_percent ?? 0) }}">
-                            {{ $c->name }} ({{ $c->group?->name ?? 'Member' }} - Disc {{ floatval($c->group?->discount_percent ?? 0) }}%)
-                        </option>
-                    @endforeach
-                </select>
+            <!-- Customer Picker & Manual Price Setting Toggle -->
+            <div class="flex items-center gap-2">
+                <!-- Clickable Customer Card Button (F2) -->
+                <button 
+                    type="button" 
+                    id="posCustomerBtn" 
+                    onclick="openCustomerModal()" 
+                    title="Pilih Pelanggan / Member (F2)" 
+                    class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 hover:border-brand-500/60 text-xs font-semibold text-slate-700 transition shadow-2xs cursor-pointer group"
+                >
+                    <div class="w-6 h-6 rounded-lg bg-orange-50 text-brand-600 flex items-center justify-center font-bold text-xs shrink-0">
+                        <i data-lucide="user-check" class="w-3.5 h-3.5"></i>
+                    </div>
+                    <div class="text-left">
+                        <span class="text-[9px] font-bold text-slate-400 block uppercase tracking-wider leading-none">Pelanggan (F2)</span>
+                        <span id="posCustomerDisplay" class="font-bold text-slate-900 text-xs truncate max-w-[150px] inline-block mt-0.5">Umum (Retail)</span>
+                    </div>
+                    <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400 group-hover:text-brand-500 transition ml-1"></i>
+                </button>
+                <input type="hidden" id="posCustomerSelect" value="">
+
+                <!-- Toggle Setting: Input Qty & Harga Manual Modal -->
+                <button 
+                    type="button" 
+                    id="toggleManualPriceBtn" 
+                    onclick="toggleManualPriceSetting()" 
+                    title="Aktifkan/Nonaktifkan Modal Input Qty & Ubah Harga Manual saat klik produk" 
+                    class="flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 text-xs font-bold transition shadow-2xs whitespace-nowrap cursor-pointer"
+                >
+                    <i data-lucide="sliders" class="w-3.5 h-3.5 text-slate-500" id="manualPriceIcon"></i>
+                    <span id="manualPriceLabel">Modal Qty/Harga: <strong class="text-slate-900 font-bold" id="manualPriceStatusText">ON</strong></span>
+                </button>
             </div>
         </div>
 
@@ -168,6 +190,9 @@
 <!-- MODALS INCLUDE -->
 @include('pos._shift_modals')
 @include('pos._payment_modals')
+@include('pos._item_modal')
+@include('pos._discount_modal')
+@include('pos._customer_modals')
 
 @endsection
 
@@ -177,8 +202,12 @@
     let currentWarehouseId = {{ $defaultWarehouse ? $defaultWarehouse->id : 1 }};
     let activeShift = @json($activeShift);
     let allProducts = [];
+    let allCustomers = @json($customers);
+    let selectedCustomer = null;
     let cart = [];
     let selectedCategoryId = null;
+    let appliedPromoCode = '';
+    let appliedManualDiscount = 0;
 
     // Helper Modals
     function openModal(modalId) {
@@ -200,41 +229,249 @@
 
     // Initialize POS
     document.addEventListener('DOMContentLoaded', () => {
+        initManualPriceSettingUI();
+
         if (!activeShift) {
             openModal('openShiftModal');
         }
 
         loadProducts();
+        renderCustomerModalList();
 
-        // Barcode Scanner Listener
+        // Barcode Scanner & Search Listener
         const scannerInput = document.getElementById('barcodeScannerInput');
+        
+        // Live search saat mengetik
+        let searchDebounce = null;
+        scannerInput.addEventListener('input', (e) => {
+            clearTimeout(searchDebounce);
+            searchDebounce = setTimeout(() => {
+                loadProducts(scannerInput.value.trim());
+            }, 300);
+        });
+
+        // Scan barcode / Enter action
         scannerInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
-                handleBarcodeScan(scannerInput.value.trim());
-                scannerInput.value = '';
+                const query = scannerInput.value.trim();
+                handleBarcodeScan(query);
             }
         });
 
-        // Global Shortcuts
+        // Global Shortcuts (F1, F2, F7, F9, F12, Escape)
         window.addEventListener('keydown', (e) => {
-            if (e.key === 'F1') {
+            const key = e.key;
+
+            if (key === 'F1') {
                 e.preventDefault();
-                scannerInput.focus();
-            } else if (e.key === 'F12') {
+                const sIn = document.getElementById('barcodeScannerInput');
+                if (sIn) {
+                    sIn.focus();
+                    sIn.select();
+                }
+            } else if (key === 'F2') {
                 e.preventDefault();
-                openPaymentModal();
-            } else if (e.key === 'F7') {
+                openCustomerModal();
+            } else if (key === 'F7') {
                 e.preventDefault();
                 openModal('holdModal');
-            } else if (e.key === 'Escape') {
+                setTimeout(() => {
+                    const hIn = document.getElementById('hold_reference_label');
+                    if (hIn) hIn.focus();
+                }, 100);
+            } else if (key === 'F9') {
+                e.preventDefault();
+                openModal('discountModal');
+                setTimeout(() => {
+                    const dIn = document.getElementById('discount_promo_code');
+                    if (dIn) dIn.focus();
+                }, 100);
+            } else if (key === 'F12') {
+                e.preventDefault();
+                openPaymentModal();
+            } else if (key === 'Escape') {
+                closeModal('itemModal');
                 closeModal('paymentModal');
                 closeModal('holdModal');
                 closeModal('recallModal');
                 closeModal('receiptModal');
+                closeModal('discountModal');
+                closeModal('customerModal');
+                closeModal('newCustomerModal');
             }
         });
     });
+
+    // Customer Modal Handlers
+    function openCustomerModal() {
+        document.getElementById('customer_search_input').value = '';
+        renderCustomerModalList();
+        openModal('customerModal');
+        setTimeout(() => {
+            const sIn = document.getElementById('customer_search_input');
+            if (sIn) sIn.focus();
+        }, 100);
+    }
+
+    function renderCustomerModalList(query = '') {
+        const container = document.getElementById('customer_modal_list_container');
+        const q = query.toLowerCase().trim();
+
+        // Preserve default Retail row
+        let html = `
+            <div onclick="selectCustomerFromModal(null)" class="customer-list-item p-3 rounded-xl hover:bg-brand-50/60 border border-transparent hover:border-brand-200 cursor-pointer transition flex items-center justify-between group ${!selectedCustomer ? 'bg-brand-50 border-brand-200' : ''}">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-slate-100 group-hover:bg-brand-100 text-slate-500 group-hover:text-brand-600 flex items-center justify-center font-bold text-xs transition">
+                        <i data-lucide="user" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <div class="font-bold text-xs text-slate-800 group-hover:text-brand-600">Pelanggan Umum (Retail)</div>
+                        <div class="text-[10px] text-slate-400">Harga standar regular tanpa diskon grup</div>
+                    </div>
+                </div>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-md ${!selectedCustomer ? 'bg-brand-500 text-white' : 'bg-slate-100 text-slate-600 border border-slate-200'}">
+                    ${!selectedCustomer ? 'Terpilih' : 'Pilih'}
+                </span>
+            </div>
+        `;
+
+        const filtered = allCustomers.filter(c => {
+            const name = (c.name || '').toLowerCase();
+            const phone = (c.phone || '').toLowerCase();
+            const code = (c.code || '').toLowerCase();
+            return name.includes(q) || phone.includes(q) || code.includes(q);
+        });
+
+        filtered.forEach(c => {
+            const isSelected = selectedCustomer && selectedCustomer.id === c.id;
+            const groupName = c.group ? c.group.name : 'Member';
+            const discPercent = c.group ? parseFloat(c.group.discount_percent) : 0;
+
+            html += `
+                <div onclick="selectCustomerFromModal(${c.id})" class="customer-list-item p-3 rounded-xl hover:bg-brand-50/60 border border-transparent hover:border-brand-200 cursor-pointer transition flex items-center justify-between group ${isSelected ? 'bg-brand-50 border-brand-200' : ''}">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl ${isSelected ? 'bg-brand-500 text-white' : 'bg-slate-100 group-hover:bg-brand-100 text-slate-600 group-hover:text-brand-600'} flex items-center justify-center font-bold text-xs transition">
+                            ${c.name.substring(0, 1).toUpperCase()}
+                        </div>
+                        <div>
+                            <div class="font-bold text-xs text-slate-900 group-hover:text-brand-600 flex items-center gap-1.5">
+                                <span>${c.name}</span>
+                                <span class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-50 text-amber-700 border border-amber-200 font-mono">
+                                    ${c.code}
+                                </span>
+                            </div>
+                            <div class="text-[10px] text-slate-400 mt-0.5 flex items-center gap-2">
+                                <span>${c.phone || 'Tanpa No. HP'}</span>
+                                <span>•</span>
+                                <span class="text-brand-600 font-bold">${groupName} ${discPercent > 0 ? `(Disc ${discPercent}%)` : ''}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-md ${isSelected ? 'bg-brand-500 text-white' : 'bg-slate-100 text-slate-600 border border-slate-200'}">
+                        ${isSelected ? 'Terpilih' : 'Pilih'}
+                    </span>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+        lucide.createIcons();
+    }
+
+    function filterCustomerModalList() {
+        const q = document.getElementById('customer_search_input').value;
+        renderCustomerModalList(q);
+    }
+
+    function selectCustomerFromModal(customerId) {
+        if (!customerId) {
+            selectedCustomer = null;
+            document.getElementById('posCustomerSelect').value = '';
+            document.getElementById('posCustomerDisplay').innerText = 'Umum (Retail)';
+        } else {
+            const found = allCustomers.find(c => c.id === customerId);
+            if (found) {
+                selectedCustomer = found;
+                document.getElementById('posCustomerSelect').value = found.id;
+                const groupInfo = found.group ? ` (${found.group.name})` : '';
+                document.getElementById('posCustomerDisplay').innerText = `${found.name}${groupInfo}`;
+            }
+        }
+
+        closeModal('customerModal');
+        onCustomerChange();
+    }
+
+    function openNewCustomerModal() {
+        closeModal('customerModal');
+        document.getElementById('quick_cust_name').value = '';
+        document.getElementById('quick_cust_phone').value = '';
+        document.getElementById('quick_cust_address').value = '';
+        openModal('newCustomerModal');
+        setTimeout(() => {
+            const nIn = document.getElementById('quick_cust_name');
+            if (nIn) nIn.focus();
+        }, 100);
+    }
+
+    async function handleQuickCreateCustomer(e) {
+        e.preventDefault();
+        const name = document.getElementById('quick_cust_name').value.trim();
+        const phone = document.getElementById('quick_cust_phone').value.trim();
+        const groupId = document.getElementById('quick_cust_group_id').value;
+        const address = document.getElementById('quick_cust_address').value.trim();
+        const btn = document.getElementById('btn_save_quick_cust');
+
+        try {
+            btn.disabled = true;
+            btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span>Menyimpan...</span>`;
+
+            const res = await fetch('{{ route("customers.store") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    name: name,
+                    phone: phone,
+                    customer_group_id: groupId || null,
+                    address: address,
+                    is_active: 1
+                })
+            });
+
+            const data = await res.json();
+            btn.disabled = false;
+            btn.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i><span>Simpan & Pilih</span>`;
+
+            if (data.status === 'success') {
+                const newCustomer = data.data;
+                allCustomers.unshift(newCustomer);
+                closeModal('newCustomerModal');
+                selectCustomerFromModal(newCustomer.id);
+                showPosToast('success', `Pelanggan ${newCustomer.name} berhasil didaftarkan.`);
+            } else {
+                showPosAlert('error', 'Gagal Menyimpan', data.message);
+            }
+        } catch (err) {
+            btn.disabled = false;
+            btn.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i><span>Simpan & Pilih</span>`;
+            showPosAlert('error', 'Terjadi Kesalahan', err.message);
+        }
+    }
+
+    // Handle Discount Modal (F9)
+    function handleApplyDiscountModal(e) {
+        e.preventDefault();
+        appliedPromoCode = document.getElementById('discount_promo_code').value.trim();
+        appliedManualDiscount = parseFloat(document.getElementById('discount_manual_amount').value) || 0;
+        closeModal('discountModal');
+        recalculateCartPrices().then(renderCart);
+        showPosToast('success', 'Diskon transaksi berhasil diterapkan.');
+    }
 
     // Shift Handlers
     async function handleOpenShift(e) {
@@ -258,20 +495,12 @@
                 activeShift = data.data;
                 currentWarehouseId = warehouseId;
                 closeModal('openShiftModal');
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Shift Kasir Dimulai!',
-                    text: `Modal awal Rp ${parseInt(startingCash).toLocaleString('id-ID')}`,
-                    timer: 2000,
-                    showConfirmButton: false,
-                    scrollbarPadding: false,
-                    heightAuto: false
-                });
+                showPosAlert('success', 'Shift Kasir Dimulai!', `Modal awal kas: Rp ${parseInt(startingCash).toLocaleString('id-ID')}`, 2000);
             } else {
-                Swal.fire({ icon: 'error', title: 'Gagal', text: data.message, scrollbarPadding: false, heightAuto: false });
+                showPosAlert('error', 'Gagal Buka Shift', data.message);
             }
         } catch (err) {
-            Swal.fire({ icon: 'error', title: 'Error', text: err.message, scrollbarPadding: false, heightAuto: false });
+            showPosAlert('error', 'Terjadi Kesalahan', err.message);
         }
     }
 
@@ -382,7 +611,7 @@
 
             const card = document.createElement('div');
             card.className = 'group bg-white hover:bg-slate-50 border border-slate-200/90 hover:border-brand-500/60 rounded-2xl p-3 flex flex-col justify-between cursor-pointer transition shadow-2xs hover:shadow-md hover:shadow-brand-500/5 active:scale-[0.98]';
-            card.onclick = () => addToCart(prod);
+            card.onclick = () => onProductCardClick(prod);
 
             card.innerHTML = `
                 <div>
@@ -407,14 +636,210 @@
         lucide.createIcons();
     }
 
-    // Barcode Scan Handler
+    // Toggle Setting: Modal Input Qty & Harga Manual
+    let isManualPriceModalEnabled = localStorage.getItem('pos_manual_price_modal') === 'false' ? false : true;
+
+    function initManualPriceSettingUI() {
+        const btn = document.getElementById('toggleManualPriceBtn');
+        const statusText = document.getElementById('manualPriceStatusText');
+        const icon = document.getElementById('manualPriceIcon');
+
+        if (isManualPriceModalEnabled) {
+            btn.className = 'flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-brand-50 text-brand-700 border border-brand-200 text-xs font-bold transition shadow-2xs whitespace-nowrap cursor-pointer';
+            statusText.innerText = 'ON';
+            statusText.className = 'text-brand-700 font-bold';
+            icon.className = 'w-3.5 h-3.5 text-brand-600';
+        } else {
+            btn.className = 'flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-500 border border-slate-200 text-xs font-bold transition shadow-2xs whitespace-nowrap cursor-pointer';
+            statusText.innerText = 'OFF (Klik Cepat)';
+            statusText.className = 'text-slate-500 font-bold';
+            icon.className = 'w-3.5 h-3.5 text-slate-400';
+        }
+    }
+
+    function toggleManualPriceSetting() {
+        isManualPriceModalEnabled = !isManualPriceModalEnabled;
+        localStorage.setItem('pos_manual_price_modal', isManualPriceModalEnabled ? 'true' : 'false');
+        initManualPriceSettingUI();
+    }
+
+    // Product Card Click Logic
+    function onProductCardClick(product) {
+        if (isManualPriceModalEnabled) {
+            openItemModal(product);
+        } else {
+            addToCart(product, null, 1);
+        }
+    }
+
+    // State for Current Item in Modal (Supports both new item and editing existing cart item)
+    let modalCurrentProduct = null;
+    let modalUnitsList = [];
+    let modalEditingCartIndex = null;
+
+    async function openItemModal(product, existingCartIndex = null) {
+        modalCurrentProduct = product;
+        modalEditingCartIndex = existingCartIndex;
+
+        const isEditing = existingCartIndex !== null;
+        const currentCartItem = isEditing ? cart[existingCartIndex] : null;
+
+        const stockItem = product.stocks && product.stocks.length > 0 ? product.stocks[0] : null;
+        const stockQty = stockItem ? parseFloat(stockItem.quantity) : 0;
+
+        document.getElementById('modal_product_name').innerText = product.name;
+        document.getElementById('modal_product_code').innerText = product.code;
+        document.getElementById('modal_product_stock').innerText = `Stok: ${stockQty}`;
+        document.getElementById('modal_submit_btn_text').innerText = isEditing ? 'Simpan Perubahan Item' : 'Masukkan ke Keranjang';
+
+        // Image
+        const imgBox = document.getElementById('modal_product_img_box');
+        if (product.image_path) {
+            imgBox.innerHTML = `<img src="/storage/${product.image_path}" class="w-full h-full object-cover">`;
+        } else {
+            imgBox.innerHTML = `<i data-lucide="package" class="w-5 h-5 text-brand-500"></i>`;
+        }
+
+        // Build units
+        modalUnitsList = [{ id: product.base_unit_id, name: product.base_unit ? product.base_unit.name : 'Pcs', short_name: product.base_unit ? product.base_unit.short_name : 'pcs', ratio: 1 }];
+        if (product.conversions) {
+            product.conversions.forEach(c => {
+                if (c.from_unit) {
+                    modalUnitsList.push({ id: c.from_unit_id, name: c.from_unit.name, short_name: c.from_unit.short_name, ratio: parseFloat(c.conversion_value) });
+                }
+            });
+        }
+
+        const unitSelect = document.getElementById('modal_item_unit');
+        unitSelect.innerHTML = '';
+        const selectedUnitId = isEditing ? currentCartItem.unit_id : product.base_unit_id;
+        modalUnitsList.forEach(u => {
+            unitSelect.innerHTML += `<option value="${u.id}" ${u.id === selectedUnitId ? 'selected' : ''}>${u.name}</option>`;
+        });
+
+        // Initial Qty & Price
+        if (isEditing) {
+            document.getElementById('modal_item_qty').value = currentCartItem.quantity;
+            document.getElementById('modal_item_price').value = currentCartItem.price;
+        } else {
+            document.getElementById('modal_item_qty').value = '1';
+            await resolveModalPrice();
+        }
+
+        calculateModalSubtotal();
+
+        openModal('itemModal');
+        lucide.createIcons();
+
+        // Auto focus Qty
+        setTimeout(() => {
+            const qtyIn = document.getElementById('modal_item_qty');
+            qtyIn.focus();
+            qtyIn.select();
+        }, 100);
+    }
+
+    async function onModalUnitChange() {
+        await resolveModalPrice();
+        calculateModalSubtotal();
+    }
+
+    async function resolveModalPrice() {
+        if (!modalCurrentProduct) return;
+        const unitId = document.getElementById('modal_item_unit').value;
+        const qty = parseFloat(document.getElementById('modal_item_qty').value) || 1;
+        const customerId = document.getElementById('posCustomerSelect').value;
+
+        try {
+            const res = await fetch(`/products/${modalCurrentProduct.id}/get-price?unit_id=${unitId}&quantity=${qty}&customer_id=${customerId || ''}`);
+            const data = await res.json();
+            if (data.status === 'success') {
+                document.getElementById('modal_item_price').value = data.data.final_unit_price;
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
+    function adjustModalQty(delta) {
+        const qtyIn = document.getElementById('modal_item_qty');
+        let current = parseFloat(qtyIn.value) || 1;
+        let next = Math.max(0.0001, current + delta);
+        qtyIn.value = next;
+        calculateModalSubtotal();
+    }
+
+    function calculateModalSubtotal() {
+        const qty = parseFloat(document.getElementById('modal_item_qty').value) || 0;
+        const price = parseFloat(document.getElementById('modal_item_price').value) || 0;
+        const subtotal = qty * price;
+
+        document.getElementById('modal_subtotal_calc_text').innerText = `${qty} x Rp ${parseInt(price).toLocaleString('id-ID')}`;
+        document.getElementById('modal_item_subtotal_display').innerText = `Rp ${parseInt(subtotal).toLocaleString('id-ID')}`;
+    }
+
+    function handleItemModalSubmit(e) {
+        e.preventDefault();
+        if (!modalCurrentProduct) return;
+
+        const unitId = parseInt(document.getElementById('modal_item_unit').value);
+        const qty = parseFloat(document.getElementById('modal_item_qty').value) || 1;
+        const customPrice = parseFloat(document.getElementById('modal_item_price').value) || 0;
+
+        if (modalEditingCartIndex !== null && cart[modalEditingCartIndex]) {
+            // Update existing cart item
+            cart[modalEditingCartIndex].unit_id = unitId;
+            cart[modalEditingCartIndex].quantity = qty;
+            cart[modalEditingCartIndex].price = customPrice;
+            cart[modalEditingCartIndex].is_custom_price = true;
+            renderCart();
+        } else {
+            // Add new to cart with custom price
+            addToCartWithCustomPrice(modalCurrentProduct, unitId, qty, customPrice, modalUnitsList);
+        }
+
+        closeModal('itemModal');
+    }
+
+    async function addToCartWithCustomPrice(product, unitId, qty, customPrice, unitsList) {
+        const existingIdx = cart.findIndex(i => i.product.id === product.id && i.unit_id === unitId);
+
+        if (existingIdx > -1) {
+            cart[existingIdx].quantity += qty;
+            cart[existingIdx].price = customPrice; // update custom price
+            cart[existingIdx].is_custom_price = true;
+        } else {
+            cart.push({
+                product,
+                unit_id: unitId,
+                quantity: qty,
+                price: customPrice,
+                is_custom_price: true,
+                unitsList: unitsList || [{ id: product.base_unit_id, name: product.base_unit ? product.base_unit.name : 'Pcs', short_name: product.base_unit ? product.base_unit.short_name : 'pcs', ratio: 1 }]
+            });
+        }
+
+        renderCart();
+    }
+
+    // Barcode Scan & Search Handler
     function handleBarcodeScan(barcode) {
-        if (!barcode) return;
+        const scannerInput = document.getElementById('barcodeScannerInput');
+        
+        // Jika input kosong lalu ditekan Enter -> Tampilkan seluruh produk
+        if (!barcode) {
+            loadProducts('');
+            return;
+        }
+
+        // Cari apakah ada barcode yang persis cocok
         const matched = allProducts.find(p => p.barcode === barcode || (p.barcodes && p.barcodes.some(b => b.barcode === barcode)));
         if (matched) {
             addToCart(matched);
+            scannerInput.value = ''; // Kosongkan setelah barcode berhasil dimasukkan ke cart
+            loadProducts(''); // Kembalikan katalog produk lengkap
         } else {
-            // Fetch online if not in current list
+            // Jika bukan barcode fisik (misal pencarian teks manual nama barang), filter daftar produk
             loadProducts(barcode);
         }
     }
@@ -451,9 +876,18 @@
     }
 
     function updateCartQty(index, delta) {
-        cart[index].quantity += delta;
-        if (cart[index].quantity <= 0) {
+        let current = parseFloat(cart[index].quantity) || 0;
+        let next = current + delta;
+        setCartQty(index, next);
+    }
+
+    function setCartQty(index, val) {
+        let parsed = parseFloat(val);
+        if (isNaN(parsed) || parsed <= 0) {
             cart.splice(index, 1);
+        } else {
+            // Support precision up to 4 decimal places without trailing zeros
+            cart[index].quantity = Math.round(parsed * 10000) / 10000;
         }
         recalculateCartPrices().then(renderCart);
     }
@@ -474,12 +908,14 @@
         renderCart();
     }
 
-    // Dynamic Price Recalculation (PricingService via AJAX)
+    // Dynamic Price Recalculation (PricingService & Discounts via AJAX)
     async function recalculateCartPrices() {
         const customerId = document.getElementById('posCustomerSelect').value;
 
         for (let i = 0; i < cart.length; i++) {
             const item = cart[i];
+            if (item.is_custom_price) continue; // preserve manual custom price
+
             try {
                 const res = await fetch(`/products/${item.product.id}/get-price?unit_id=${item.unit_id}&quantity=${item.quantity}&customer_id=${customerId || ''}`);
                 const data = await res.json();
@@ -533,31 +969,58 @@
                 unitOptions += `<option value="${u.id}" ${u.id === item.unit_id ? 'selected' : ''}>${u.name}</option>`;
             });
 
+            // Product image thumbnail / icon placeholder
+            const imgHtml = item.product.image_path 
+                ? `<img src="/storage/${item.product.image_path}" class="w-full h-full object-cover rounded-lg">`
+                : `<i data-lucide="package" class="w-5 h-5 text-slate-400"></i>`;
+
             const row = document.createElement('div');
-            row.className = 'cart-item-row p-3.5 bg-white border border-slate-200/90 hover:border-slate-300 rounded-2xl transition space-y-2.5 shadow-2xs';
+            row.className = 'cart-item-row p-3 bg-white border border-slate-200/90 hover:border-brand-500/60 hover:shadow-md hover:shadow-brand-500/5 rounded-2xl transition space-y-2 shadow-2xs cursor-pointer group';
+            row.onclick = () => openItemModal(cart[idx].product, idx);
+
             row.innerHTML = `
-                <div class="flex items-start justify-between gap-2">
+                <div class="flex items-start gap-2.5">
+                    <!-- Product Thumbnail -->
+                    <div class="w-11 h-11 rounded-xl bg-slate-50 border border-slate-100 shrink-0 flex items-center justify-center overflow-hidden">
+                        ${imgHtml}
+                    </div>
+
+                    <!-- Details -->
                     <div class="min-w-0 flex-1">
-                        <div class="flex items-center gap-1.5">
-                            <h5 class="text-xs font-bold text-slate-900 truncate">${item.product.name}</h5>
-                            ${item.is_tiered ? `<span class="px-1.5 py-0.2 rounded text-[8px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200">Grosir</span>` : ''}
+                        <div class="flex items-center justify-between gap-1">
+                            <div class="flex items-center gap-1.5 min-w-0">
+                                <h5 class="text-xs font-bold text-slate-900 group-hover:text-brand-600 transition truncate">${item.product.name}</h5>
+                                ${item.is_tiered ? `<span class="px-1.5 py-0.2 rounded text-[8px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">Grosir</span>` : ''}
+                                ${item.is_custom_price ? `<span class="px-1.5 py-0.2 rounded text-[8px] font-bold bg-amber-50 text-amber-700 border border-amber-200 shrink-0">Custom</span>` : ''}
+                            </div>
+                            <button onclick="event.stopPropagation(); removeCartItem(${idx});" class="text-slate-400 hover:text-rose-500 p-0.5 transition shrink-0 cursor-pointer" title="Hapus Item">
+                                <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                            </button>
                         </div>
                         <div class="flex items-center gap-2 mt-1 text-xs text-slate-500">
                             <span class="font-bold text-slate-800 font-mono-num">@ Rp ${parseInt(item.price).toLocaleString('id-ID')}</span>
-                            <select onchange="updateCartUnit(${idx}, this.value)" class="bg-slate-50 text-[10px] font-bold text-brand-600 px-2 py-0.5 rounded-md border border-slate-200 focus:outline-none focus:border-brand-500 cursor-pointer">
+                            <select onclick="event.stopPropagation();" onchange="updateCartUnit(${idx}, this.value)" class="bg-slate-50 text-[10px] font-bold text-brand-600 px-2 py-0.5 rounded-md border border-slate-200 focus:outline-none focus:border-brand-500 cursor-pointer">
                                 ${unitOptions}
                             </select>
                         </div>
                     </div>
-                    <button onclick="removeCartItem(${idx})" class="text-slate-400 hover:text-rose-500 p-1 transition" title="Hapus Item">
-                        <i data-lucide="x" class="w-3.5 h-3.5"></i>
-                    </button>
                 </div>
+
                 <div class="flex items-center justify-between pt-2 border-t border-slate-100">
-                    <div class="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl p-0.5">
-                        <button onclick="updateCartQty(${idx}, -1)" class="w-6 h-6 rounded-lg bg-white hover:bg-slate-100 text-slate-700 flex items-center justify-center text-xs font-bold transition shadow-2xs border border-slate-200/70">-</button>
-                        <span class="w-8 text-center text-xs font-bold text-slate-900 font-mono-num">${item.quantity}</span>
-                        <button onclick="updateCartQty(${idx}, 1)" class="w-6 h-6 rounded-lg bg-white hover:bg-slate-100 text-slate-700 flex items-center justify-center text-xs font-bold transition shadow-2xs border border-slate-200/70">+</button>
+                    <!-- Manual & Decimal Stepper Input -->
+                    <div onclick="event.stopPropagation();" class="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-xl p-0.5">
+                        <button onclick="updateCartQty(${idx}, -1)" class="w-6 h-6 rounded-lg bg-white hover:bg-slate-100 text-slate-700 flex items-center justify-center text-xs font-bold transition shadow-2xs border border-slate-200/70 cursor-pointer">-</button>
+                        <input 
+                            type="number" 
+                            step="any" 
+                            min="0.0001" 
+                            value="${item.quantity}" 
+                            onchange="setCartQty(${idx}, this.value)" 
+                            onkeydown="if(event.key==='Enter'){this.blur();}" 
+                            class="w-14 text-center bg-transparent border-0 p-0 text-xs font-bold text-slate-900 font-mono-num focus:ring-0 focus:outline-none cursor-text"
+                            title="Ketik angka desimal (misal 0.5, 1.25) lalu Enter"
+                        >
+                        <button onclick="updateCartQty(${idx}, 1)" class="w-6 h-6 rounded-lg bg-white hover:bg-slate-100 text-slate-700 flex items-center justify-center text-xs font-bold transition shadow-2xs border border-slate-200/70 cursor-pointer">+</button>
                     </div>
                     <span class="text-xs font-black text-slate-900 font-mono-num">Rp ${parseInt(lineTotal).toLocaleString('id-ID')}</span>
                 </div>
@@ -570,9 +1033,10 @@
     }
 
     function updateSummary(subtotal, discount, qty) {
-        const grandTotal = Math.max(0, subtotal - discount);
+        const totalDiscount = discount + appliedManualDiscount;
+        const grandTotal = Math.max(0, subtotal - totalDiscount);
         document.getElementById('cartSubtotalText').innerText = `Rp ${parseInt(subtotal).toLocaleString('id-ID')}`;
-        document.getElementById('cartDiscountText').innerText = `- Rp ${parseInt(discount).toLocaleString('id-ID')}`;
+        document.getElementById('cartDiscountText').innerText = `- Rp ${parseInt(totalDiscount).toLocaleString('id-ID')}`;
         document.getElementById('cartTotalQtyText').innerText = `${qty} Qty Total`;
         document.getElementById('cartGrandTotalText').innerText = `Rp ${parseInt(grandTotal).toLocaleString('id-ID')}`;
         window.currentCartGrandTotal = grandTotal;
@@ -589,6 +1053,15 @@
         document.getElementById('pay_cash_received_input').value = window.currentCartGrandTotal;
         calculateChangeAmount();
         openModal('paymentModal');
+
+        // Focus cash input
+        setTimeout(() => {
+            const cIn = document.getElementById('pay_cash_received_input');
+            if (cIn) {
+                cIn.focus();
+                cIn.select();
+            }
+        }, 100);
     }
 
     function openPaymentWithMethod(method) {
@@ -663,6 +1136,8 @@
             paid_amount: method === 'cash' ? paidAmount : window.currentCartGrandTotal,
             payment_method: method,
             reference_number: refNo,
+            promo_code: appliedPromoCode || null,
+            manual_discount: appliedManualDiscount || 0,
             notes: notes
         };
 
@@ -692,10 +1167,10 @@
                 clearCart();
                 loadProducts(); // refresh stock numbers
             } else {
-                Swal.fire({ icon: 'error', title: 'Gagal Checkout', text: data.message, scrollbarPadding: false, heightAuto: false });
+                showPosAlert('error', 'Gagal Checkout', data.message);
             }
         } catch (err) {
-            Swal.fire({ icon: 'error', title: 'Error', text: err.message, scrollbarPadding: false, heightAuto: false });
+            showPosAlert('error', 'Terjadi Kesalahan', err.message);
         }
     }
 
@@ -766,10 +1241,10 @@
                 closeModal('holdModal');
                 clearCart();
                 document.getElementById('hold_reference_label').value = '';
-                Swal.fire({ icon: 'success', title: 'Tersimpan!', text: data.message, timer: 1500, showConfirmButton: false, scrollbarPadding: false, heightAuto: false });
+                showPosToast('success', 'Keranjang transaksi berhasil ditahan (Hold).');
             }
         } catch (err) {
-            Swal.fire({ icon: 'error', title: 'Error', text: err.message, scrollbarPadding: false, heightAuto: false });
+            showPosAlert('error', 'Terjadi Kesalahan', err.message);
         }
     }
 
@@ -817,10 +1292,10 @@
                 cart = data.data || [];
                 closeModal('recallModal');
                 recalculateCartPrices().then(renderCart);
-                Swal.fire({ icon: 'success', title: 'Keranjang Dimuat!', timer: 1000, showConfirmButton: false, scrollbarPadding: false, heightAuto: false });
+                showPosToast('success', 'Keranjang berhasil dimuat kembali.');
             }
         } catch (err) {
-            Swal.fire({ icon: 'error', title: 'Error', text: err.message, scrollbarPadding: false, heightAuto: false });
+            showPosAlert('error', 'Terjadi Kesalahan', err.message);
         }
     }
 </script>

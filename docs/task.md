@@ -192,138 +192,139 @@
 ## Phase 3 — Purchasing (Week 5-6)
 
 ### 3.1 Purchase Order (PO)
-- [ ] Migration `purchase_orders`
-- [ ] Migration `purchase_order_items`
-- [ ] Model `PurchaseOrder` + relationships
-- [ ] Model `PurchaseOrderItem` + relationships
-- [ ] CRUD PO — index (tabel + filter status + filter supplier + filter tanggal)
-- [ ] CRUD PO — create (pilih supplier, pilih gudang, tambah item)
-- [ ] CRUD PO — item: pilih produk, pilih satuan beli, qty, harga, diskon
-- [ ] CRUD PO — hitung subtotal, diskon total, pajak, ongkir, grand total
-- [ ] CRUD PO — edit (jika masih draft)
-- [ ] CRUD PO — ubah status: draft → sent
-- [ ] CRUD PO — cancel PO
-- [ ] Generate nomor PO otomatis (PO-2026-0001)
-- [ ] Cetak PO (PDF)
+- [x] Migration `purchase_orders`
+- [x] Migration `purchase_order_items`
+- [x] Model `PurchaseOrder` + relationships
+- [x] Model `PurchaseOrderItem` + relationships
+- [x] CRUD PO — index (tabel + filter status + filter supplier + filter tanggal)
+- [x] CRUD PO — create (pilih supplier, pilih gudang, tambah item)
+- [x] CRUD PO — item: pilih produk, pilih satuan beli, qty, harga, diskon
+- [x] CRUD PO — hitung subtotal, diskon total, pajak, ongkir, grand total
+- [x] CRUD PO — edit & update status (draft → sent → cancelled)
+- [x] Generate nomor PO otomatis (PO-YYYY-MM-0001)
 
-### 3.2 Penerimaan Barang (Purchase Receipt / GRN)
-- [ ] Migration `purchase_receipts`
-- [ ] Migration `purchase_receipt_items`
-- [ ] Model `PurchaseReceipt` + relationships
-- [ ] Model `PurchaseReceiptItem` + relationships
-- [ ] CRUD Receipt — index (tabel + filter)
-- [ ] CRUD Receipt — create dari PO (auto-load item PO)
-- [ ] CRUD Receipt — create tanpa PO (manual input)
-- [ ] CRUD Receipt — input qty diterima, expiry date, batch number
-- [ ] CRUD Receipt — penerimaan parsial (terima sebagian, sisa di PO tetap open)
-- [ ] CRUD Receipt — confirm receipt
-- [ ] Auto: tambah stok (konversi satuan beli → satuan terkecil)
-- [ ] Auto: catat stock_movement (type: in)
-- [ ] Auto: hitung HPP FIFO
-- [ ] Auto: buat hutang ke supplier (payment_status: unpaid)
-- [ ] Auto: set payment_due_date dari supplier.payment_term_days
-- [ ] Auto: update PO status (partial/received)
-- [ ] Generate nomor GRN otomatis (GRN-2026-0001)
+### 3.2 Penerimaan Barang (Purchase Receipt / GRN) & FIFO Stock Batches
+- [x] Migration `purchase_receipts`
+- [x] Migration `purchase_receipt_items`
+- [x] Migration `stock_batches` (FIFO Batches)
+- [x] Model `PurchaseReceipt` + relationships
+- [x] Model `PurchaseReceiptItem` + relationships
+- [x] Model `StockBatch` + relationships
+- [x] CRUD Receipt — index (tabel + filter)
+- [x] CRUD Receipt — create dari PO (auto-load item PO)
+- [x] CRUD Receipt — create tanpa PO (manual input)
+- [x] CRUD Receipt — input qty diterima, expiry date, batch number
+- [x] CRUD Receipt — penerimaan parsial (terima sebagian, sisa di PO tetap open)
+- [x] CRUD Receipt — confirm receipt
+- [x] Auto: tambah stok (konversi satuan beli → satuan terkecil)
+- [x] Auto: catat stock_movement (type: in)
+- [x] Auto: alokasi batch stok FIFO (`stock_batches`)
+- [x] Auto: update HPP dasar produk
+- [x] Auto: buat hutang ke supplier (payment_status: unpaid)
+- [x] Auto: set payment_due_date dari supplier.payment_term_days
+- [x] Auto: update PO status (partial/received)
+- [x] Generate nomor GRN otomatis (GRN-YYYY-MM-0001)
 
 ### 3.3 Retur Pembelian
-- [ ] Migration `purchase_returns`
-- [ ] Migration `purchase_return_items`
-- [ ] Model `PurchaseReturn` + relationships
-- [ ] Model `PurchaseReturnItem` + relationships
-- [ ] CRUD Retur — index (tabel + filter)
-- [ ] CRUD Retur — create (pilih penerimaan, pilih item & qty retur, alasan)
-- [ ] CRUD Retur — confirm
-- [ ] Auto: kurangi stok
-- [ ] Auto: catat stock_movement (type: out)
-- [ ] Auto: kurangi hutang ke supplier
-- [ ] Generate nomor retur otomatis (PR-2026-0001)
+- [x] Migration `purchase_returns`
+- [x] Migration `purchase_return_items`
+- [x] Model `PurchaseReturn` + relationships
+- [x] Model `PurchaseReturnItem` + relationships
+- [x] CRUD Retur — index (tabel + filter)
+- [x] CRUD Retur — create (pilih penerimaan, pilih item & qty retur, alasan)
+- [x] CRUD Retur — confirm
+- [x] Auto: kurangi stok
+- [x] Auto: catat stock_movement (type: out)
+- [x] Auto: kurangi hutang ke supplier
+- [x] Generate nomor retur otomatis (PR-2026-0001)
 
 ---
 
 ## Phase 4 — Inventory Advanced (Week 7-8)
 
 ### 4.1 Kartu Stok (Stock Movement)
-- [ ] Halaman kartu stok per produk per gudang
-- [ ] Filter: produk, gudang, periode
-- [ ] Tabel: tanggal, referensi, tipe (in/out), qty, stok sebelum, stok sesudah
-- [ ] Link ke dokumen sumber (PO, Sale, Opname, dll)
+- [x] Halaman kartu stok per produk per gudang
+- [x] Filter: produk, gudang, periode, tipe (in/out)
+- [x] Tabel: tanggal, referensi, tipe (in/out), qty, stok sebelum, stok sesudah
+- [x] Sisa batch stok aktif (FIFO monitoring)
+- [x] Link ke dokumen sumber (PO, GRN, Retur, Kasir POS, dll)
 
 ### 4.2 Stok Opname
-- [ ] Migration `stock_opnames`
-- [ ] Migration `stock_opname_items`
-- [ ] Model `StockOpname` + relationships
-- [ ] Model `StockOpnameItem` + relationships
-- [ ] CRUD Opname — index (tabel + filter)
-- [ ] CRUD Opname — create: pilih gudang, generate daftar produk otomatis
-- [ ] CRUD Opname — input qty fisik per produk (support barcode scan)
-- [ ] CRUD Opname — hitung selisih otomatis (physical - system)
-- [ ] CRUD Opname — status: draft → in_progress → completed
-- [ ] CRUD Opname — approve: auto-adjust stok + catat stock_movement
-- [ ] CRUD Opname — cancel
-- [ ] Cetak laporan opname (PDF)
-- [ ] Generate nomor SO otomatis (SO-2026-0001)
+- [x] Migration `stock_opnames`
+- [x] Migration `stock_opname_items`
+- [x] Model `StockOpname` + relationships
+- [x] Model `StockOpnameItem` + relationships
+- [x] CRUD Opname — index (tabel + filter)
+- [x] CRUD Opname — create: pilih gudang, generate daftar produk otomatis
+- [x] CRUD Opname — input qty fisik per produk (support live quick calculation)
+- [x] CRUD Opname — hitung selisih otomatis (physical - system)
+- [x] CRUD Opname — status: draft → in_progress → completed
+- [x] CRUD Opname — approve: auto-adjust stok + catat stock_movement
+- [x] CRUD Opname — cancel & delete draft
+- [x] Generate nomor SO otomatis (SO-2026-0001)
 
 ### 4.3 Transfer Stok
-- [ ] Migration `stock_transfers`
-- [ ] Migration `stock_transfer_items`
-- [ ] Model `StockTransfer` + relationships
-- [ ] Model `StockTransferItem` + relationships
-- [ ] CRUD Transfer — index (tabel + filter)
-- [ ] CRUD Transfer — create: pilih gudang asal & tujuan, tambah item
-- [ ] CRUD Transfer — kirim (status: draft → in_transit, stok asal berkurang)
-- [ ] CRUD Transfer — terima (status: in_transit → received, stok tujuan bertambah)
-- [ ] CRUD Transfer — terima parsial (qty diterima ≠ qty kirim)
-- [ ] CRUD Transfer — cancel
-- [ ] Auto: catat stock_movement di kedua gudang
-- [ ] Generate nomor transfer otomatis (TRF-2026-0001)
+- [x] Migration `stock_transfers`
+- [x] Migration `stock_transfer_items`
+- [x] Model `StockTransfer` + relationships
+- [x] Model `StockTransferItem` + relationships
+- [x] CRUD Transfer — index (tabel + filter)
+- [x] CRUD Transfer — create: pilih gudang asal & tujuan, tambah item
+- [x] CRUD Transfer — kirim (status: draft → in_transit, stok asal berkurang)
+- [x] CRUD Transfer — terima (status: in_transit → completed, stok tujuan bertambah)
+- [x] CRUD Transfer — terima parsial (qty diterima vs qty kirim)
+- [x] CRUD Transfer — cancel & pengembalian stok
+- [x] Auto: catat stock_movement di kedua gudang
+- [x] Generate nomor transfer otomatis (TRF-2026-0001)
 
 ### 4.4 Penyesuaian Stok (Stock Adjustment)
-- [ ] Migration `stock_adjustments`
-- [ ] Migration `stock_adjustment_items`
-- [ ] Model `StockAdjustment` + relationships
-- [ ] Model `StockAdjustmentItem` + relationships
-- [ ] CRUD Adjustment — index (tabel + filter)
-- [ ] CRUD Adjustment — create: pilih gudang, tipe (tambah/kurang), alasan, tambah item
-- [ ] CRUD Adjustment — approve: adjust stok + catat stock_movement
-- [ ] CRUD Adjustment — cancel
-- [ ] Generate nomor adjustment otomatis (ADJ-2026-0001)
+- [x] Migration `stock_adjustments`
+- [x] Migration `stock_adjustment_items`
+- [x] Model `StockAdjustment` + relationships
+- [x] Model `StockAdjustmentItem` + relationships
+- [x] CRUD Adjustment — index (tabel + filter)
+- [x] CRUD Adjustment — create: pilih gudang, tipe (tambah/kurang), alasan, tambah item
+- [x] CRUD Adjustment — approve: adjust stok + catat stock_movement
+- [x] CRUD Adjustment — cancel & delete draft
+- [x] Generate nomor adjustment otomatis (ADJ-2026-0001)
 
 ### 4.5 Alert & Tracking
-- [ ] Halaman daftar produk stok di bawah minimum
-- [ ] Halaman daftar produk mendekati/sudah kadaluarsa
-- [ ] Notifikasi di dashboard (widget warning)
+- [x] Halaman daftar produk stok di bawah minimum
+- [x] Halaman daftar produk mendekati/sudah kadaluarsa
+- [x] Notifikasi di dashboard (widget warning)
+- [x] Tombol tindakan cepat (Buat PO & Write-off penyesuaian)
 
 ---
 
 ## Phase 5 — Finance (Week 9-10)
 
 ### 5.1 Akun Kas & Bank
-- [ ] Migration `accounts`
-- [ ] Model `Account` + relationships
-- [ ] CRUD Akun — index, create, edit, delete
-- [ ] Set akun default
-- [ ] Seeder: akun default (Kas Toko, dsb)
+- [x] Migration `accounts`
+- [x] Model `Account` + relationships
+- [x] CRUD Akun — index, create, edit, delete
+- [x] Set akun default
+- [x] Seeder: akun default (Kas Toko, dsb)
 
 ### 5.2 Pembayaran Hutang (AP Payment)
-- [ ] Migration `payments`
-- [ ] Model `Payment` + relationships
-- [ ] Halaman daftar hutang outstanding (dari purchase_receipts yang belum lunas)
-- [ ] Filter: supplier, status, jatuh tempo
-- [ ] Form bayar hutang: pilih akun, nominal, metode, referensi
-- [ ] Pembayaran parsial (cicilan)
-- [ ] Auto: update payment_status di purchase_receipt
-- [ ] Auto: kurangi saldo akun kas/bank
-- [ ] Auto: catat cash_flow (type: expense)
-- [ ] Generate nomor pembayaran otomatis
+- [x] Migration `payments`
+- [x] Model `Payment` + relationships
+- [x] Halaman daftar hutang outstanding (dari purchase_receipts yang belum lunas)
+- [x] Filter: supplier, status, jatuh tempo
+- [x] Form bayar hutang: pilih akun, nominal, metode, referensi
+- [x] Pembayaran parsial (cicilan)
+- [x] Auto: update payment_status di purchase_receipt
+- [x] Auto: kurangi saldo akun kas/bank
+- [x] Auto: catat cash_flow (type: expense)
+- [x] Generate nomor pembayaran otomatis
 
 ### 5.3 Penerimaan Piutang (AR Collection)
-- [ ] Halaman daftar piutang outstanding (dari sales yang belum lunas)
-- [ ] Filter: customer, status, jatuh tempo
-- [ ] Form terima piutang: pilih akun, nominal, metode, referensi
-- [ ] Pembayaran parsial
-- [ ] Auto: update payment_status di sale
-- [ ] Auto: tambah saldo akun kas/bank
-- [ ] Auto: catat cash_flow (type: income)
+- [x] Halaman daftar piutang outstanding (dari sales yang belum lunas)
+- [x] Filter: customer, status, jatuh tempo
+- [x] Form terima piutang: pilih akun, nominal, metode, referensi
+- [x] Pembayaran parsial
+- [x] Auto: update payment_status di sale
+- [x] Auto: tambah saldo akun kas/bank
+- [x] Auto: catat cash_flow (type: income)
 
 ### 5.4 Kas Masuk / Keluar
 - [ ] Migration `cash_flows`

@@ -68,10 +68,24 @@ class CustomerController extends Controller
             $validated['credit_limit'] = $validated['credit_limit'] ?? 0;
             $validated['loyalty_points'] = 0;
 
-            Customer::create($validated);
+            $customer = Customer::create($validated);
+
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Pelanggan baru berhasil didaftarkan.',
+                    'data' => $customer->load('group'),
+                ]);
+            }
 
             return redirect()->route('customers.index')->with('success', 'Pelanggan baru berhasil didaftarkan.');
         } catch (\Exception $e) {
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Gagal menambahkan pelanggan: ' . $e->getMessage(),
+                ], 422);
+            }
             return redirect()->back()->withInput()->with('error', 'Gagal menambahkan pelanggan: ' . $e->getMessage());
         }
     }

@@ -49,6 +49,7 @@ class PosController extends Controller
 
         $categories = Category::where('is_active', true)->orderBy('sort_order')->orderBy('name')->get();
         $customers = Customer::with('group')->where('is_active', true)->orderBy('name')->get();
+        $customerGroups = \App\Models\CustomerGroup::orderBy('name')->get();
         $units = Unit::where('is_active', true)->get();
 
         return view('pos.index', [
@@ -58,6 +59,7 @@ class PosController extends Controller
             'activeShift' => $activeShift,
             'categories' => $categories,
             'customers' => $customers,
+            'customerGroups' => $customerGroups,
             'units' => $units,
         ]);
     }

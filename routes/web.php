@@ -16,11 +16,7 @@ Route::get('/', function () {
 Route::middleware(['auth'])->group(function () {
     
     // 1. Dashboard Utama
-    Route::get('/dashboard', function () {
-        return view('dashboard.index', [
-            'headerTitle' => 'Dashboard'
-        ]);
-    })->name('dashboard');
+    Route::get('/dashboard', [\App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
 
     // 2. POS Routes
     Route::get('pos', [\App\Http\Controllers\PosController::class, 'index'])->name('pos.index');
@@ -48,7 +44,33 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('warehouses', \App\Http\Controllers\WarehouseController::class)->except(['create', 'show', 'edit']);
     Route::resource('discounts', \App\Http\Controllers\DiscountController::class)->except(['create', 'show', 'edit']);
 
-    // 4. User & Role Management
+    // 4. Purchasing & Procurement Routes (Phase 3)
+    Route::get('purchase-orders/{purchaseOrder}/details', [\App\Http\Controllers\PurchaseOrderController::class, 'getDetails'])->name('purchase-orders.details');
+    Route::patch('purchase-orders/{purchaseOrder}/status', [\App\Http\Controllers\PurchaseOrderController::class, 'updateStatus'])->name('purchase-orders.update-status');
+    Route::resource('purchase-orders', \App\Http\Controllers\PurchaseOrderController::class)->except(['create', 'show', 'edit']);
+    Route::resource('purchase-receipts', \App\Http\Controllers\PurchaseReceiptController::class)->except(['create', 'show', 'edit']);
+    Route::resource('purchase-returns', \App\Http\Controllers\PurchaseReturnController::class)->except(['create', 'show', 'edit']);
+
+    // 5. Inventory, Kartu Stok, Opname, Transfer, Adjustment & Alerts (Phase 4)
+    Route::get('stocks', [\App\Http\Controllers\StockMovementController::class, 'index'])->name('stocks.index');
+    Route::get('stock-alerts', [\App\Http\Controllers\StockAlertController::class, 'index'])->name('stocks.alerts');
+    Route::post('stock-opnames/{stockOpname}/approve', [\App\Http\Controllers\StockOpnameController::class, 'approve'])->name('stock-opnames.approve');
+    Route::resource('stock-opnames', \App\Http\Controllers\StockOpnameController::class)->except(['create', 'edit']);
+    Route::post('stock-transfers/{stockTransfer}/dispatch', [\App\Http\Controllers\StockTransferController::class, 'dispatch'])->name('stock-transfers.dispatch');
+    Route::post('stock-transfers/{stockTransfer}/receive', [\App\Http\Controllers\StockTransferController::class, 'receive'])->name('stock-transfers.receive');
+    Route::resource('stock-transfers', \App\Http\Controllers\StockTransferController::class)->except(['create', 'edit']);
+    Route::post('stock-adjustments/{stockAdjustment}/approve', [\App\Http\Controllers\StockAdjustmentController::class, 'approve'])->name('stock-adjustments.approve');
+    Route::resource('stock-adjustments', \App\Http\Controllers\StockAdjustmentController::class)->except(['create', 'edit']);
+
+    // 6. Finance & Kas/Bank (Phase 5)
+    Route::post('accounts/{account}/default', [\App\Http\Controllers\AccountController::class, 'setDefault'])->name('accounts.default');
+    Route::resource('accounts', \App\Http\Controllers\AccountController::class)->except(['create', 'edit']);
+    Route::get('payables', [\App\Http\Controllers\PaymentController::class, 'payables'])->name('payables.index');
+    Route::post('payables', [\App\Http\Controllers\PaymentController::class, 'storePayable'])->name('payables.store');
+    Route::get('receivables', [\App\Http\Controllers\PaymentController::class, 'receivables'])->name('receivables.index');
+    Route::post('receivables', [\App\Http\Controllers\PaymentController::class, 'storeReceivable'])->name('receivables.store');
+
+    // 7. User & Role Management
     Route::resource('users', UserController::class)->except(['create', 'show', 'edit']);
 
     // 5. User Profile

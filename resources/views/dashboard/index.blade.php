@@ -3,96 +3,153 @@
 @section('content')
 <div class="space-y-6">
 
-    <!-- ROW 1: TOP 4 STAT CARDS -->
-    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+    <!-- STOCK WARNING ALERTS BANNER (If any alerts exist) -->
+    @if(($lowStockCount ?? 0) > 0 || ($expiringCount ?? 0) > 0)
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            @if(($lowStockCount ?? 0) > 0)
+                <div class="p-4 rounded-2xl bg-rose-50 border border-rose-200/80 flex items-center justify-between shadow-2xs">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-rose-500 text-white flex items-center justify-center shrink-0 shadow-xs">
+                            <i data-lucide="package-x" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <div class="font-bold text-xs text-rose-900">Peringatan: {{ $lowStockCount }} Produk Stok Menipis!</div>
+                            <p class="text-[11px] text-rose-700 mt-0.5">Stok fisik produk telah berada di bawah batas minimum.</p>
+                        </div>
+                    </div>
+                    <a href="{{ route('stocks.alerts', ['tab' => 'low_stock']) }}" class="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-xs transition shrink-0">
+                        Cek Produk
+                    </a>
+                </div>
+            @endif
+
+            @if(($expiringCount ?? 0) > 0)
+                <div class="p-4 rounded-2xl bg-amber-50 border border-amber-200/80 flex items-center justify-between shadow-2xs">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-xs">
+                            <i data-lucide="clock-alert" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <div class="font-bold text-xs text-amber-900">Perhatian: {{ $expiringCount }} Batch Mendekati Expired!</div>
+                            <p class="text-[11px] text-amber-700 mt-0.5">Ada kelompok batch stok yang kedaluwarsa $\le$ 30 hari ke depan.</p>
+                        </div>
+                    </div>
+                    <a href="{{ route('stocks.alerts', ['tab' => 'expiring']) }}" class="px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-xs transition shrink-0">
+                        Cek Batch
+                    </a>
+                </div>
+            @endif
+        </div>
+    @endif
+
+    <!-- ROW 1: TOP 4 STAT CARDS (Real Business Operational Metrics) -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         
-        <!-- Card 1: Business Autonomous Reports (Orange Banner Card) -->
-        <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-500 via-brand-500 to-amber-500 p-5 text-white shadow-sm shadow-brand-500/20 flex flex-col justify-between min-h-[140px]">
-            <div class="flex items-center gap-2">
-                <i data-lucide="sparkles" class="w-4 h-4 text-white/90"></i>
-                <span class="text-xs font-semibold tracking-wide text-white/95">Business Autonomous Reports</span>
+        <!-- Card 1: Penjualan Hari Ini -->
+        <div class="rounded-2xl bg-white border border-slate-200/90 p-5 shadow-2xs flex flex-col justify-between min-h-[135px]">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h4 class="text-xs font-bold text-slate-800">Penjualan Hari Ini</h4>
+                    <p class="text-[11px] text-slate-400">Total omset kasir terbayar</p>
+                </div>
+                <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
+                    <i data-lucide="banknote" class="w-4 h-4"></i>
+                </div>
             </div>
-            
+
             <div class="my-2">
-                <div class="text-3xl font-extrabold tracking-tight">92% Efficiency</div>
-            </div>
-
-            <div class="flex items-center gap-1.5 text-xs text-white/90 font-medium">
-                <i data-lucide="arrow-up-right" class="w-3.5 h-3.5"></i>
-                <span>24.2% vs last week</span>
-            </div>
-
-            <!-- Soft decorative glow background -->
-            <div class="absolute -right-6 -bottom-6 w-28 h-28 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
-        </div>
-
-        <!-- Card 2: Automation Running -->
-        <div class="rounded-2xl bg-white border border-slate-200/70 p-5 shadow-2xs flex flex-col justify-between min-h-[140px] transition-colors duration-200">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h4 class="text-xs font-semibold text-slate-800">Automation Running</h4>
-                    <p class="text-[11px] text-slate-400">Actions currently being executed</p>
-                </div>
-                <div class="w-7 h-7 rounded-lg bg-orange-50 border border-orange-100 flex items-center justify-center text-brand-500">
-                    <i data-lucide="message-square" class="w-3.5 h-3.5 fill-brand-500"></i>
+                <div class="text-2xl font-black text-slate-900 font-mono-num tracking-tight">
+                    Rp {{ number_format($todaySales ?? 0, 0, ',', '.') }}
                 </div>
             </div>
 
-            <div class="my-1">
-                <div class="text-3xl font-bold text-slate-900 tracking-tight">86 <span class="text-lg font-medium text-slate-400">runs</span></div>
-            </div>
-
-            <div class="flex items-center justify-between text-[11px] text-slate-500 border-t border-slate-100 pt-2">
-                <span>Recently added: <strong class="text-slate-700 font-semibold">Sheets</strong></span>
-                <i data-lucide="info" class="w-3.5 h-3.5 text-slate-400"></i>
+            <div class="flex items-center justify-between text-[11px] border-t border-slate-100 pt-2 text-slate-500">
+                <span>{{ $todayTransactions ?? 0 }} transaksi berhasil</span>
+                <a href="{{ url('/sales') }}" class="text-brand-600 hover:text-brand-700 font-bold flex items-center gap-0.5">
+                    <span>Detail</span>
+                    <i data-lucide="chevron-right" class="w-3 h-3"></i>
+                </a>
             </div>
         </div>
 
-        <!-- Card 3: Weekly Revenue -->
-        <div class="rounded-2xl bg-white border border-slate-200/70 p-5 shadow-2xs flex flex-col justify-between min-h-[140px] transition-colors duration-200">
+        <!-- Card 2: Transaksi Kasir Hari Ini -->
+        <div class="rounded-2xl bg-white border border-slate-200/90 p-5 shadow-2xs flex flex-col justify-between min-h-[135px]">
             <div class="flex items-center justify-between">
                 <div>
-                    <h4 class="text-xs font-semibold text-slate-800">Weekly Revenue</h4>
-                    <p class="text-[11px] text-slate-400">Across all active products</p>
+                    <h4 class="text-xs font-bold text-slate-800">Transaksi Kasir</h4>
+                    <p class="text-[11px] text-slate-400">Aktivitas struk penjualan POS</p>
                 </div>
-                <div class="w-7 h-7 rounded-lg bg-orange-50 border border-orange-100 flex items-center justify-center text-brand-500">
-                    <i data-lucide="banknote" class="w-3.5 h-3.5"></i>
+                <div class="w-9 h-9 rounded-xl bg-brand-50 text-brand-500 flex items-center justify-center border border-brand-100">
+                    <i data-lucide="receipt" class="w-4 h-4"></i>
                 </div>
             </div>
 
-            <div class="my-1">
-                <div class="text-3xl font-bold text-slate-900 tracking-tight">$ 12,450</div>
+            <div class="my-2">
+                <div class="text-2xl font-black text-slate-900 font-mono-num tracking-tight">
+                    {{ number_format($todayTransactions ?? 0, 0, ',', '.') }} <span class="text-sm font-semibold text-slate-400">Struk</span>
+                </div>
             </div>
 
-            <div class="flex items-center justify-between text-[11px] border-t border-slate-100 pt-2">
-                <span class="text-emerald-600 font-semibold flex items-center gap-1">
-                    <i data-lucide="arrow-up-right" class="w-3 h-3"></i> 8.2% vs last week
-                </span>
-                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-400"></i>
+            <div class="flex items-center justify-between text-[11px] border-t border-slate-100 pt-2 text-slate-500">
+                <span>Kasir aktif POS</span>
+                <a href="{{ route('pos.index') }}" class="text-brand-600 hover:text-brand-700 font-bold flex items-center gap-0.5">
+                    <span>Buka POS</span>
+                    <i data-lucide="chevron-right" class="w-3 h-3"></i>
+                </a>
             </div>
         </div>
 
-        <!-- Card 4: Orders Fulfilled -->
-        <div class="rounded-2xl bg-white border border-slate-200/70 p-5 shadow-2xs flex flex-col justify-between min-h-[140px] transition-colors duration-200">
+        <!-- Card 3: Katalog Produk Aktif -->
+        <div class="rounded-2xl bg-white border border-slate-200/90 p-5 shadow-2xs flex flex-col justify-between min-h-[135px]">
             <div class="flex items-center justify-between">
                 <div>
-                    <h4 class="text-xs font-semibold text-slate-800">Orders Fulfilled</h4>
-                    <p class="text-[11px] text-slate-400">Across 3 sales channels</p>
+                    <h4 class="text-xs font-bold text-slate-800">Katalog Produk</h4>
+                    <p class="text-[11px] text-slate-400">Total SKU produk aktif</p>
                 </div>
-                <div class="w-7 h-7 rounded-lg bg-orange-50 border border-orange-100 flex items-center justify-center text-brand-500">
-                    <i data-lucide="truck" class="w-3.5 h-3.5"></i>
+                <div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100">
+                    <i data-lucide="package" class="w-4 h-4"></i>
                 </div>
             </div>
 
-            <div class="my-1">
-                <div class="text-3xl font-bold text-slate-900 tracking-tight">118 <span class="text-lg font-medium text-slate-400">orders</span></div>
+            <div class="my-2">
+                <div class="text-2xl font-black text-slate-900 font-mono-num tracking-tight">
+                    {{ number_format($totalProducts ?? 0, 0, ',', '.') }} <span class="text-sm font-semibold text-slate-400">Item</span>
+                </div>
             </div>
 
-            <div class="flex items-center justify-between text-[11px] border-t border-slate-100 pt-2">
-                <span class="text-emerald-600 font-semibold flex items-center gap-1">
-                    <i data-lucide="arrow-up-right" class="w-3 h-3"></i> 5% ahead of daily average
-                </span>
-                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-400"></i>
+            <div class="flex items-center justify-between text-[11px] border-t border-slate-100 pt-2 text-slate-500">
+                <span>Multi satuan & barcode</span>
+                <a href="{{ route('products.index') }}" class="text-brand-600 hover:text-brand-700 font-bold flex items-center gap-0.5">
+                    <span>Kelola</span>
+                    <i data-lucide="chevron-right" class="w-3 h-3"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- Card 4: Pelanggan Terdaftar -->
+        <div class="rounded-2xl bg-white border border-slate-200/90 p-5 shadow-2xs flex flex-col justify-between min-h-[135px]">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h4 class="text-xs font-bold text-slate-800">Total Pelanggan</h4>
+                    <p class="text-[11px] text-slate-400">Member & customer retail</p>
+                </div>
+                <div class="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
+                    <i data-lucide="users" class="w-4 h-4"></i>
+                </div>
+            </div>
+
+            <div class="my-2">
+                <div class="text-2xl font-black text-slate-900 font-mono-num tracking-tight">
+                    {{ number_format($totalCustomers ?? 0, 0, ',', '.') }} <span class="text-sm font-semibold text-slate-400">Member</span>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between text-[11px] border-t border-slate-100 pt-2 text-slate-500">
+                <span>Tier member & poin</span>
+                <a href="{{ route('customers.index') }}" class="text-brand-600 hover:text-brand-700 font-bold flex items-center gap-0.5">
+                    <span>Lihat</span>
+                    <i data-lucide="chevron-right" class="w-3 h-3"></i>
+                </a>
             </div>
         </div>
 
