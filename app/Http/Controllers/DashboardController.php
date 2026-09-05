@@ -16,12 +16,7 @@ class DashboardController extends Controller
         $lowStockCount = Product::where('is_active', true)
             ->where('min_stock', '>', 0)
             ->whereHas('stocks')
-            ->addSelect([
-                'current_stock' => DB::table('product_stocks')
-                    ->selectRaw('COALESCE(SUM(quantity), 0)')
-                    ->whereColumn('product_stocks.product_id', 'products.id')
-            ])
-            ->havingRaw('current_stock <= products.min_stock')
+            ->whereRaw('(SELECT COALESCE(SUM(quantity), 0) FROM product_stocks WHERE product_stocks.product_id = products.id) <= products.min_stock')
             ->count();
 
         // 2. Expiring batch count (<= 30 days)

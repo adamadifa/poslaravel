@@ -42,13 +42,16 @@ class StockAlertController extends Controller
                     $q->where('warehouse_id', $warehouseId);
                 }
             })
+            ->whereRaw('(' . ($warehouseId 
+                ? 'SELECT COALESCE(SUM(quantity), 0) FROM product_stocks WHERE product_stocks.product_id = products.id AND product_stocks.warehouse_id = ' . intval($warehouseId)
+                : 'SELECT COALESCE(SUM(quantity), 0) FROM product_stocks WHERE product_stocks.product_id = products.id'
+            ) . ') <= products.min_stock')
             ->addSelect([
                 'current_stock' => DB::table('product_stocks')
                     ->selectRaw('COALESCE(SUM(quantity), 0)')
                     ->whereColumn('product_stocks.product_id', 'products.id')
                     ->when($warehouseId, fn($q) => $q->where('warehouse_id', $warehouseId))
             ])
-            ->havingRaw('current_stock <= products.min_stock')
             ->orderBy('current_stock', 'asc');
 
         $lowStockProducts = $lowStockQuery->paginate(15, ['*'], 'low_page')->withQueryString();
@@ -74,12 +77,7 @@ class StockAlertController extends Controller
         $totalLowStockCount = Product::where('is_active', true)
             ->where('min_stock', '>', 0)
             ->whereHas('stocks')
-            ->addSelect([
-                'current_stock' => DB::table('product_stocks')
-                    ->selectRaw('COALESCE(SUM(quantity), 0)')
-                    ->whereColumn('product_stocks.product_id', 'products.id')
-            ])
-            ->havingRaw('current_stock <= products.min_stock')
+            ->whereRaw('(SELECT COALESCE(SUM(quantity), 0) FROM product_stocks WHERE product_stocks.product_id = products.id) <= products.min_stock')
             ->count();
 
         $totalExpiringCount = StockBatch::where('qty_remaining', '>', 0)
