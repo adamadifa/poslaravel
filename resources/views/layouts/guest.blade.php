@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ $title ?? config('app.name', 'Mare POS Pro') }}</title>
+    <title>{{ $title ?? config('app.name', 'WarungPro') }}</title>
 
     <!-- Google Fonts: Plus Jakarta Sans -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -41,11 +41,17 @@
         
         <!-- Brand Logo & Title -->
         <div class="text-center space-y-2">
-            <div class="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-tr from-brand-500 to-amber-500 text-white font-black text-xl shadow-md shadow-brand-500/30 mb-1">
-                <i data-lucide="zap" class="w-6 h-6 fill-white stroke-white"></i>
-            </div>
-            <h2 class="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Mare<span class="text-brand-500">™</span> POS Pro</h2>
-            <p class="text-xs text-slate-500 dark:text-slate-400">Sistem Kasir & Manajemen Retail Profesional</p>
+            @if(!empty($appLogoSetting))
+                <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-2 shadow-xs mb-1">
+                    <img src="{{ asset('storage/' . $appLogoSetting) }}" alt="{{ $appNameSetting ?? 'Logo' }}" class="w-full h-full object-contain">
+                </div>
+            @else
+                <div class="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-tr from-brand-500 to-amber-500 text-white font-black text-xl shadow-md shadow-brand-500/30 mb-1">
+                    <i data-lucide="zap" class="w-6 h-6 fill-white stroke-white"></i>
+                </div>
+            @endif
+            <h2 class="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">{{ $appNameSetting ?? 'WarungPro' }}</h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400">{{ $appTaglineSetting ?? 'Sistem Kasir & Manajemen Retail Profesional' }}</p>
         </div>
 
         {{ $slot }}

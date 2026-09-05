@@ -16,7 +16,7 @@ class SettingController extends Controller
         $tab = $request->get('tab', 'profile');
 
         // Store profile settings
-        $companyName = Setting::get('company_name', 'POS Pro Enterprise');
+        $companyName = Setting::get('company_name', 'WarungPro');
         $companyTagline = Setting::get('company_tagline', 'Solusi Kasir & Manajemen Ritel Modern');
         $companyAddress = Setting::get('company_address', 'Jl. Sudirman No. 45, Jakarta Pusat');
         $companyPhone = Setting::get('company_phone', '0812-3456-7890');

@@ -128,12 +128,16 @@
             <div>
                 <!-- Brand Header -->
                 <div class="brand-header flex items-center justify-between px-1 h-12 mb-6">
-                    <div class="flex items-center gap-2.5">
-                        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-500 to-amber-500 flex items-center justify-center text-white font-black text-lg shadow-sm shadow-brand-500/30 shrink-0">
-                            <i data-lucide="zap" class="w-5 h-5 fill-white stroke-white"></i>
-                        </div>
-                        <div class="brand-text flex items-center gap-1">
-                            <span class="font-bold text-xl tracking-tight text-slate-900">Mare<span class="text-brand-500">™</span></span>
+                    <div class="flex items-center gap-2.5 min-w-0">
+                        @if(!empty($appLogoSetting))
+                            <img src="{{ asset('storage/' . $appLogoSetting) }}" alt="{{ $appNameSetting ?? 'Logo' }}" class="w-9 h-9 rounded-xl object-contain bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 p-1 shadow-xs shrink-0">
+                        @else
+                            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-500 to-amber-500 flex items-center justify-center text-white font-black text-lg shadow-sm shadow-brand-500/30 shrink-0">
+                                <i data-lucide="zap" class="w-5 h-5 fill-white stroke-white"></i>
+                            </div>
+                        @endif
+                        <div class="brand-text flex items-center gap-1 min-w-0">
+                            <span class="font-bold text-lg tracking-tight text-slate-900 dark:text-white truncate" title="{{ $appNameSetting ?? 'WarungPro' }}">{{ $appNameSetting ?? 'WarungPro' }}</span>
                         </div>
                     </div>
                     

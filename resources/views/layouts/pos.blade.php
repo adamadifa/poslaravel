@@ -262,11 +262,15 @@
         <div class="flex items-center gap-5">
             <!-- Brand & Mode -->
             <div class="flex items-center gap-2.5">
-                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-500 to-amber-500 flex items-center justify-center text-white font-black text-sm shadow-sm shadow-brand-500/30">
-                    <i data-lucide="zap" class="w-4.5 h-4.5 fill-white stroke-white"></i>
-                </div>
+                @if(!empty($appLogoSetting))
+                    <img src="{{ asset('storage/' . $appLogoSetting) }}" alt="{{ $appNameSetting ?? 'Logo' }}" class="w-9 h-9 rounded-xl object-contain bg-white border border-slate-200 p-1 shadow-xs shrink-0">
+                @else
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-500 to-amber-500 flex items-center justify-center text-white font-black text-sm shadow-sm shadow-brand-500/30">
+                        <i data-lucide="zap" class="w-4.5 h-4.5 fill-white stroke-white"></i>
+                    </div>
+                @endif
                 <div class="flex items-center gap-2">
-                    <span class="font-bold text-lg tracking-tight text-slate-900">Mare<span class="text-brand-500">POS</span></span>
+                    <span class="font-bold text-lg tracking-tight text-slate-900">{{ $appNameSetting ?? 'WarungPro' }}</span>
                     <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center gap-1.5">
                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Online
                     </span>
