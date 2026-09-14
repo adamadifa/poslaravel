@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Models\AuditTrail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -29,7 +30,7 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerate();
 
         // Log audit trail for login
-        \App\Models\AuditTrail::log(
+        AuditTrail::log(
             'login',
             "Pengguna {$request->user()->name} berhasil masuk ke sistem.",
             $request->user()
@@ -47,7 +48,7 @@ class AuthenticatedSessionController extends Controller
 
         if ($user) {
             // Log audit trail for logout
-            \App\Models\AuditTrail::log(
+            AuditTrail::log(
                 'logout',
                 "Pengguna {$user->name} keluar dari sistem.",
                 $user

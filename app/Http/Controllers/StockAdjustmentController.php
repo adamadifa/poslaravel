@@ -30,15 +30,15 @@ class StockAdjustmentController extends Controller
         $search = $request->query('search');
 
         $adjustments = StockAdjustment::with(['warehouse', 'creator', 'approver', 'items.product.baseUnit'])
-            ->when($warehouseId, fn($q) => $q->where('warehouse_id', $warehouseId))
-            ->when($type, fn($q) => $q->where('type', $type))
-            ->when($status, fn($q) => $q->where('status', $status))
-            ->when($startDate, fn($q) => $q->whereDate('adjustment_date', '>=', $startDate))
-            ->when($endDate, fn($q) => $q->whereDate('adjustment_date', '<=', $endDate))
+            ->when($warehouseId, fn ($q) => $q->where('warehouse_id', $warehouseId))
+            ->when($type, fn ($q) => $q->where('type', $type))
+            ->when($status, fn ($q) => $q->where('status', $status))
+            ->when($startDate, fn ($q) => $q->whereDate('adjustment_date', '>=', $startDate))
+            ->when($endDate, fn ($q) => $q->whereDate('adjustment_date', '<=', $endDate))
             ->when($search, function ($q, $search) {
                 $q->where('adjustment_number', 'like', "%{$search}%")
-                  ->orWhere('reason', 'like', "%{$search}%")
-                  ->orWhere('notes', 'like', "%{$search}%");
+                    ->orWhere('reason', 'like', "%{$search}%")
+                    ->orWhere('notes', 'like', "%{$search}%");
             })
             ->latest('adjustment_date')
             ->latest('id')
@@ -95,7 +95,7 @@ class StockAdjustmentController extends Controller
 
             return redirect()->route('stock-adjustments.index')->with('success', $msg);
         } catch (\Exception $e) {
-            return redirect()->back()->withInput()->with('error', 'Gagal membuat penyesuaian stok: ' . $e->getMessage());
+            return redirect()->back()->withInput()->with('error', 'Gagal membuat penyesuaian stok: '.$e->getMessage());
         }
     }
 
@@ -105,6 +105,7 @@ class StockAdjustmentController extends Controller
     public function show(StockAdjustment $stockAdjustment)
     {
         $stockAdjustment->load(['warehouse', 'creator', 'approver', 'items.product.baseUnit', 'items.unit']);
+
         return response()->json($stockAdjustment);
     }
 
@@ -137,7 +138,7 @@ class StockAdjustmentController extends Controller
 
             return redirect()->route('stock-adjustments.index')->with('success', $msg);
         } catch (\Exception $e) {
-            return redirect()->back()->withInput()->with('error', 'Gagal memperbarui penyesuaian stok: ' . $e->getMessage());
+            return redirect()->back()->withInput()->with('error', 'Gagal memperbarui penyesuaian stok: '.$e->getMessage());
         }
     }
 
@@ -148,9 +149,10 @@ class StockAdjustmentController extends Controller
     {
         try {
             $this->adjustmentService->approveAdjustment($stockAdjustment);
+
             return redirect()->route('stock-adjustments.index')->with('success', "Penyesuaian stok {$stockAdjustment->adjustment_number} telah disetujui dan kartu mutasi stok telah diperbarui.");
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal menyetujui penyesuaian stok: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal menyetujui penyesuaian stok: '.$e->getMessage());
         }
     }
 
@@ -162,13 +164,15 @@ class StockAdjustmentController extends Controller
         try {
             if ($stockAdjustment->status === 'draft') {
                 $stockAdjustment->delete();
+
                 return redirect()->route('stock-adjustments.index')->with('success', "Draft penyesuaian stok {$stockAdjustment->adjustment_number} berhasil dihapus.");
             }
 
             $this->adjustmentService->cancelAdjustment($stockAdjustment);
+
             return redirect()->route('stock-adjustments.index')->with('success', "Penyesuaian stok {$stockAdjustment->adjustment_number} berhasil dibatalkan.");
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal memproses penyesuaian stok: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal memproses penyesuaian stok: '.$e->getMessage());
         }
     }
 }

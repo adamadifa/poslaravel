@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class SaleItem extends Model
 {
@@ -17,6 +19,10 @@ class SaleItem extends Model
         'unit_cost',
         'discount_amount',
         'subtotal',
+        'notes',
+        'item_status',
+        'prepared_at',
+        'served_at',
     ];
 
     protected $casts = [
@@ -26,6 +32,8 @@ class SaleItem extends Model
         'unit_cost' => 'decimal:2',
         'discount_amount' => 'decimal:2',
         'subtotal' => 'decimal:2',
+        'prepared_at' => 'datetime',
+        'served_at' => 'datetime',
     ];
 
     public function sale(): BelongsTo
@@ -41,5 +49,15 @@ class SaleItem extends Model
     public function unit(): BelongsTo
     {
         return $this->belongsTo(Unit::class);
+    }
+
+    public function modifiers(): HasMany
+    {
+        return $this->hasMany(SaleItemModifier::class);
+    }
+
+    public function assignment(): HasOne
+    {
+        return $this->hasOne(SaleItemAssignment::class);
     }
 }

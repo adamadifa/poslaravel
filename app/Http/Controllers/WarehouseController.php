@@ -22,9 +22,9 @@ class WarehouseController extends Controller
         $warehouses = Warehouse::withCount('stocks')
             ->when($search, function ($query, $search) {
                 $query->where('name', 'like', "%{$search}%")
-                      ->orWhere('code', 'like', "%{$search}%")
-                      ->orWhere('phone', 'like', "%{$search}%")
-                      ->orWhere('address', 'like', "%{$search}%");
+                    ->orWhere('code', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%")
+                    ->orWhere('address', 'like', "%{$search}%");
             })
             ->orderByDesc('is_default')
             ->latest()
@@ -54,7 +54,7 @@ class WarehouseController extends Controller
             // Auto-generate warehouse code if empty
             if (empty($validated['code'])) {
                 $count = Warehouse::count() + 1;
-                $validated['code'] = 'WH-' . str_pad($count, 3, '0', STR_PAD_LEFT);
+                $validated['code'] = 'WH-'.str_pad($count, 3, '0', STR_PAD_LEFT);
             }
 
             $validated['is_active'] = $request->has('is_active') ? true : false;
@@ -90,7 +90,8 @@ class WarehouseController extends Controller
             return redirect()->route('warehouses.index')->with('success', 'Gudang / Cabang baru berhasil ditambahkan.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->withInput()->with('error', 'Gagal menambahkan gudang: ' . $e->getMessage());
+
+            return redirect()->back()->withInput()->with('error', 'Gagal menambahkan gudang: '.$e->getMessage());
         }
     }
 
@@ -125,7 +126,8 @@ class WarehouseController extends Controller
             return redirect()->route('warehouses.index')->with('success', 'Data gudang / cabang berhasil diperbarui.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->withInput()->with('error', 'Gagal memperbarui gudang: ' . $e->getMessage());
+
+            return redirect()->back()->withInput()->with('error', 'Gagal memperbarui gudang: '.$e->getMessage());
         }
     }
 
@@ -158,9 +160,10 @@ class WarehouseController extends Controller
 
         try {
             $warehouse->delete();
+
             return redirect()->route('warehouses.index')->with('success', 'Gudang berhasil dihapus.');
         } catch (\Exception $e) {
-            return redirect()->route('warehouses.index')->with('error', 'Gagal menghapus gudang: ' . $e->getMessage());
+            return redirect()->route('warehouses.index')->with('error', 'Gagal menghapus gudang: '.$e->getMessage());
         }
     }
 }

@@ -29,15 +29,15 @@ class CashFlowController extends Controller
         $search = $request->query('search');
 
         $cashFlows = CashFlow::with(['account', 'creator'])
-            ->when($accountId, fn($q) => $q->where('account_id', $accountId))
-            ->when($type, fn($q) => $q->where('type', $type))
-            ->when($category, fn($q) => $q->where('category', $category))
-            ->when($startDate, fn($q) => $q->whereDate('transaction_date', '>=', $startDate))
-            ->when($endDate, fn($q) => $q->whereDate('transaction_date', '<=', $endDate))
+            ->when($accountId, fn ($q) => $q->where('account_id', $accountId))
+            ->when($type, fn ($q) => $q->where('type', $type))
+            ->when($category, fn ($q) => $q->where('category', $category))
+            ->when($startDate, fn ($q) => $q->whereDate('transaction_date', '>=', $startDate))
+            ->when($endDate, fn ($q) => $q->whereDate('transaction_date', '<=', $endDate))
             ->when($search, function ($q, $search) {
                 $q->where('cash_flow_number', 'like', "%{$search}%")
-                  ->orWhere('category', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
+                    ->orWhere('category', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%");
             })
             ->latest('transaction_date')
             ->latest('id')
@@ -48,13 +48,13 @@ class CashFlowController extends Controller
 
         // Calculate summary metrics
         $totalIncome = CashFlow::where('type', 'income')
-            ->when($startDate, fn($q) => $q->whereDate('transaction_date', '>=', $startDate))
-            ->when($endDate, fn($q) => $q->whereDate('transaction_date', '<=', $endDate))
+            ->when($startDate, fn ($q) => $q->whereDate('transaction_date', '>=', $startDate))
+            ->when($endDate, fn ($q) => $q->whereDate('transaction_date', '<=', $endDate))
             ->sum('amount');
 
         $totalExpense = CashFlow::where('type', 'expense')
-            ->when($startDate, fn($q) => $q->whereDate('transaction_date', '>=', $startDate))
-            ->when($endDate, fn($q) => $q->whereDate('transaction_date', '<=', $endDate))
+            ->when($startDate, fn ($q) => $q->whereDate('transaction_date', '>=', $startDate))
+            ->when($endDate, fn ($q) => $q->whereDate('transaction_date', '<=', $endDate))
             ->sum('amount');
 
         $netFlow = $totalIncome - $totalExpense;
@@ -95,13 +95,13 @@ class CashFlowController extends Controller
 
         try {
             $cf = $this->financeService->recordCashFlow($validated);
-            $msg = $cf->type === 'income' 
-                ? "Kas masuk {$cf->cash_flow_number} sebesar Rp " . number_format($cf->amount, 0, ',', '.') . " berhasil dicatat."
-                : "Kas keluar {$cf->cash_flow_number} sebesar Rp " . number_format($cf->amount, 0, ',', '.') . " berhasil dicatat.";
+            $msg = $cf->type === 'income'
+                ? "Kas masuk {$cf->cash_flow_number} sebesar Rp ".number_format($cf->amount, 0, ',', '.').' berhasil dicatat.'
+                : "Kas keluar {$cf->cash_flow_number} sebesar Rp ".number_format($cf->amount, 0, ',', '.').' berhasil dicatat.';
 
             return redirect()->route('cash-flows.index')->with('success', $msg);
         } catch (\Exception $e) {
-            return redirect()->back()->withInput()->with('error', 'Gagal mencatat arus kas: ' . $e->getMessage());
+            return redirect()->back()->withInput()->with('error', 'Gagal mencatat arus kas: '.$e->getMessage());
         }
     }
 }

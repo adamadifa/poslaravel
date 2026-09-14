@@ -49,6 +49,12 @@
                     <span>Profil Toko & Usaha</span>
                 </a>
 
+                <a href="{{ route('settings.index', ['tab' => 'business_type']) }}"
+                   class="flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold transition-all {{ $tab === 'business_type' ? 'bg-brand-500 text-white shadow-md shadow-brand-500/25' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800' }}">
+                    <i data-lucide="layers" class="w-4 h-4 shrink-0"></i>
+                    <span>Jenis Usaha (Retail / FNB / Jasa)</span>
+                </a>
+
                 <a href="{{ route('settings.index', ['tab' => 'prefixes']) }}"
                    class="flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold transition-all {{ $tab === 'prefixes' ? 'bg-brand-500 text-white shadow-md shadow-brand-500/25' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800' }}">
                     <i data-lucide="hash" class="w-4 h-4 shrink-0"></i>
@@ -157,6 +163,210 @@
                             <button type="submit" class="px-6 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-xs font-bold shadow-md shadow-brand-500/25 transition-all flex items-center gap-2">
                                 <i data-lucide="save" class="w-4 h-4"></i>
                                 Simpan Profil Toko
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+            @elseif($tab === 'business_type')
+                <!-- TAB 2: JENIS USAHA & MODEL OPERASIONAL -->
+                <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xs">
+                    <div class="flex items-center justify-between pb-6 border-b border-slate-100 dark:border-slate-800 mb-6">
+                        <div>
+                            <h2 class="text-lg font-black text-slate-800 dark:text-white">Jenis Usaha & Model Bisnis</h2>
+                            <p class="text-xs font-medium text-slate-400 mt-0.5">Tentukan jenis usaha POS Anda: Retail, FNB (Resto/Kafe), Jasa/Service, atau Gabungan (Hybrid).</p>
+                        </div>
+                        <span class="px-3 py-1 rounded-full bg-brand-50 dark:bg-brand-950/40 text-brand-600 dark:text-brand-400 text-[11px] font-bold border border-brand-200/60 dark:border-brand-800">
+                            Multi-Business Mode
+                        </span>
+                    </div>
+
+                    <form action="{{ route('settings.business-type') }}" method="POST" class="space-y-6">
+                        @csrf
+
+                        <!-- Business Type Selector Cards -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-3">Pilih Model Bisnis Utama:</label>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                                <!-- Retail -->
+                                <label class="relative flex flex-col p-4 rounded-2xl border-2 cursor-pointer transition-all {{ $businessType === 'retail' ? 'border-brand-500 bg-brand-50/20 dark:bg-brand-950/20 shadow-xs' : 'border-slate-200 dark:border-slate-700 hover:border-slate-300' }}">
+                                    <input type="radio" name="business_type" value="retail" class="sr-only" {{ $businessType === 'retail' ? 'checked' : '' }} onchange="toggleBusinessPanels(this.value)">
+                                    <div class="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 flex items-center justify-center mb-3">
+                                        <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+                                    </div>
+                                    <span class="text-xs font-black text-slate-800 dark:text-white">Retail / Ritel</span>
+                                    <p class="text-[11px] text-slate-400 mt-1">Minimarket, toko kelontong, butik baju, apotek fisik.</p>
+                                </label>
+
+                                <!-- FNB -->
+                                <label class="relative flex flex-col p-4 rounded-2xl border-2 cursor-pointer transition-all {{ $businessType === 'fnb' ? 'border-brand-500 bg-brand-50/20 dark:bg-brand-950/20 shadow-xs' : 'border-slate-200 dark:border-slate-700 hover:border-slate-300' }}">
+                                    <input type="radio" name="business_type" value="fnb" class="sr-only" {{ $businessType === 'fnb' ? 'checked' : '' }} onchange="toggleBusinessPanels(this.value)">
+                                    <div class="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 flex items-center justify-center mb-3">
+                                        <i data-lucide="utensils" class="w-5 h-5"></i>
+                                    </div>
+                                    <span class="text-xs font-black text-slate-800 dark:text-white">F&B (Kuliner)</span>
+                                    <p class="text-[11px] text-slate-400 mt-1">Restoran, cafe, kedai kopi, fast food, bakery.</p>
+                                </label>
+
+                                <!-- Jasa / Service -->
+                                <label class="relative flex flex-col p-4 rounded-2xl border-2 cursor-pointer transition-all {{ $businessType === 'service' ? 'border-brand-500 bg-brand-50/20 dark:bg-brand-950/20 shadow-xs' : 'border-slate-200 dark:border-slate-700 hover:border-slate-300' }}">
+                                    <input type="radio" name="business_type" value="service" class="sr-only" {{ $businessType === 'service' ? 'checked' : '' }} onchange="toggleBusinessPanels(this.value)">
+                                    <div class="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 flex items-center justify-center mb-3">
+                                        <i data-lucide="scissors" class="w-5 h-5"></i>
+                                    </div>
+                                    <span class="text-xs font-black text-slate-800 dark:text-white">Jasa / Service</span>
+                                    <p class="text-[11px] text-slate-400 mt-1">Barbershop, salon, klinik estetika, bengkel, cuci mobil, laundry.</p>
+                                </label>
+
+                                <!-- Hybrid -->
+                                <label class="relative flex flex-col p-4 rounded-2xl border-2 cursor-pointer transition-all {{ $businessType === 'hybrid' ? 'border-brand-500 bg-brand-50/20 dark:bg-brand-950/20 shadow-xs' : 'border-slate-200 dark:border-slate-700 hover:border-slate-300' }}">
+                                    <input type="radio" name="business_type" value="hybrid" class="sr-only" {{ $businessType === 'hybrid' ? 'checked' : '' }} onchange="toggleBusinessPanels(this.value)">
+                                    <div class="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 flex items-center justify-center mb-3">
+                                        <i data-lucide="sparkles" class="w-5 h-5"></i>
+                                    </div>
+                                    <span class="text-xs font-black text-slate-800 dark:text-white">Hybrid (Semua)</span>
+                                    <p class="text-[11px] text-slate-400 mt-1">Gabungan ritel barang, menu resto/kafe, dan layanan jasa sekaligus.</p>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- FNB SUB-PANEL -->
+                        <div id="fnbPanel" class="p-5 rounded-2xl border border-amber-200/80 bg-amber-50/30 dark:bg-slate-800/60 dark:border-slate-700 space-y-4 {{ in_array($businessType, ['fnb', 'hybrid']) ? '' : 'hidden' }}">
+                            <div class="flex items-center gap-2 text-xs font-bold text-amber-900 dark:text-amber-400">
+                                <i data-lucide="utensils" class="w-4 h-4"></i>
+                                <span>Fitur & Pengaturan Operasional F&B (Resto / Kafe)</span>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                                <!-- Table Management -->
+                                <div class="flex items-center justify-between p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+                                    <div>
+                                        <span class="text-xs font-bold text-slate-800 dark:text-white block">Manajemen Meja & Denah</span>
+                                        <span class="text-[11px] text-slate-400 font-medium">Atur status meja (Indoor, Outdoor, VIP)</span>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" name="fnb_enable_table_management" value="1" {{ $fnbEnableTableManagement ? 'checked' : '' }} class="sr-only peer">
+                                        <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-amber-500"></div>
+                                    </label>
+                                </div>
+
+                                <!-- Kitchen Display System (KDS) -->
+                                <div class="flex items-center justify-between p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+                                    <div>
+                                        <span class="text-xs font-bold text-slate-800 dark:text-white block">Kitchen Display System (KDS)</span>
+                                        <span class="text-[11px] text-slate-400 font-medium">Layar monitor order dapur & bar real-time</span>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" name="fnb_enable_kitchen_display" value="1" {{ $fnbEnableKitchenDisplay ? 'checked' : '' }} class="sr-only peer">
+                                        <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-amber-500"></div>
+                                    </label>
+                                </div>
+
+                                <!-- Modifiers / Add-ons -->
+                                <div class="flex items-center justify-between p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+                                    <div>
+                                        <span class="text-xs font-bold text-slate-800 dark:text-white block">Modifiers & Opsi Tambahan</span>
+                                        <span class="text-[11px] text-slate-400 font-medium">Level pedas, topping ekstra, ukuran cup</span>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" name="fnb_enable_modifiers" value="1" {{ $fnbEnableModifiers ? 'checked' : '' }} class="sr-only peer">
+                                        <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-amber-500"></div>
+                                    </label>
+                                </div>
+
+                                <!-- Reservasi Meja -->
+                                <div class="flex items-center justify-between p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+                                    <div>
+                                        <span class="text-xs font-bold text-slate-800 dark:text-white block">Reservasi Meja</span>
+                                        <span class="text-[11px] text-slate-400 font-medium">Pencatatan booking meja sebelum hari H</span>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" name="fnb_enable_reservation" value="1" {{ $fnbEnableReservation ? 'checked' : '' }} class="sr-only peer">
+                                        <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-amber-500"></div>
+                                    </label>
+                                </div>
+
+                                <!-- Nomor Antrian Take Away -->
+                                <div class="flex items-center justify-between p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+                                    <div>
+                                        <span class="text-xs font-bold text-slate-800 dark:text-white block">Nomor Antrian Take Away</span>
+                                        <span class="text-[11px] text-slate-400 font-medium">Generate nomor antrian otomatis (A-001)</span>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" name="fnb_enable_queue_number" value="1" {{ $fnbEnableQueueNumber ? 'checked' : '' }} class="sr-only peer">
+                                        <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-amber-500"></div>
+                                    </label>
+                                </div>
+
+                                <!-- Service Charge (%) -->
+                                <div class="relative rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 pt-3 pb-2">
+                                    <label class="absolute -top-2.5 left-3.5 bg-white dark:bg-slate-900 px-1.5 text-[11px] font-bold text-slate-700 dark:text-slate-300">Biaya Layanan / Service Charge (%)</label>
+                                    <input type="number" step="0.1" name="fnb_service_charge_percent" value="{{ old('fnb_service_charge_percent', $fnbServiceChargePercent) }}" class="w-full border-0 p-0 text-sm font-semibold text-slate-800 dark:text-white bg-transparent focus:ring-0 focus:outline-none" placeholder="0">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- JASA SUB-PANEL -->
+                        <div id="servicePanel" class="p-5 rounded-2xl border border-emerald-200/80 bg-emerald-50/30 dark:bg-slate-800/60 dark:border-slate-700 space-y-4 {{ in_array($businessType, ['service', 'hybrid']) ? '' : 'hidden' }}">
+                            <div class="flex items-center gap-2 text-xs font-bold text-emerald-900 dark:text-emerald-400">
+                                <i data-lucide="scissors" class="w-4 h-4"></i>
+                                <span>Fitur & Pengaturan Operasional Jasa / Service</span>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                                <!-- Booking & Appointment -->
+                                <div class="flex items-center justify-between p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+                                    <div>
+                                        <span class="text-xs font-bold text-slate-800 dark:text-white block">Booking & Appointment Jadwal</span>
+                                        <span class="text-[11px] text-slate-400 font-medium">Kalender reservasi waktu layanan per staff</span>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" name="service_enable_booking" value="1" {{ $serviceEnableBooking ? 'checked' : '' }} class="sr-only peer">
+                                        <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-emerald-500"></div>
+                                    </label>
+                                </div>
+
+                                <!-- Assignment Teknisi / Terapis -->
+                                <div class="flex items-center justify-between p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+                                    <div>
+                                        <span class="text-xs font-bold text-slate-800 dark:text-white block">Assignment Staff & Komisi</span>
+                                        <span class="text-[11px] text-slate-400 font-medium">Penugasan teknisi/terapis + hitung komisi</span>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" name="service_enable_technician_assignment" value="1" {{ $serviceEnableTechnicianAssignment ? 'checked' : '' }} class="sr-only peer">
+                                        <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-emerald-500"></div>
+                                    </label>
+                                </div>
+
+                                <!-- Antrian & Status Tracking -->
+                                <div class="flex items-center justify-between p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+                                    <div>
+                                        <span class="text-xs font-bold text-slate-800 dark:text-white block">Dashboard Antrian Layanan</span>
+                                        <span class="text-[11px] text-slate-400 font-medium">Monitor antrian (Menunggu, Dikerjakan, Selesai)</span>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" name="service_auto_queue" value="1" {{ $serviceAutoQueue ? 'checked' : '' }} class="sr-only peer">
+                                        <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-emerald-500"></div>
+                                    </label>
+                                </div>
+
+                                <!-- Slot Waktu Booking -->
+                                <div class="relative rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 pt-3 pb-2">
+                                    <label class="absolute -top-2.5 left-3.5 bg-white dark:bg-slate-900 px-1.5 text-[11px] font-bold text-slate-700 dark:text-slate-300">Interval Slot Kalender (Menit)</label>
+                                    <select name="service_booking_slot_minutes" class="w-full border-0 p-0 text-sm font-semibold text-slate-800 dark:text-white bg-transparent focus:ring-0 focus:outline-none cursor-pointer">
+                                        <option value="15" {{ $serviceBookingSlotMinutes == '15' ? 'selected' : '' }}>15 Menit</option>
+                                        <option value="30" {{ $serviceBookingSlotMinutes == '30' ? 'selected' : '' }}>30 Menit (Standar)</option>
+                                        <option value="45" {{ $serviceBookingSlotMinutes == '45' ? 'selected' : '' }}>45 Menit</option>
+                                        <option value="60" {{ $serviceBookingSlotMinutes == '60' ? 'selected' : '' }}>60 Menit (1 Jam)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end pt-4 border-t border-slate-100 dark:border-slate-800">
+                            <button type="submit" class="px-6 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-xs font-bold shadow-md shadow-brand-500/25 transition-all flex items-center gap-2">
+                                <i data-lucide="save" class="w-4 h-4"></i>
+                                Simpan Jenis Usaha
                             </button>
                         </div>
                     </form>
@@ -339,6 +549,27 @@
 </div>
 
 <script>
+    function toggleBusinessPanels(type) {
+        const fnbPanel = document.getElementById('fnbPanel');
+        const servicePanel = document.getElementById('servicePanel');
+
+        if (fnbPanel) {
+            if (type === 'fnb' || type === 'hybrid') {
+                fnbPanel.classList.remove('hidden');
+            } else {
+                fnbPanel.classList.add('hidden');
+            }
+        }
+
+        if (servicePanel) {
+            if (type === 'service' || type === 'hybrid') {
+                servicePanel.classList.remove('hidden');
+            } else {
+                servicePanel.classList.add('hidden');
+            }
+        }
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
         const logoInput = document.getElementById('logoInput');
         const logoPreview = document.getElementById('logoPreview');

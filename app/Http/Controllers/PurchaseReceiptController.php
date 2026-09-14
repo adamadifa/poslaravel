@@ -115,7 +115,7 @@ class PurchaseReceiptController extends Controller
                 return response()->json([
                     'status' => 'success',
                     'message' => "Penerimaan Barang {$receipt->grn_number} berhasil dicatat & stok bertambah.",
-                    'data' => $receipt
+                    'data' => $receipt,
                 ]);
             }
 
@@ -124,7 +124,8 @@ class PurchaseReceiptController extends Controller
             if ($request->wantsJson()) {
                 return response()->json(['status' => 'error', 'message' => $e->getMessage()], 422);
             }
-            return redirect()->back()->withInput()->with('error', 'Gagal mencatat penerimaan: ' . $e->getMessage());
+
+            return redirect()->back()->withInput()->with('error', 'Gagal mencatat penerimaan: '.$e->getMessage());
         }
     }
 }

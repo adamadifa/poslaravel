@@ -5,10 +5,16 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
 use App\Models\Category;
+use App\Models\Customer;
+use App\Models\CustomerGroup;
 use App\Models\Product;
 use App\Models\ProductBarcode;
+use App\Models\ProductStock;
+use App\Models\TieredPrice;
 use App\Models\Unit;
 use App\Models\UnitConversion;
+use App\Models\Warehouse;
+use App\Services\PricingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -23,28 +29,39 @@ class ProductController extends Controller
     {
         $search = $request->query('search');
         $categoryId = $request->query('category_id');
+        $type = $request->query('type');
 
         $products = Product::with([
-            'category', 
-            'baseUnit', 
-            'stocks', 
-            'barcodes.unit', 
-            'conversions.fromUnit', 
+            'category',
+            'baseUnit',
+            'stocks',
+            'barcodes.unit',
+            'conversions.fromUnit',
             'conversions.toUnit',
             'priceLists.unit',
             'tieredPrices.unit',
-            'tieredPrices.customerGroup'
+            'tieredPrices.customerGroup',
+            'recipes.ingredient',
         ])
             ->when($search, function ($query, $search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
-                      ->orWhere('code', 'like', "%{$search}%")
-                      ->orWhere('barcode', 'like', "%{$search}%")
-                      ->orWhere('brand', 'like', "%{$search}%");
+                        ->orWhere('code', 'like', "%{$search}%")
+                        ->orWhere('barcode', 'like', "%{$search}%")
+                        ->orWhere('brand', 'like', "%{$search}%");
                 });
             })
             ->when($categoryId, function ($query, $categoryId) {
                 $query->where('category_id', $categoryId);
+            })
+            ->when($type, function ($query, $type) {
+                if ($type === 'fnb') {
+                    $query->whereIn('product_type', ['food', 'beverage']);
+                } else {
+                    $query->where('product_type', $type);
+                }
+            }, function ($query) {
+                $query->where('product_type', '!=', 'raw_material');
             })
             ->latest()
             ->paginate(10)
@@ -52,7 +69,7 @@ class ProductController extends Controller
 
         $categories = Category::where('is_active', true)->orderBy('name')->get();
         $units = Unit::where('is_active', true)->orderBy('name')->get();
-        $customerGroups = \App\Models\CustomerGroup::orderBy('name')->get();
+        $customerGroups = CustomerGroup::orderBy('name')->get();
 
         return view('products.index', [
             'title' => 'Master Produk',
@@ -81,11 +98,11 @@ class ProductController extends Controller
             // 1. Generate code if empty
             if (empty($validated['code'])) {
                 $count = Product::withTrashed()->count() + 1;
-                $validated['code'] = 'PRD-' . str_pad($count, 5, '0', STR_PAD_LEFT);
+                $validated['code'] = 'PRD-'.str_pad($count, 5, '0', STR_PAD_LEFT);
             }
 
             // 2. Generate slug
-            $validated['slug'] = Str::slug($validated['name']) . '-' . strtolower(Str::random(5));
+            $validated['slug'] = Str::slug($validated['name']).'-'.strtolower(Str::random(5));
 
             // 3. Handle image upload
             if ($request->hasFile('image')) {
@@ -95,14 +112,16 @@ class ProductController extends Controller
 
             $validated['is_active'] = $request->has('is_active') ? true : false;
             $validated['has_expiry'] = $request->has('has_expiry') ? true : false;
+            $validated['is_bookable'] = $request->has('is_bookable') ? true : false;
+            $validated['require_staff_assignment'] = $request->has('require_staff_assignment') ? true : false;
 
             // 4. Create Product
             $product = Product::create($validated);
 
             // 5. Multi-Barcode
-            if (!empty($request->input('barcodes'))) {
+            if (! empty($request->input('barcodes'))) {
                 foreach ($request->input('barcodes') as $item) {
-                    if (!empty($item['barcode']) && !empty($item['unit_id'])) {
+                    if (! empty($item['barcode']) && ! empty($item['unit_id'])) {
                         ProductBarcode::create([
                             'product_id' => $product->id,
                             'unit_id' => $item['unit_id'],
@@ -114,9 +133,9 @@ class ProductController extends Controller
             }
 
             // 6. Unit Conversions
-            if (!empty($request->input('conversions'))) {
+            if (! empty($request->input('conversions'))) {
                 foreach ($request->input('conversions') as $item) {
-                    if (!empty($item['from_unit_id']) && !empty($item['to_unit_id']) && !empty($item['conversion_value'])) {
+                    if (! empty($item['from_unit_id']) && ! empty($item['to_unit_id']) && ! empty($item['conversion_value'])) {
                         UnitConversion::create([
                             'product_id' => $product->id,
                             'from_unit_id' => $item['from_unit_id'],
@@ -128,9 +147,9 @@ class ProductController extends Controller
             }
 
             // 7. Inisialisasi Stok Awal (Task 1.10) ke setiap gudang aktif
-            $warehouses = \App\Models\Warehouse::where('is_active', true)->get();
+            $warehouses = Warehouse::where('is_active', true)->get();
             foreach ($warehouses as $wh) {
-                \App\Models\ProductStock::firstOrCreate(
+                ProductStock::firstOrCreate(
                     [
                         'product_id' => $product->id,
                         'warehouse_id' => $wh->id,
@@ -143,14 +162,15 @@ class ProductController extends Controller
             }
 
             // 8. Auto-Sync Price Lists from Conversions (Task 2.1)
-            app(\App\Services\PricingService::class)->syncPriceListsFromConversions($product);
+            app(PricingService::class)->syncPriceListsFromConversions($product);
 
             DB::commit();
 
             return redirect()->route('products.index')->with('success', 'Produk berhasil ditambahkan.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->withInput()->with('error', 'Gagal menambahkan produk: ' . $e->getMessage());
+
+            return redirect()->back()->withInput()->with('error', 'Gagal menambahkan produk: '.$e->getMessage());
         }
     }
 
@@ -165,7 +185,7 @@ class ProductController extends Controller
         try {
             // 1. Slug update if name changed
             if ($product->name !== $validated['name']) {
-                $validated['slug'] = Str::slug($validated['name']) . '-' . strtolower(Str::random(5));
+                $validated['slug'] = Str::slug($validated['name']).'-'.strtolower(Str::random(5));
             }
 
             // 2. Handle image upload
@@ -179,15 +199,17 @@ class ProductController extends Controller
 
             $validated['is_active'] = $request->has('is_active') ? true : false;
             $validated['has_expiry'] = $request->has('has_expiry') ? true : false;
+            $validated['is_bookable'] = $request->has('is_bookable') ? true : false;
+            $validated['require_staff_assignment'] = $request->has('require_staff_assignment') ? true : false;
 
             // 3. Update Product
             $product->update($validated);
 
             // 4. Sync Multi-Barcode
             $product->barcodes()->delete();
-            if (!empty($request->input('barcodes'))) {
+            if (! empty($request->input('barcodes'))) {
                 foreach ($request->input('barcodes') as $item) {
-                    if (!empty($item['barcode']) && !empty($item['unit_id'])) {
+                    if (! empty($item['barcode']) && ! empty($item['unit_id'])) {
                         ProductBarcode::create([
                             'product_id' => $product->id,
                             'unit_id' => $item['unit_id'],
@@ -200,9 +222,9 @@ class ProductController extends Controller
 
             // 5. Sync Unit Conversions
             $product->conversions()->delete();
-            if (!empty($request->input('conversions'))) {
+            if (! empty($request->input('conversions'))) {
                 foreach ($request->input('conversions') as $item) {
-                    if (!empty($item['from_unit_id']) && !empty($item['to_unit_id']) && !empty($item['conversion_value'])) {
+                    if (! empty($item['from_unit_id']) && ! empty($item['to_unit_id']) && ! empty($item['conversion_value'])) {
                         UnitConversion::create([
                             'product_id' => $product->id,
                             'from_unit_id' => $item['from_unit_id'],
@@ -215,15 +237,15 @@ class ProductController extends Controller
 
             // 6. Sync Tiered Prices (Harga Berjenjang)
             $product->tieredPrices()->delete();
-            if (!empty($request->input('tiered_prices'))) {
+            if (! empty($request->input('tiered_prices'))) {
                 foreach ($request->input('tiered_prices') as $tp) {
-                    if (!empty($tp['unit_id']) && !empty($tp['min_qty']) && !empty($tp['price'])) {
-                        \App\Models\TieredPrice::create([
+                    if (! empty($tp['unit_id']) && ! empty($tp['min_qty']) && ! empty($tp['price'])) {
+                        TieredPrice::create([
                             'product_id' => $product->id,
                             'unit_id' => $tp['unit_id'],
-                            'customer_group_id' => !empty($tp['customer_group_id']) ? $tp['customer_group_id'] : null,
+                            'customer_group_id' => ! empty($tp['customer_group_id']) ? $tp['customer_group_id'] : null,
                             'min_qty' => $tp['min_qty'],
-                            'max_qty' => !empty($tp['max_qty']) ? $tp['max_qty'] : null,
+                            'max_qty' => ! empty($tp['max_qty']) ? $tp['max_qty'] : null,
                             'price' => $tp['price'],
                             'is_active' => true,
                         ]);
@@ -232,14 +254,15 @@ class ProductController extends Controller
             }
 
             // 7. Auto-Sync Price Lists from Conversions (Task 2.1)
-            app(\App\Services\PricingService::class)->syncPriceListsFromConversions($product);
+            app(PricingService::class)->syncPriceListsFromConversions($product);
 
             DB::commit();
 
             return redirect()->route('products.index')->with('success', 'Produk berhasil diperbarui.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->withInput()->with('error', 'Gagal memperbarui produk: ' . $e->getMessage());
+
+            return redirect()->back()->withInput()->with('error', 'Gagal memperbarui produk: '.$e->getMessage());
         }
     }
 
@@ -252,9 +275,9 @@ class ProductController extends Controller
         $qty = (float) $request->query('quantity', 1);
         $customerId = $request->query('customer_id');
 
-        $customer = $customerId ? \App\Models\Customer::with('group')->find($customerId) : null;
+        $customer = $customerId ? Customer::with('group')->find($customerId) : null;
 
-        $pricingService = app(\App\Services\PricingService::class);
+        $pricingService = app(PricingService::class);
         $priceData = $pricingService->resolvePrice($product, $unitId, $qty, $customer);
 
         return response()->json([
@@ -270,9 +293,10 @@ class ProductController extends Controller
     {
         try {
             $product->delete();
+
             return redirect()->route('products.index')->with('success', 'Produk berhasil dihapus.');
         } catch (\Exception $e) {
-            return redirect()->route('products.index')->with('error', 'Gagal menghapus produk: ' . $e->getMessage());
+            return redirect()->route('products.index')->with('error', 'Gagal menghapus produk: '.$e->getMessage());
         }
     }
 }

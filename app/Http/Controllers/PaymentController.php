@@ -3,11 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Account;
+use App\Models\Customer;
 use App\Models\Payment;
 use App\Models\PurchaseReceipt;
 use App\Models\Sale;
 use App\Models\Supplier;
-use App\Models\Customer;
 use App\Services\FinanceService;
 use Illuminate\Http\Request;
 
@@ -31,20 +31,20 @@ class PaymentController extends Controller
 
         $receipts = PurchaseReceipt::with(['supplier', 'warehouse'])
             ->where('status', 'completed')
-            ->when($supplierId, fn($q) => $q->where('supplier_id', $supplierId))
+            ->when($supplierId, fn ($q) => $q->where('supplier_id', $supplierId))
             ->when($paymentStatus, function ($q, $paymentStatus) {
                 $q->where('payment_status', $paymentStatus);
             }, function ($q) {
                 // Default: show outstanding (unpaid or partial)
-                if (!request()->has('payment_status')) {
+                if (! request()->has('payment_status')) {
                     $q->whereIn('payment_status', ['unpaid', 'partial']);
                 }
             })
             ->when($search, function ($q, $search) {
                 $q->where(function ($sq) use ($search) {
                     $sq->where('receipt_number', 'like', "%{$search}%")
-                      ->orWhere('invoice_number', 'like', "%{$search}%")
-                      ->orWhereHas('supplier', fn($sp) => $sp->where('name', 'like', "%{$search}%"));
+                        ->orWhere('invoice_number', 'like', "%{$search}%")
+                        ->orWhereHas('supplier', fn ($sp) => $sp->where('name', 'like', "%{$search}%"));
                 });
             })
             ->latest('receipt_date')
@@ -93,9 +93,10 @@ class PaymentController extends Controller
 
         try {
             $payment = $this->financeService->processPayablePayment($validated);
-            return redirect()->route('payables.index')->with('success', "Pembayaran hutang {$payment->payment_number} sebesar Rp " . number_format($payment->amount, 0, ',', '.') . " berhasil dicatat.");
+
+            return redirect()->route('payables.index')->with('success', "Pembayaran hutang {$payment->payment_number} sebesar Rp ".number_format($payment->amount, 0, ',', '.').' berhasil dicatat.');
         } catch (\Exception $e) {
-            return redirect()->back()->withInput()->with('error', 'Gagal memproses pembayaran: ' . $e->getMessage());
+            return redirect()->back()->withInput()->with('error', 'Gagal memproses pembayaran: '.$e->getMessage());
         }
     }
 
@@ -110,19 +111,19 @@ class PaymentController extends Controller
 
         $sales = Sale::with(['customer', 'warehouse', 'user'])
             ->where('status', 'completed')
-            ->when($customerId, fn($q) => $q->where('customer_id', $customerId))
+            ->when($customerId, fn ($q) => $q->where('customer_id', $customerId))
             ->when($paymentStatus, function ($q, $paymentStatus) {
                 $q->where('payment_status', $paymentStatus);
             }, function ($q) {
                 // Default: show outstanding (unpaid or partial)
-                if (!request()->has('payment_status')) {
+                if (! request()->has('payment_status')) {
                     $q->whereIn('payment_status', ['unpaid', 'partial']);
                 }
             })
             ->when($search, function ($q, $search) {
                 $q->where(function ($sq) use ($search) {
                     $sq->where('invoice_number', 'like', "%{$search}%")
-                      ->orWhereHas('customer', fn($cs) => $cs->where('name', 'like', "%{$search}%"));
+                        ->orWhereHas('customer', fn ($cs) => $cs->where('name', 'like', "%{$search}%"));
                 });
             })
             ->latest('sale_date')
@@ -171,9 +172,10 @@ class PaymentController extends Controller
 
         try {
             $payment = $this->financeService->processReceivableCollection($validated);
-            return redirect()->route('receivables.index')->with('success', "Penerimaan piutang {$payment->payment_number} sebesar Rp " . number_format($payment->amount, 0, ',', '.') . " berhasil dicatat.");
+
+            return redirect()->route('receivables.index')->with('success', "Penerimaan piutang {$payment->payment_number} sebesar Rp ".number_format($payment->amount, 0, ',', '.').' berhasil dicatat.');
         } catch (\Exception $e) {
-            return redirect()->back()->withInput()->with('error', 'Gagal memproses penerimaan piutang: ' . $e->getMessage());
+            return redirect()->back()->withInput()->with('error', 'Gagal memproses penerimaan piutang: '.$e->getMessage());
         }
     }
 }

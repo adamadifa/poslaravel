@@ -29,12 +29,12 @@ class StockAlertController extends Controller
         $lowStockQuery = Product::with(['category', 'baseUnit', 'stocks.warehouse'])
             ->where('is_active', true)
             ->where('min_stock', '>', 0)
-            ->when($categoryId, fn($q) => $q->where('category_id', $categoryId))
+            ->when($categoryId, fn ($q) => $q->where('category_id', $categoryId))
             ->when($search, function ($q, $search) {
                 $q->where(function ($sq) use ($search) {
                     $sq->where('name', 'like', "%{$search}%")
-                      ->orWhere('code', 'like', "%{$search}%")
-                      ->orWhere('barcode', 'like', "%{$search}%");
+                        ->orWhere('code', 'like', "%{$search}%")
+                        ->orWhere('barcode', 'like', "%{$search}%");
                 });
             })
             ->whereHas('stocks', function ($q) use ($warehouseId) {
@@ -42,15 +42,15 @@ class StockAlertController extends Controller
                     $q->where('warehouse_id', $warehouseId);
                 }
             })
-            ->whereRaw('(' . ($warehouseId 
-                ? 'SELECT COALESCE(SUM(quantity), 0) FROM product_stocks WHERE product_stocks.product_id = products.id AND product_stocks.warehouse_id = ' . intval($warehouseId)
+            ->whereRaw('('.($warehouseId
+                ? 'SELECT COALESCE(SUM(quantity), 0) FROM product_stocks WHERE product_stocks.product_id = products.id AND product_stocks.warehouse_id = '.intval($warehouseId)
                 : 'SELECT COALESCE(SUM(quantity), 0) FROM product_stocks WHERE product_stocks.product_id = products.id'
-            ) . ') <= products.min_stock')
+            ).') <= products.min_stock')
             ->addSelect([
                 'current_stock' => DB::table('product_stocks')
                     ->selectRaw('COALESCE(SUM(quantity), 0)')
                     ->whereColumn('product_stocks.product_id', 'products.id')
-                    ->when($warehouseId, fn($q) => $q->where('warehouse_id', $warehouseId))
+                    ->when($warehouseId, fn ($q) => $q->where('warehouse_id', $warehouseId)),
             ])
             ->orderBy('current_stock', 'asc');
 
@@ -62,11 +62,11 @@ class StockAlertController extends Controller
             ->where('qty_remaining', '>', 0)
             ->whereNotNull('expiry_date')
             ->whereDate('expiry_date', '<=', $targetDate)
-            ->when($warehouseId, fn($q) => $q->where('warehouse_id', $warehouseId))
+            ->when($warehouseId, fn ($q) => $q->where('warehouse_id', $warehouseId))
             ->when($search, function ($q, $search) {
                 $q->where(function ($sq) use ($search) {
                     $sq->where('batch_number', 'like', "%{$search}%")
-                      ->orWhereHas('product', fn($pq) => $pq->where('name', 'like', "%{$search}%")->orWhere('code', 'like', "%{$search}%"));
+                        ->orWhereHas('product', fn ($pq) => $pq->where('name', 'like', "%{$search}%")->orWhere('code', 'like', "%{$search}%"));
                 });
             })
             ->orderBy('expiry_date', 'asc')

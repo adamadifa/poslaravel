@@ -15,7 +15,6 @@ use App\Models\Unit;
 use App\Models\UnitConversion;
 use App\Models\Warehouse;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Str;
 
 class MasterDataSeeder extends Seeder
 {

@@ -7,6 +7,10 @@ use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderItem;
 use App\Models\PurchaseReceipt;
 use App\Models\PurchaseReceiptItem;
+use App\Models\PurchaseReturn;
+use App\Models\PurchaseReturnItem;
+use App\Models\StockBatch;
+use App\Models\Supplier;
 use App\Models\UnitConversion;
 use Illuminate\Support\Facades\DB;
 
@@ -28,7 +32,8 @@ class PurchasingService
         $prefix = "PO-{$yearMonth}-";
         $last = PurchaseOrder::where('po_number', 'like', "{$prefix}%")->orderByDesc('id')->first();
         $nextNumber = $last ? ((int) substr($last->po_number, -4) + 1) : 1;
-        return $prefix . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+
+        return $prefix.str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
     }
 
     /**
@@ -40,7 +45,8 @@ class PurchasingService
         $prefix = "GRN-{$yearMonth}-";
         $last = PurchaseReceipt::where('grn_number', 'like', "{$prefix}%")->orderByDesc('id')->first();
         $nextNumber = $last ? ((int) substr($last->grn_number, -4) + 1) : 1;
-        return $prefix . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+
+        return $prefix.str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
     }
 
     /**
@@ -172,7 +178,7 @@ class PurchasingService
             $supplierId = $data['supplier_id'];
             $warehouseId = $data['warehouse_id'];
             $receiptDate = $data['receipt_date'] ?? now()->toDateString();
-            $supplier = \App\Models\Supplier::findOrFail($supplierId);
+            $supplier = Supplier::findOrFail($supplierId);
 
             // Calculate Payment Due Date from Supplier's Payment Terms
             $termDays = (int) ($supplier->payment_term_days ?? 0);
@@ -230,7 +236,7 @@ class PurchasingService
                     'unit_cost' => $unitCost,
                     'base_unit_cost' => $baseUnitCost,
                     'subtotal' => $lineSubtotal,
-                    'batch_number' => $item['batch_number'] ?? ('BATCH-' . now()->format('ymd') . '-' . rand(100, 999)),
+                    'batch_number' => $item['batch_number'] ?? ('BATCH-'.now()->format('ymd').'-'.rand(100, 999)),
                     'expiry_date' => $item['expiry_date'] ?? null,
                 ]);
 
@@ -262,7 +268,7 @@ class PurchasingService
                 $product->save();
 
                 // 4. Update PO Item received quantity if PO exists
-                if (!empty($item['purchase_order_item_id'])) {
+                if (! empty($item['purchase_order_item_id'])) {
                     $poItem = PurchaseOrderItem::find($item['purchase_order_item_id']);
                     if ($poItem) {
                         $poItem->quantity_received += $qtyReceived;
@@ -283,8 +289,8 @@ class PurchasingService
             if ($poId) {
                 $po = PurchaseOrder::with('items')->find($poId);
                 if ($po) {
-                    $allReceived = $po->items->every(fn($i) => $i->quantity_received >= $i->quantity_ordered);
-                    $anyReceived = $po->items->some(fn($i) => $i->quantity_received > 0);
+                    $allReceived = $po->items->every(fn ($i) => $i->quantity_received >= $i->quantity_ordered);
+                    $anyReceived = $po->items->some(fn ($i) => $i->quantity_received > 0);
 
                     if ($allReceived) {
                         $po->status = 'received';
@@ -306,16 +312,17 @@ class PurchasingService
     {
         $yearMonth = now()->format('Y-m');
         $prefix = "PR-{$yearMonth}-";
-        $last = \App\Models\PurchaseReturn::where('return_number', 'like', "{$prefix}%")->orderByDesc('id')->first();
+        $last = PurchaseReturn::where('return_number', 'like', "{$prefix}%")->orderByDesc('id')->first();
         $nextNumber = $last ? ((int) substr($last->return_number, -4) + 1) : 1;
-        return $prefix . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+
+        return $prefix.str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
     }
 
     /**
      * Process Purchase Return (Retur Pembelian)
      * Deducts stock, writes stock movement (type: out), reduces FIFO batch or creates FIFO adjustment, and records return.
      */
-    public function processPurchaseReturn(array $data): \App\Models\PurchaseReturn
+    public function processPurchaseReturn(array $data): PurchaseReturn
     {
         return DB::transaction(function () use ($data) {
             $returnNumber = $this->generateReturnNumber();
@@ -323,7 +330,7 @@ class PurchasingService
             $supplierId = $data['supplier_id'];
             $warehouseId = $data['warehouse_id'];
 
-            $return = \App\Models\PurchaseReturn::create([
+            $return = PurchaseReturn::create([
                 'return_number' => $returnNumber,
                 'purchase_receipt_id' => $receiptId,
                 'supplier_id' => $supplierId,
@@ -359,7 +366,7 @@ class PurchasingService
 
                 $baseQuantity = $qty * $conversionRatio;
 
-                \App\Models\PurchaseReturnItem::create([
+                PurchaseReturnItem::create([
                     'purchase_return_id' => $return->id,
                     'purchase_receipt_item_id' => $item['purchase_receipt_item_id'] ?? null,
                     'product_id' => $product->id,
@@ -379,7 +386,7 @@ class PurchasingService
                     'PurchaseReturn',
                     $return->id,
                     $unitCost / $conversionRatio,
-                    "Retur Pembelian {$return->return_number} (Alasan: " . ($data['reason'] ?? '-') . ")",
+                    "Retur Pembelian {$return->return_number} (Alasan: ".($data['reason'] ?? '-').')',
                     auth()->id()
                 );
 
@@ -400,11 +407,12 @@ class PurchasingService
     /**
      * Cancel/Delete Purchase Return (restores stock if cancelled)
      */
-    public function cancelPurchaseReturn(\App\Models\PurchaseReturn $purchaseReturn): void
+    public function cancelPurchaseReturn(PurchaseReturn $purchaseReturn): void
     {
         DB::transaction(function () use ($purchaseReturn) {
             if ($purchaseReturn->status === 'cancelled') {
                 $purchaseReturn->delete();
+
                 return;
             }
 
@@ -423,8 +431,8 @@ class PurchasingService
 
                 // Restore batch: if batch exists, add back remaining qty, else create restored batch
                 $existingBatch = null;
-                if (!empty($item->batch_number)) {
-                    $existingBatch = \App\Models\StockBatch::where('product_id', $item->product_id)
+                if (! empty($item->batch_number)) {
+                    $existingBatch = StockBatch::where('product_id', $item->product_id)
                         ->where('warehouse_id', $purchaseReturn->warehouse_id)
                         ->where('batch_number', $item->batch_number)
                         ->first();
@@ -439,7 +447,7 @@ class PurchasingService
                         $item->base_quantity,
                         $item->unit_cost / ($item->base_quantity / max(1, $item->quantity)),
                         null,
-                        $item->batch_number ?? ('BATCH-RESTORE-' . now()->format('ymd')),
+                        $item->batch_number ?? ('BATCH-RESTORE-'.now()->format('ymd')),
                         null
                     );
                 }

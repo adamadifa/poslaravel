@@ -33,7 +33,7 @@ trait Auditable
         static::updated(function (Model $model) {
             $user = auth()->user();
             $modelName = class_basename($model);
-            
+
             // Only log if something actually changed
             $changes = $model->getChanges();
             // Exclude updated_at from triggering unnecessary audit logs if it's the only changed field

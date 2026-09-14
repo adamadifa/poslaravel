@@ -3,11 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Account;
+use App\Models\Product;
 use App\Models\Sale;
 use App\Models\SaleReturn;
-use App\Models\Warehouse;
 use App\Services\SaleReturnService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class SaleReturnController extends Controller
 {
@@ -29,14 +30,14 @@ class SaleReturnController extends Controller
         $search = $request->query('search');
 
         $returns = SaleReturn::with(['sale', 'customer', 'warehouse', 'account', 'creator', 'items.product.baseUnit'])
-            ->when($status, fn($q) => $q->where('status', $status))
-            ->when($startDate, fn($q) => $q->whereDate('return_date', '>=', $startDate))
-            ->when($endDate, fn($q) => $q->whereDate('return_date', '<=', $endDate))
+            ->when($status, fn ($q) => $q->where('status', $status))
+            ->when($startDate, fn ($q) => $q->whereDate('return_date', '>=', $startDate))
+            ->when($endDate, fn ($q) => $q->whereDate('return_date', '<=', $endDate))
             ->when($search, function ($q, $search) {
                 $q->where('return_number', 'like', "%{$search}%")
-                  ->orWhere('reason', 'like', "%{$search}%")
-                  ->orWhereHas('sale', fn($sq) => $sq->where('invoice_number', 'like', "%{$search}%"))
-                  ->orWhereHas('customer', fn($cq) => $cq->where('name', 'like', "%{$search}%"));
+                    ->orWhere('reason', 'like', "%{$search}%")
+                    ->orWhereHas('sale', fn ($sq) => $sq->where('invoice_number', 'like', "%{$search}%"))
+                    ->orWhereHas('customer', fn ($cq) => $cq->where('name', 'like', "%{$search}%"));
             })
             ->latest('return_date')
             ->latest('id')
@@ -44,7 +45,7 @@ class SaleReturnController extends Controller
             ->withQueryString();
 
         $accounts = Account::where('is_active', true)->orderBy('name')->get();
-        $products = \App\Models\Product::with('baseUnit')->where('is_active', true)->orderBy('name')->get();
+        $products = Product::with('baseUnit')->where('is_active', true)->orderBy('name')->get();
         $totalRefund = SaleReturn::where('status', 'completed')->sum('refund_amount');
 
         return view('sales.returns.index', [
@@ -75,7 +76,7 @@ class SaleReturnController extends Controller
             ->orWhere('id', $invoiceNumber)
             ->first();
 
-        if (!$sale) {
+        if (! $sale) {
             return response()->json(['error' => 'Invoice penjualan tidak ditemukan.'], 404);
         }
 
@@ -94,8 +95,8 @@ class SaleReturnController extends Controller
             ->when($search, function ($q, $search) {
                 $q->where(function ($sq) use ($search) {
                     $sq->where('invoice_number', 'like', "%{$search}%")
-                       ->orWhereHas('customer', fn($cq) => $cq->where('name', 'like', "%{$search}%"))
-                       ->orWhereHas('user', fn($uq) => $uq->where('name', 'like', "%{$search}%"));
+                        ->orWhereHas('customer', fn ($cq) => $cq->where('name', 'like', "%{$search}%"))
+                        ->orWhereHas('user', fn ($uq) => $uq->where('name', 'like', "%{$search}%"));
                 });
             })
             ->latest('sale_date')
@@ -114,7 +115,7 @@ class SaleReturnController extends Controller
         // Filter out return items that have 0 or empty quantity
         if ($request->has('items') && is_array($request->input('items'))) {
             $filteredItems = array_values(array_filter($request->input('items'), function ($item) {
-                return isset($item['quantity']) && (float)$item['quantity'] > 0;
+                return isset($item['quantity']) && (float) $item['quantity'] > 0;
             }));
             $request->merge(['items' => $filteredItems]);
         }
@@ -122,12 +123,12 @@ class SaleReturnController extends Controller
         // Filter out replacement items that have 0 or empty quantity
         if ($request->has('replacement_items') && is_array($request->input('replacement_items'))) {
             $filteredRepItems = array_values(array_filter($request->input('replacement_items'), function ($item) {
-                return isset($item['quantity']) && (float)$item['quantity'] > 0;
+                return isset($item['quantity']) && (float) $item['quantity'] > 0;
             }));
             $request->merge(['replacement_items' => $filteredRepItems]);
         }
 
-        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
+        $validator = Validator::make($request->all(), [
             'sale_id' => 'required|exists:sales,id',
             'return_date' => 'required|date',
             'refund_method' => 'required|in:cash,credit_deduction,exchange',
@@ -165,9 +166,10 @@ class SaleReturnController extends Controller
 
         try {
             $ret = $this->returnService->processSaleReturn($validated);
+
             return redirect()->route('sale-returns.index')->with('success', "Retur penjualan {$ret->return_number} berhasil diproses dan stok barang telah dikembalikan ke gudang.");
         } catch (\Exception $e) {
-            return redirect()->back()->withInput()->with('error', 'Gagal memproses retur penjualan: ' . $e->getMessage());
+            return redirect()->back()->withInput()->with('error', 'Gagal memproses retur penjualan: '.$e->getMessage());
         }
     }
 
@@ -178,9 +180,10 @@ class SaleReturnController extends Controller
     {
         try {
             $this->returnService->cancelSaleReturn($saleReturn);
+
             return redirect()->route('sale-returns.index')->with('success', "Retur penjualan {$saleReturn->return_number} berhasil dibatalkan dan mutasi persediaan dikembalikan.");
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal membatalkan retur: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal membatalkan retur: '.$e->getMessage());
         }
     }
 }

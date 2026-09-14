@@ -2,11 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Account;
+use App\Models\CashFlow;
+use App\Models\CashierShift;
 use App\Models\Category;
 use App\Models\Customer;
-use App\Models\Product;
+use App\Models\Payment;
+use App\Models\ProductStock;
+use App\Models\PurchaseOrder;
+use App\Models\PurchaseReceipt;
 use App\Models\Sale;
 use App\Models\SaleItem;
+use App\Models\StockOpname;
+use App\Models\Supplier;
 use App\Models\User;
 use App\Models\Warehouse;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -349,7 +357,7 @@ class ReportController extends Controller
         $callback = function () use ($sales) {
             $file = fopen('php://output', 'w');
             // Add UTF-8 BOM for Excel compatibility
-            fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
+            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
 
             // CSV Header
             fputcsv($file, [
@@ -398,7 +406,7 @@ class ReportController extends Controller
         $warehouseId = $request->get('warehouse_id');
         $status = $request->get('status');
 
-        $query = \App\Models\PurchaseOrder::with(['supplier', 'warehouse', 'user', 'items.product'])
+        $query = PurchaseOrder::with(['supplier', 'warehouse', 'user', 'items.product'])
             ->whereDate('order_date', '>=', $startDate)
             ->whereDate('order_date', '<=', $endDate);
 
@@ -437,8 +445,8 @@ class ReportController extends Controller
             ->orderByDesc(DB::raw('SUM(purchase_orders.grand_total)'))
             ->get();
 
-        $suppliers = \App\Models\Supplier::where('is_active', true)->orderBy('name')->get();
-        $warehouses = \App\Models\Warehouse::where('is_active', true)->get();
+        $suppliers = Supplier::where('is_active', true)->orderBy('name')->get();
+        $warehouses = Warehouse::where('is_active', true)->get();
 
         return view('reports.purchases', compact(
             'purchases',
@@ -469,7 +477,7 @@ class ReportController extends Controller
         $warehouseId = $request->get('warehouse_id');
         $status = $request->get('status');
 
-        $query = \App\Models\PurchaseOrder::with(['supplier', 'warehouse', 'user'])
+        $query = PurchaseOrder::with(['supplier', 'warehouse', 'user'])
             ->whereDate('order_date', '>=', $startDate)
             ->whereDate('order_date', '<=', $endDate);
 
@@ -486,8 +494,8 @@ class ReportController extends Controller
         $purchases = $query->latest('order_date')->get();
         $totalPurchases = $purchases->where('status', '!=', 'cancelled')->sum('grand_total');
         $totalOrders = $purchases->where('status', '!=', 'cancelled')->count();
-        $supplier = $supplierId ? \App\Models\Supplier::find($supplierId) : null;
-        $warehouse = $warehouseId ? \App\Models\Warehouse::find($warehouseId) : null;
+        $supplier = $supplierId ? Supplier::find($supplierId) : null;
+        $warehouse = $warehouseId ? Warehouse::find($warehouseId) : null;
 
         $pdf = Pdf::loadView('reports.purchases_pdf', compact(
             'purchases',
@@ -513,7 +521,7 @@ class ReportController extends Controller
         $warehouseId = $request->get('warehouse_id');
         $status = $request->get('status');
 
-        $query = \App\Models\PurchaseOrder::with(['supplier', 'warehouse', 'user'])
+        $query = PurchaseOrder::with(['supplier', 'warehouse', 'user'])
             ->whereDate('order_date', '>=', $startDate)
             ->whereDate('order_date', '<=', $endDate);
 
@@ -540,7 +548,7 @@ class ReportController extends Controller
 
         $callback = function () use ($purchases) {
             $file = fopen('php://output', 'w');
-            fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
+            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
 
             fputcsv($file, [
                 'No. PO',
@@ -587,7 +595,7 @@ class ReportController extends Controller
         $search = $request->get('search');
         $filterStock = $request->get('filter_stock'); // all, low, out
 
-        $query = \App\Models\ProductStock::with(['product.category', 'product.baseUnit', 'warehouse'])
+        $query = ProductStock::with(['product.category', 'product.baseUnit', 'warehouse'])
             ->join('products', 'product_stocks.product_id', '=', 'products.id')
             ->leftJoin('categories', 'products.category_id', '=', 'categories.id')
             ->whereNull('products.deleted_at')
@@ -624,26 +632,28 @@ class ReportController extends Controller
         $allStocks = (clone $baseQuery)->get();
         $totalItemsCount = $allStocks->count();
         $totalStockQty = $allStocks->sum('quantity');
-        
+
         // Nilai persediaan: Sum(quantity * purchase_price)
         $totalValuation = $allStocks->reduce(function ($carry, $stock) {
             $purchasePrice = $stock->product->purchase_price ?? 0;
+
             return $carry + ($stock->quantity * $purchasePrice);
         }, 0);
 
         // Potensi nilai jual: Sum(quantity * selling_price)
         $totalPotentialRevenue = $allStocks->reduce(function ($carry, $stock) {
             $sellingPrice = $stock->product->selling_price ?? 0;
+
             return $carry + ($stock->quantity * $sellingPrice);
         }, 0);
 
         // Total produk kritis / habis
-        $lowStockCount = \App\Models\ProductStock::join('products', 'product_stocks.product_id', '=', 'products.id')
+        $lowStockCount = ProductStock::join('products', 'product_stocks.product_id', '=', 'products.id')
             ->whereRaw('product_stocks.quantity <= products.min_stock')
             ->count();
 
-        $warehouses = \App\Models\Warehouse::where('is_active', true)->get();
-        $categories = \App\Models\Category::orderBy('name')->get();
+        $warehouses = Warehouse::where('is_active', true)->get();
+        $categories = Category::orderBy('name')->get();
 
         return view('reports.stocks', compact(
             'stocks',
@@ -671,7 +681,7 @@ class ReportController extends Controller
         $warehouseId = $request->get('warehouse_id');
         $status = $request->get('status');
 
-        $query = \App\Models\StockOpname::with(['warehouse', 'conductor', 'approver', 'items.product'])
+        $query = StockOpname::with(['warehouse', 'conductor', 'approver', 'items.product'])
             ->whereDate('opname_date', '>=', $startDate)
             ->whereDate('opname_date', '<=', $endDate);
 
@@ -684,7 +694,7 @@ class ReportController extends Controller
 
         $opnames = (clone $query)->latest('opname_date')->paginate(15)->withQueryString();
 
-        $warehouses = \App\Models\Warehouse::where('is_active', true)->get();
+        $warehouses = Warehouse::where('is_active', true)->get();
 
         return view('reports.stock_opnames', compact(
             'opnames',
@@ -706,7 +716,7 @@ class ReportController extends Controller
         $search = $request->get('search');
         $filterStock = $request->get('filter_stock');
 
-        $query = \App\Models\ProductStock::with(['product.category', 'product.baseUnit', 'warehouse'])
+        $query = ProductStock::with(['product.category', 'product.baseUnit', 'warehouse'])
             ->join('products', 'product_stocks.product_id', '=', 'products.id')
             ->whereNull('products.deleted_at')
             ->where('products.is_active', true);
@@ -730,9 +740,9 @@ class ReportController extends Controller
         }
 
         $stocks = $query->select('product_stocks.*')->orderBy('products.name')->get();
-        $totalValuation = $stocks->reduce(fn($c, $s) => $c + ($s->quantity * ($s->product->purchase_price ?? 0)), 0);
+        $totalValuation = $stocks->reduce(fn ($c, $s) => $c + ($s->quantity * ($s->product->purchase_price ?? 0)), 0);
         $totalQty = $stocks->sum('quantity');
-        $warehouse = $warehouseId ? \App\Models\Warehouse::find($warehouseId) : null;
+        $warehouse = $warehouseId ? Warehouse::find($warehouseId) : null;
 
         $pdf = Pdf::loadView('reports.stocks_pdf', compact(
             'stocks',
@@ -741,7 +751,7 @@ class ReportController extends Controller
             'warehouse'
         ))->setPaper('a4', 'portrait');
 
-        return $pdf->download("Laporan_Nilai_Persediaan_Stok_" . now()->format('Ymd') . ".pdf");
+        return $pdf->download('Laporan_Nilai_Persediaan_Stok_'.now()->format('Ymd').'.pdf');
     }
 
     /**
@@ -754,7 +764,7 @@ class ReportController extends Controller
         $search = $request->get('search');
         $filterStock = $request->get('filter_stock');
 
-        $query = \App\Models\ProductStock::with(['product.category', 'product.baseUnit', 'warehouse'])
+        $query = ProductStock::with(['product.category', 'product.baseUnit', 'warehouse'])
             ->join('products', 'product_stocks.product_id', '=', 'products.id')
             ->whereNull('products.deleted_at')
             ->where('products.is_active', true);
@@ -779,7 +789,7 @@ class ReportController extends Controller
 
         $stocks = $query->select('product_stocks.*')->orderBy('products.name')->get();
 
-        $filename = "Laporan_Stok_Nilai_Persediaan_" . now()->format('Ymd') . ".csv";
+        $filename = 'Laporan_Stok_Nilai_Persediaan_'.now()->format('Ymd').'.csv';
         $headers = [
             'Content-Type' => 'text/csv; charset=UTF-8',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
@@ -790,7 +800,7 @@ class ReportController extends Controller
 
         $callback = function () use ($stocks) {
             $file = fopen('php://output', 'w');
-            fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
+            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
 
             fputcsv($file, [
                 'Kode Produk',
@@ -842,7 +852,7 @@ class ReportController extends Controller
         $supplierId = $request->get('supplier_id');
 
         // Fetch all purchase receipts or purchase orders with pending payment
-        $query = \App\Models\PurchaseReceipt::with(['purchaseOrder.supplier', 'warehouse'])
+        $query = PurchaseReceipt::with(['purchaseOrder.supplier', 'warehouse'])
             ->where('status', 'received');
 
         if ($supplierId) {
@@ -855,7 +865,7 @@ class ReportController extends Controller
 
         // Calculate total payments made per receipt
         $receiptIds = $receipts->pluck('id');
-        $payments = \App\Models\Payment::where('payable_type', \App\Models\PurchaseReceipt::class)
+        $payments = Payment::where('payable_type', PurchaseReceipt::class)
             ->whereIn('payable_id', $receiptIds)
             ->select('payable_id', DB::raw('SUM(amount) as paid_amount'))
             ->groupBy('payable_id')
@@ -913,7 +923,7 @@ class ReportController extends Controller
             }
         }
 
-        $suppliers = \App\Models\Supplier::where('is_active', true)->orderBy('name')->get();
+        $suppliers = Supplier::where('is_active', true)->orderBy('name')->get();
 
         return view('reports.payables', compact(
             'payablesData',
@@ -945,7 +955,7 @@ class ReportController extends Controller
 
         // Calculate paid amounts
         $saleIds = $sales->pluck('id');
-        $payments = \App\Models\Payment::where('payable_type', Sale::class)
+        $payments = Payment::where('payable_type', Sale::class)
             ->whereIn('payable_id', $saleIds)
             ->select('payable_id', DB::raw('SUM(amount) as paid_amount'))
             ->groupBy('payable_id')
@@ -1028,7 +1038,7 @@ class ReportController extends Controller
         $accountId = $request->get('account_id');
         $type = $request->get('type');
 
-        $query = \App\Models\CashFlow::with(['account', 'creator'])
+        $query = CashFlow::with(['account', 'creator'])
             ->whereDate('transaction_date', '>=', $startDate)
             ->whereDate('transaction_date', '<=', $endDate);
 
@@ -1046,7 +1056,7 @@ class ReportController extends Controller
         $totalCashOut = (clone $baseQuery)->where('type', 'out')->sum('amount');
         $netCashFlow = $totalCashIn - $totalCashOut;
 
-        $accounts = \App\Models\Account::where('is_active', true)->orderBy('name')->get();
+        $accounts = Account::where('is_active', true)->orderBy('name')->get();
 
         return view('reports.cash_flows', compact(
             'cashFlows',
@@ -1092,7 +1102,7 @@ class ReportController extends Controller
         $grossProfit = $netSales - $totalHpp;
 
         // 3. Biaya Operasional / Kas Keluar
-        $expenseQuery = \App\Models\CashFlow::whereDate('transaction_date', '>=', $startDate)
+        $expenseQuery = CashFlow::whereDate('transaction_date', '>=', $startDate)
             ->whereDate('transaction_date', '<=', $endDate)
             ->where('type', 'out');
 
@@ -1135,7 +1145,7 @@ class ReportController extends Controller
         $userId = $request->get('user_id');
         $warehouseId = $request->get('warehouse_id');
 
-        $query = \App\Models\CashierShift::with(['user', 'warehouse'])
+        $query = CashierShift::with(['user', 'warehouse'])
             ->whereDate('opened_at', '>=', $startDate)
             ->whereDate('opened_at', '<=', $endDate);
 

@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
-use App\Models\ProductStock;
 use App\Models\StockOpname;
 use App\Models\Warehouse;
 use App\Services\StockOpnameService;
@@ -30,13 +29,13 @@ class StockOpnameController extends Controller
         $search = $request->query('search');
 
         $opnames = StockOpname::with(['warehouse', 'conductor', 'approver', 'items.product'])
-            ->when($warehouseId, fn($q) => $q->where('warehouse_id', $warehouseId))
-            ->when($status, fn($q) => $q->where('status', $status))
-            ->when($startDate, fn($q) => $q->whereDate('opname_date', '>=', $startDate))
-            ->when($endDate, fn($q) => $q->whereDate('opname_date', '<=', $endDate))
+            ->when($warehouseId, fn ($q) => $q->where('warehouse_id', $warehouseId))
+            ->when($status, fn ($q) => $q->where('status', $status))
+            ->when($startDate, fn ($q) => $q->whereDate('opname_date', '>=', $startDate))
+            ->when($endDate, fn ($q) => $q->whereDate('opname_date', '<=', $endDate))
             ->when($search, function ($q, $search) {
                 $q->where('opname_number', 'like', "%{$search}%")
-                  ->orWhere('notes', 'like', "%{$search}%");
+                    ->orWhere('notes', 'like', "%{$search}%");
             })
             ->latest('opname_date')
             ->latest('id')
@@ -84,7 +83,7 @@ class StockOpnameController extends Controller
 
             return redirect()->route('stock-opnames.index')->with('success', "Dokumen Stok Opname {$opname->opname_number} berhasil dibuat.");
         } catch (\Exception $e) {
-            return redirect()->back()->withInput()->with('error', 'Gagal membuat stok opname: ' . $e->getMessage());
+            return redirect()->back()->withInput()->with('error', 'Gagal membuat stok opname: '.$e->getMessage());
         }
     }
 
@@ -122,7 +121,7 @@ class StockOpnameController extends Controller
 
             return redirect()->route('stock-opnames.index')->with('success', "Stok Opname {$stockOpname->opname_number} berhasil diperbarui.");
         } catch (\Exception $e) {
-            return redirect()->back()->withInput()->with('error', 'Gagal memperbarui stok opname: ' . $e->getMessage());
+            return redirect()->back()->withInput()->with('error', 'Gagal memperbarui stok opname: '.$e->getMessage());
         }
     }
 
@@ -136,7 +135,7 @@ class StockOpnameController extends Controller
 
             return redirect()->route('stock-opnames.index')->with('success', "Stok Opname {$stockOpname->opname_number} telah disetujui. Mutasi stok dan batch persediaan telah diperbarui otomatis.");
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal menyetujui stok opname: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal menyetujui stok opname: '.$e->getMessage());
         }
     }
 
@@ -148,13 +147,15 @@ class StockOpnameController extends Controller
         try {
             if ($stockOpname->status === 'draft') {
                 $stockOpname->delete();
+
                 return redirect()->route('stock-opnames.index')->with('success', "Draft Stok Opname {$stockOpname->opname_number} berhasil dihapus.");
             }
 
             $this->opnameService->cancelStockOpname($stockOpname);
+
             return redirect()->route('stock-opnames.index')->with('success', "Stok Opname {$stockOpname->opname_number} berhasil dibatalkan.");
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal memproses penghapusan: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal memproses penghapusan: '.$e->getMessage());
         }
     }
 }

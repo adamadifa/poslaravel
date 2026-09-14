@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -18,7 +19,7 @@ class UpdateProductRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
@@ -26,6 +27,11 @@ class UpdateProductRequest extends FormRequest
 
         return [
             'name' => ['required', 'string', 'max:200'],
+            'product_type' => ['nullable', 'in:standard,food,beverage,service,combo,raw_material'],
+            'duration_minutes' => ['nullable', 'integer', 'min:1'],
+            'is_bookable' => ['nullable', 'boolean'],
+            'require_staff_assignment' => ['nullable', 'boolean'],
+            'max_concurrent' => ['nullable', 'integer', 'min:1'],
             'code' => ['nullable', 'string', 'max:50', Rule::unique('products', 'code')->ignore($productId)],
             'barcode' => ['nullable', 'string', 'max:50', Rule::unique('products', 'barcode')->ignore($productId)],
             'category_id' => ['nullable', 'exists:categories,id'],

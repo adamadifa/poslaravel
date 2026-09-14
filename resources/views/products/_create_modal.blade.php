@@ -119,8 +119,30 @@
                         </div>
                     </div>
 
-                    <!-- Kategori & Satuan Dasar (2 Columns) -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <!-- Kategori, Satuan Dasar & Tipe Produk (3 Columns) -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                        <div>
+                            <div
+                                class="relative rounded-xl border border-slate-200 hover:border-slate-300 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/20 bg-white transition px-4 pt-3 pb-2">
+                                <label
+                                    class="absolute -top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold text-slate-700">
+                                    Tipe Produk
+                                </label>
+                                <div class="flex items-center gap-2.5">
+                                    <i data-lucide="layers" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                                    <select name="product_type"
+                                        class="w-full bg-transparent border-0 p-0 text-xs font-semibold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
+                                        <option value="standard" {{ (old('_method') ? '' : old('product_type')) == 'standard' ? 'selected' : '' }}>Standard / Retail</option>
+                                        <option value="food" {{ (old('_method') ? '' : old('product_type')) == 'food' ? 'selected' : '' }}>Makanan (Food)</option>
+                                        <option value="beverage" {{ (old('_method') ? '' : old('product_type')) == 'beverage' ? 'selected' : '' }}>Minuman (Beverage)</option>
+                                        <option value="raw_material" {{ (old('_method') ? '' : old('product_type')) == 'raw_material' ? 'selected' : '' }}>Bahan Baku (Raw Material)</option>
+                                        <option value="service" {{ (old('_method') ? '' : old('product_type')) == 'service' ? 'selected' : '' }}>Jasa / Layanan</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <p class="mt-1 text-[10px] text-slate-400 px-1">Jenis item produk</p>
+                        </div>
+
                         <div>
                             <div
                                 class="relative rounded-xl border border-slate-200 hover:border-slate-300 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/20 bg-white transition px-4 pt-3 pb-2">
@@ -167,7 +189,7 @@
                             </div>
                             <p id="create_error_base_unit_id"
                                 class="mt-1 text-[11px] font-medium {{ $errors->has('base_unit_id') && !old('_method') ? 'text-rose-500' : 'text-slate-400' }} px-1">
-                                {{ $errors->has('base_unit_id') && !old('_method') ? $errors->first('base_unit_id') : 'Satuan eceran terendah (Pcs, Botol)' }}
+                                {{ $errors->has('base_unit_id') && !old('_method') ? $errors->first('base_unit_id') : 'Satuan eceran terendah' }}
                             </p>
                         </div>
                     </div>

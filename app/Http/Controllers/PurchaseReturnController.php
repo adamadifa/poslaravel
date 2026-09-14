@@ -46,7 +46,7 @@ class PurchaseReturnController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('return_number', 'like', "%{$search}%")
-                  ->orWhereHas('supplier', fn($sq) => $sq->where('name', 'like', "%{$search}%"));
+                    ->orWhereHas('supplier', fn ($sq) => $sq->where('name', 'like', "%{$search}%"));
             });
         }
 
@@ -98,7 +98,7 @@ class PurchaseReturnController extends Controller
                 return response()->json([
                     'status' => 'success',
                     'message' => "Retur Pembelian {$return->return_number} berhasil diproses.",
-                    'data' => $return
+                    'data' => $return,
                 ]);
             }
 
@@ -107,7 +107,8 @@ class PurchaseReturnController extends Controller
             if ($request->wantsJson()) {
                 return response()->json(['status' => 'error', 'message' => $e->getMessage()], 422);
             }
-            return redirect()->back()->withInput()->with('error', 'Gagal memproses retur: ' . $e->getMessage());
+
+            return redirect()->back()->withInput()->with('error', 'Gagal memproses retur: '.$e->getMessage());
         }
     }
 
@@ -118,9 +119,10 @@ class PurchaseReturnController extends Controller
     {
         try {
             $this->purchasingService->cancelPurchaseReturn($purchaseReturn);
+
             return redirect()->route('purchase-returns.index')->with('success', "Retur {$purchaseReturn->return_number} berhasil dibatalkan dan stok dikembalikan.");
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal membatalkan retur: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal membatalkan retur: '.$e->getMessage());
         }
     }
 }

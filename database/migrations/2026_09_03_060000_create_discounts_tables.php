@@ -21,12 +21,12 @@ return new class extends Migration
                 'fixed_item',           // Potongan Rp per item tertentu
                 'percentage_invoice',   // Diskon % total transaksi belanja
                 'fixed_invoice',        // Potongan Rp total transaksi belanja
-                'buy_x_get_y'           // Beli X produk A gratis/diskon Y produk B
+                'buy_x_get_y',           // Beli X produk A gratis/diskon Y produk B
             ]);
             $table->decimal('value', 15, 2)->default(0); // Nilai % atau nominal Rp
             $table->decimal('min_order_amount', 15, 2)->nullable(); // Syarat minimal belanja (Rp)
             $table->decimal('max_discount_amount', 15, 2)->nullable(); // Batas maksimal diskon nominal
-            
+
             // Kolom pendukung BOGO (Buy X Get Y)
             $table->decimal('buy_qty', 15, 4)->nullable(); // Jumlah beli (X)
             $table->decimal('get_qty', 15, 4)->nullable(); // Jumlah gratis/diskon (Y)

@@ -22,17 +22,18 @@ class StockAdjustmentService
      */
     public function generateAdjustmentNumber(): string
     {
-        $prefix = 'ADJ-' . now()->format('Y-m-');
+        $prefix = 'ADJ-'.now()->format('Y-m-');
         $last = StockAdjustment::where('adjustment_number', 'like', "{$prefix}%")
             ->orderBy('adjustment_number', 'desc')
             ->first();
 
-        if (!$last) {
-            return $prefix . '0001';
+        if (! $last) {
+            return $prefix.'0001';
         }
 
         $lastSeq = (int) substr($last->adjustment_number, -4);
-        return $prefix . str_pad($lastSeq + 1, 4, '0', STR_PAD_LEFT);
+
+        return $prefix.str_pad($lastSeq + 1, 4, '0', STR_PAD_LEFT);
     }
 
     /**
@@ -193,7 +194,7 @@ class StockAdjustmentService
                         $item->base_quantity,
                         $item->unit_cost,
                         null,
-                        $item->batch_number ?? ('ADJ-BATCH-' . now()->format('ymd') . '-' . $adjustment->id),
+                        $item->batch_number ?? ('ADJ-BATCH-'.now()->format('ymd').'-'.$adjustment->id),
                         null
                     );
                 } else {
@@ -234,6 +235,7 @@ class StockAdjustmentService
         DB::transaction(function () use ($adjustment) {
             if ($adjustment->status === 'cancelled') {
                 $adjustment->delete();
+
                 return;
             }
 
@@ -277,7 +279,7 @@ class StockAdjustmentService
                             $item->base_quantity,
                             $item->unit_cost,
                             null,
-                            $item->batch_number ?? ('RESTORE-ADJ-' . now()->format('ymd')),
+                            $item->batch_number ?? ('RESTORE-ADJ-'.now()->format('ymd')),
                             null
                         );
                     }

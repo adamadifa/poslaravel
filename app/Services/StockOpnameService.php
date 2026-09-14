@@ -22,17 +22,18 @@ class StockOpnameService
      */
     public function generateOpnameNumber(): string
     {
-        $prefix = 'SO-' . now()->format('Y-m-');
+        $prefix = 'SO-'.now()->format('Y-m-');
         $lastOpname = StockOpname::where('opname_number', 'like', "{$prefix}%")
             ->orderBy('opname_number', 'desc')
             ->first();
 
-        if (!$lastOpname) {
-            return $prefix . '0001';
+        if (! $lastOpname) {
+            return $prefix.'0001';
         }
 
         $lastSeq = (int) substr($lastOpname->opname_number, -4);
-        return $prefix . str_pad($lastSeq + 1, 4, '0', STR_PAD_LEFT);
+
+        return $prefix.str_pad($lastSeq + 1, 4, '0', STR_PAD_LEFT);
     }
 
     /**
@@ -55,7 +56,7 @@ class StockOpnameService
             foreach ($data['items'] as $item) {
                 $productId = $item['product_id'];
                 $physicalQty = (float) $item['physical_qty'];
-                
+
                 // Get current system stock
                 $currentStock = ProductStock::where('product_id', $productId)
                     ->where('warehouse_id', $data['warehouse_id'])
@@ -104,7 +105,7 @@ class StockOpnameService
                 foreach ($data['items'] as $item) {
                     $productId = $item['product_id'];
                     $physicalQty = (float) $item['physical_qty'];
-                    
+
                     $currentStock = ProductStock::where('product_id', $productId)
                         ->where('warehouse_id', $opname->warehouse_id)
                         ->value('quantity') ?? 0;
@@ -157,7 +158,7 @@ class StockOpnameService
                         'StockOpname',
                         $opname->id,
                         $item->unit_cost,
-                        "Penyesuaian Opname Fisik Lebih {$opname->opname_number}: " . ($item->reason ?? 'Selisih Lebih Fisik'),
+                        "Penyesuaian Opname Fisik Lebih {$opname->opname_number}: ".($item->reason ?? 'Selisih Lebih Fisik'),
                         auth()->id()
                     );
 
@@ -168,7 +169,7 @@ class StockOpnameService
                         $diffQty,
                         $item->unit_cost,
                         null,
-                        'SO-BATCH-' . now()->format('ymd') . '-' . $opname->id,
+                        'SO-BATCH-'.now()->format('ymd').'-'.$opname->id,
                         null
                     );
                 } elseif ($diffQty < 0) {
@@ -182,7 +183,7 @@ class StockOpnameService
                         'StockOpname',
                         $opname->id,
                         $item->unit_cost,
-                        "Penyesuaian Opname Fisik Kurang {$opname->opname_number}: " . ($item->reason ?? 'Selisih Kurang Fisik/Hilang/Rusak'),
+                        "Penyesuaian Opname Fisik Kurang {$opname->opname_number}: ".($item->reason ?? 'Selisih Kurang Fisik/Hilang/Rusak'),
                         auth()->id()
                     );
 

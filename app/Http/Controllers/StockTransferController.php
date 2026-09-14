@@ -30,14 +30,14 @@ class StockTransferController extends Controller
         $search = $request->query('search');
 
         $transfers = StockTransfer::with(['fromWarehouse', 'toWarehouse', 'sender', 'receiver', 'items.product.baseUnit'])
-            ->when($fromWarehouseId, fn($q) => $q->where('from_warehouse_id', $fromWarehouseId))
-            ->when($toWarehouseId, fn($q) => $q->where('to_warehouse_id', $toWarehouseId))
-            ->when($status, fn($q) => $q->where('status', $status))
-            ->when($startDate, fn($q) => $q->whereDate('transfer_date', '>=', $startDate))
-            ->when($endDate, fn($q) => $q->whereDate('transfer_date', '<=', $endDate))
+            ->when($fromWarehouseId, fn ($q) => $q->where('from_warehouse_id', $fromWarehouseId))
+            ->when($toWarehouseId, fn ($q) => $q->where('to_warehouse_id', $toWarehouseId))
+            ->when($status, fn ($q) => $q->where('status', $status))
+            ->when($startDate, fn ($q) => $q->whereDate('transfer_date', '>=', $startDate))
+            ->when($endDate, fn ($q) => $q->whereDate('transfer_date', '<=', $endDate))
             ->when($search, function ($q, $search) {
                 $q->where('transfer_number', 'like', "%{$search}%")
-                  ->orWhere('notes', 'like', "%{$search}%");
+                    ->orWhere('notes', 'like', "%{$search}%");
             })
             ->latest('transfer_date')
             ->latest('id')
@@ -86,13 +86,13 @@ class StockTransferController extends Controller
         try {
             $transfer = $this->transferService->createStockTransfer($validated);
 
-            $msg = $transfer->status === 'in_transit' 
+            $msg = $transfer->status === 'in_transit'
                 ? "Transfer {$transfer->transfer_number} berhasil dibuat & langsung dikirim (In Transit)."
                 : "Draft Transfer {$transfer->transfer_number} berhasil disimpan.";
 
             return redirect()->route('stock-transfers.index')->with('success', $msg);
         } catch (\Exception $e) {
-            return redirect()->back()->withInput()->with('error', 'Gagal membuat transfer stok: ' . $e->getMessage());
+            return redirect()->back()->withInput()->with('error', 'Gagal membuat transfer stok: '.$e->getMessage());
         }
     }
 
@@ -102,6 +102,7 @@ class StockTransferController extends Controller
     public function show(StockTransfer $stockTransfer)
     {
         $stockTransfer->load(['fromWarehouse', 'toWarehouse', 'sender', 'receiver', 'items.product.baseUnit', 'items.unit']);
+
         return response()->json($stockTransfer);
     }
 
@@ -112,9 +113,10 @@ class StockTransferController extends Controller
     {
         try {
             $this->transferService->dispatchTransfer($stockTransfer);
+
             return redirect()->route('stock-transfers.index')->with('success', "Transfer {$stockTransfer->transfer_number} telah dikirim (In Transit). Stok gudang asal telah dikurangi.");
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal mengirim transfer: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal mengirim transfer: '.$e->getMessage());
         }
     }
 
@@ -130,9 +132,10 @@ class StockTransferController extends Controller
 
         try {
             $this->transferService->receiveTransfer($stockTransfer, $validated);
+
             return redirect()->route('stock-transfers.index')->with('success', "Transfer {$stockTransfer->transfer_number} telah berhasil diterima. Stok gudang tujuan telah ditambahkan.");
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal mengonfirmasi penerimaan: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal mengonfirmasi penerimaan: '.$e->getMessage());
         }
     }
 
@@ -144,13 +147,15 @@ class StockTransferController extends Controller
         try {
             if ($stockTransfer->status === 'draft') {
                 $stockTransfer->delete();
+
                 return redirect()->route('stock-transfers.index')->with('success', "Draft Transfer {$stockTransfer->transfer_number} berhasil dihapus.");
             }
 
             $this->transferService->cancelTransfer($stockTransfer);
+
             return redirect()->route('stock-transfers.index')->with('success', "Transfer {$stockTransfer->transfer_number} berhasil dibatalkan dan stok gudang asal dikembalikan.");
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal membatalkan transfer: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal membatalkan transfer: '.$e->getMessage());
         }
     }
 }

@@ -22,6 +22,7 @@ class Setting extends Model
     {
         return Cache::rememberForever("app_setting_{$key}", function () use ($key, $default) {
             $setting = static::where('key', $key)->first();
+
             return $setting ? $setting->value : $default;
         });
     }
@@ -42,6 +43,7 @@ class Setting extends Model
         );
 
         Cache::forget("app_setting_{$key}");
+
         return $setting;
     }
 

@@ -7,6 +7,7 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 class RoleAndPermissionSeeder extends Seeder
 {
@@ -16,20 +17,31 @@ class RoleAndPermissionSeeder extends Seeder
     public function run(): void
     {
         // Reset cached roles and permissions
-        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
         // 1. Daftar Permissions Lengkap
         $permissions = [
             // Dashboard
             'dashboard.view',
 
-            // Master Data
+            // Master Data & Resep (BOM)
             'categories.view', 'categories.create', 'categories.edit', 'categories.delete',
             'units.view', 'units.create', 'units.edit', 'units.delete',
             'products.view', 'products.create', 'products.edit', 'products.delete',
+            'recipes.view', 'recipes.manage',
             'suppliers.view', 'suppliers.create', 'suppliers.edit', 'suppliers.delete',
             'customers.view', 'customers.create', 'customers.edit', 'customers.delete',
             'warehouses.view', 'warehouses.create', 'warehouses.edit', 'warehouses.delete',
+
+            // F&B (Resto, Kafe, Meja, KDS, Modifiers)
+            'tables.view', 'tables.create', 'tables.edit', 'tables.delete', 'tables.reservations',
+            'modifiers.view', 'modifiers.manage',
+            'kitchen.view',
+
+            // Jasa & Layanan (Services, Booking, Antrian, Staff)
+            'service_queue.view',
+            'service_bookings.view', 'service_bookings.manage',
+            'service_staff.view', 'service_staff.manage',
 
             // Harga & Diskon
             'pricing.view', 'pricing.manage',
@@ -65,26 +77,33 @@ class RoleAndPermissionSeeder extends Seeder
         // 2. Buat Roles Default
         // Super Admin (Semua Hak Akses)
         $superAdmin = Role::firstOrCreate(['name' => 'super_admin']);
-        $superAdmin->givePermissionTo(Permission::all());
+        $superAdmin->syncPermissions(Permission::all());
 
-        // Owner (Dashboard, Laporan, Keuangan, Master Data)
+        // Owner (Dashboard, Laporan, Keuangan, Master Data, FNB, Service)
         $owner = Role::firstOrCreate(['name' => 'owner']);
-        $owner->givePermissionTo([
+        $owner->syncPermissions([
             'dashboard.view',
-            'categories.view', 'units.view', 'products.view', 'suppliers.view', 'customers.view', 'warehouses.view',
+            'categories.view', 'units.view', 'products.view', 'recipes.view', 'suppliers.view', 'customers.view', 'warehouses.view',
+            'tables.view', 'tables.reservations', 'modifiers.view', 'kitchen.view',
+            'service_queue.view', 'service_bookings.view', 'service_staff.view',
             'pricing.view', 'discounts.view', 'stocks.view', 'purchases.view', 'sales.view',
             'finance.accounts', 'finance.payable', 'finance.receivable', 'finance.cashflow', 'finance.transfer',
             'reports.sales', 'reports.purchases', 'reports.inventory', 'reports.finance', 'reports.shifts',
             'audit.view',
         ]);
 
-        // Manager (Operasional, Stok, Kasir, Pembelian, Diskon)
+        // Manager (Operasional, Stok, Kasir, Pembelian, Diskon, FNB, Service)
         $manager = Role::firstOrCreate(['name' => 'manager']);
-        $manager->givePermissionTo([
+        $manager->syncPermissions([
             'dashboard.view',
             'categories.view', 'categories.create', 'categories.edit',
             'units.view', 'units.create', 'units.edit',
             'products.view', 'products.create', 'products.edit',
+            'recipes.view', 'recipes.manage',
+            'tables.view', 'tables.create', 'tables.edit', 'tables.delete', 'tables.reservations',
+            'modifiers.view', 'modifiers.manage',
+            'kitchen.view',
+            'service_queue.view', 'service_bookings.view', 'service_bookings.manage', 'service_staff.view', 'service_staff.manage',
             'suppliers.view', 'suppliers.create', 'suppliers.edit',
             'customers.view', 'customers.create', 'customers.edit',
             'warehouses.view',

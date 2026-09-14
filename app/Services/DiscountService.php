@@ -11,10 +11,8 @@ class DiscountService
     /**
      * Resolve all active discounts applicable for given cart items and customer.
      *
-     * @param array $cartItems Array of items: [['product_id' => 1, 'unit_id' => 1, 'quantity' => 2, 'price' => 3500], ...]
-     * @param Customer|null $customer
-     * @param string|null $promoCode Optional coupon/promo code
-     * @return array
+     * @param  array  $cartItems  Array of items: [['product_id' => 1, 'unit_id' => 1, 'quantity' => 2, 'price' => 3500], ...]
+     * @param  string|null  $promoCode  Optional coupon/promo code
      */
     public function calculateCartDiscounts(array $cartItems, ?Customer $customer = null, ?string $promoCode = null): array
     {
@@ -26,7 +24,7 @@ class DiscountService
             $subtotal += $lineTotal;
 
             $pId = $item['product_id'];
-            if (!isset($itemsByProduct[$pId])) {
+            if (! isset($itemsByProduct[$pId])) {
                 $itemsByProduct[$pId] = [
                     'quantity' => 0,
                     'total_amount' => 0,
@@ -57,18 +55,52 @@ class DiscountService
 
         if ($promoCode) {
             $query->where(function ($q) use ($promoCode) {
-                $q->whereNull('code')->orWhere('code', $promoCode);
+                $q->whereNull('code')->orWhere('code', '')->orWhere('code', $promoCode);
+            });
+        } else {
+            $query->where(function ($q) {
+                $q->whereNull('code')->orWhere('code', '');
             });
         }
 
         $discounts = $query->get();
 
+        // 1. Evaluate candidate: All Combinable Discounts merged together
+        $combinableDiscounts = $discounts->filter(fn ($d) => (bool) $d->is_combinable);
+        $candidateCombinable = $this->evaluateDiscountGroup($combinableDiscounts, $cartItems, $itemsByProduct, $subtotal, $currentTime);
+
+        // 2. Evaluate each Non-Combinable Discount individually
+        $nonCombinableDiscounts = $discounts->filter(fn ($d) => ! (bool) $d->is_combinable);
+        $candidatesNonCombinable = [];
+        foreach ($nonCombinableDiscounts as $singleDiscount) {
+            $candidatesNonCombinable[] = $this->evaluateDiscountGroup(collect([$singleDiscount]), $cartItems, $itemsByProduct, $subtotal, $currentTime);
+        }
+
+        // 3. Determine the winning discount result (Best Value / Maximum Savings for Customer)
+        $bestResult = $candidateCombinable;
+        $maxSavings = $candidateCombinable['total_discount'];
+
+        foreach ($candidatesNonCombinable as $cand) {
+            if ($cand['total_discount'] > $maxSavings || ($maxSavings == 0 && count($cand['free_rewards']) > 0)) {
+                $maxSavings = $cand['total_discount'];
+                $bestResult = $cand;
+            }
+        }
+
+        return $bestResult;
+    }
+
+    /**
+     * Helper to evaluate a specific collection of discounts against cart items.
+     */
+    protected function evaluateDiscountGroup($discountCollection, array $cartItems, array $itemsByProduct, float $subtotal, string $currentTime): array
+    {
         $itemDiscounts = [];
         $invoiceDiscounts = [];
         $freeRewards = [];
         $totalDiscountAmount = 0;
 
-        foreach ($discounts as $discount) {
+        foreach ($discountCollection as $discount) {
             // Check minimum order amount if set
             if ($discount->min_order_amount && $subtotal < (float) $discount->min_order_amount) {
                 continue;

@@ -28,14 +28,14 @@ class AccountTransferController extends Controller
         $search = $request->query('search');
 
         $transfers = AccountTransfer::with(['fromAccount', 'toAccount', 'creator'])
-            ->when($fromAccountId, fn($q) => $q->where('from_account_id', $fromAccountId))
-            ->when($toAccountId, fn($q) => $q->where('to_account_id', $toAccountId))
-            ->when($startDate, fn($q) => $q->whereDate('transfer_date', '>=', $startDate))
-            ->when($endDate, fn($q) => $q->whereDate('transfer_date', '<=', $endDate))
+            ->when($fromAccountId, fn ($q) => $q->where('from_account_id', $fromAccountId))
+            ->when($toAccountId, fn ($q) => $q->where('to_account_id', $toAccountId))
+            ->when($startDate, fn ($q) => $q->whereDate('transfer_date', '>=', $startDate))
+            ->when($endDate, fn ($q) => $q->whereDate('transfer_date', '<=', $endDate))
             ->when($search, function ($q, $search) {
                 $q->where('transfer_number', 'like', "%{$search}%")
-                  ->orWhere('reference_number', 'like', "%{$search}%")
-                  ->orWhere('notes', 'like', "%{$search}%");
+                    ->orWhere('reference_number', 'like', "%{$search}%")
+                    ->orWhere('notes', 'like', "%{$search}%");
             })
             ->latest('transfer_date')
             ->latest('id')
@@ -79,9 +79,10 @@ class AccountTransferController extends Controller
 
         try {
             $transfer = $this->financeService->transferAccount($validated);
-            return redirect()->route('account-transfers.index')->with('success', "Transfer {$transfer->transfer_number} sebesar Rp " . number_format($transfer->amount, 0, ',', '.') . " berhasil diproses.");
+
+            return redirect()->route('account-transfers.index')->with('success', "Transfer {$transfer->transfer_number} sebesar Rp ".number_format($transfer->amount, 0, ',', '.').' berhasil diproses.');
         } catch (\Exception $e) {
-            return redirect()->back()->withInput()->with('error', 'Gagal memproses transfer kas: ' . $e->getMessage());
+            return redirect()->back()->withInput()->with('error', 'Gagal memproses transfer kas: '.$e->getMessage());
         }
     }
 }

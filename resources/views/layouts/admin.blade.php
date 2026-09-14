@@ -68,9 +68,30 @@
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
             z-index: 99999 !important;
         }
+        .dark .flatpickr-calendar {
+            background: #0f172a !important;
+            border-color: #334155 !important;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5) !important;
+        }
+        .dark .flatpickr-calendar .flatpickr-month {
+            background: #0f172a !important;
+            color: #f8fafc !important;
+            fill: #f8fafc !important;
+        }
+        .dark .flatpickr-calendar .flatpickr-weekday {
+            background: #0f172a !important;
+            color: #94a3b8 !important;
+        }
+        .dark .flatpickr-calendar .flatpickr-day {
+            color: #cbd5e1 !important;
+        }
+        .dark .flatpickr-calendar .flatpickr-day.flatpickr-disabled {
+            color: #475569 !important;
+        }
         .flatpickr-day.selected, .flatpickr-day.startRange, .flatpickr-day.endRange {
             background: #f97316 !important;
             border-color: #f97316 !important;
+            color: #ffffff !important;
         }
         .flatpickr-day.today {
             border-color: #f97316 !important;
@@ -78,8 +99,18 @@
         .flatpickr-day:hover {
             background: #ffedd5 !important;
         }
+        .dark .flatpickr-day:hover {
+            background: #1e293b !important;
+            color: #f97316 !important;
+        }
         .flatpickr-current-month .flatpickr-monthDropdown-months, .flatpickr-current-month input.cur-year {
             font-weight: 700 !important;
+        }
+        .dark .flatpickr-current-month .flatpickr-monthDropdown-months, .dark .flatpickr-current-month input.cur-year {
+            color: #f8fafc !important;
+        }
+        .flatpickr-input[readonly] {
+            cursor: pointer !important;
         }
 
         /* Sidebar collapse transition */
@@ -154,165 +185,324 @@
 
                 <!-- Main Nav -->
                 <div class="space-y-1">
+                    @can('dashboard.view')
                     <a href="{{ route('dashboard') }}" title="Dashboard" class="nav-item flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl font-semibold text-xs transition {{ request()->routeIs('dashboard') ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-200/50 dark:border-brand-500/20 shadow-2xs' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
                         <i data-lucide="layout-grid" class="w-4 h-4 shrink-0 {{ request()->routeIs('dashboard') ? 'text-brand-500 dark:text-brand-400' : 'text-slate-400' }}"></i>
                         <span class="nav-text truncate font-bold">Dashboard</span>
                     </a>
+                    @endcan
                     
+                    @can('sales.pos')
                     <a href="{{ route('pos.index') }}" title="Kasir / POS" class="nav-item flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl font-medium text-xs transition text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60">
                         <i data-lucide="shopping-cart" class="w-4 h-4 shrink-0 text-slate-400"></i>
                         <span class="nav-text truncate">Kasir POS (F12)</span>
                     </a>
+                    @endcan
 
                     <!-- Section: Master Data -->
+                    @canany(['products.view', 'categories.view', 'units.view', 'customers.view', 'suppliers.view', 'warehouses.view'])
                     <div class="pt-3">
                         <p class="section-header px-3 text-[10px] font-extrabold tracking-wider text-slate-400 dark:text-slate-500 uppercase mb-1.5">Master Data</p>
                         
+                        @can('products.view')
                         <a href="{{ route('products.index') ?? url('/products') }}" title="Produk & Barcode" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->is('products*') ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
                             <i data-lucide="package" class="w-4 h-4 shrink-0 text-slate-400"></i>
                             <span class="nav-text truncate">Master Produk</span>
                         </a>
+                        @endcan
 
+                        @can('products.view')
+                        <a href="{{ route('raw-materials.index') }}" title="Bahan Baku Mentah" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->routeIs('raw-materials*') ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
+                            <i data-lucide="boxes" class="w-4 h-4 shrink-0 text-amber-500"></i>
+                            <span class="nav-text truncate">Bahan Baku (Raw)</span>
+                        </a>
+                        @endcan
+
+                        @can('categories.view')
                         <a href="{{ route('categories.index') ?? url('/categories') }}" title="Kategori" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->is('categories*') ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
                             <i data-lucide="folder-tree" class="w-4 h-4 shrink-0 text-slate-400"></i>
                             <span class="nav-text truncate">Kategori</span>
                         </a>
+                        @endcan
 
+                        @can('units.view')
                         <a href="{{ route('units.index') ?? url('/units') }}" title="Satuan" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->is('units*') ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
                             <i data-lucide="scale" class="w-4 h-4 shrink-0 text-slate-400"></i>
                             <span class="nav-text truncate">Satuan</span>
                         </a>
+                        @endcan
 
-                        <a href="{{ url('/customers') }}" title="Pelanggan & Member" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->is('customers*') ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
+                        @can('customers.view')
+                        <a href="{{ route('customers.index') }}" title="Pelanggan & Member" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->routeIs('customers*') ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
                             <i data-lucide="user-check" class="w-4 h-4 shrink-0 text-slate-400"></i>
                             <span class="nav-text truncate">Pelanggan & Member</span>
                         </a>
+                        @endcan
 
+                        @can('suppliers.view')
                         <a href="{{ route('suppliers.index') ?? url('/suppliers') }}" title="Pemasok / Supplier" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->is('suppliers*') ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
                             <i data-lucide="truck" class="w-4 h-4 shrink-0 text-slate-400"></i>
                             <span class="nav-text truncate">Pemasok (Supplier)</span>
                         </a>
+                        @endcan
 
+                        @can('warehouses.view')
                         <a href="{{ route('warehouses.index') ?? url('/warehouses') }}" title="Gudang & Cabang" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->is('warehouses*') ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
                             <i data-lucide="warehouse" class="w-4 h-4 shrink-0 text-slate-400"></i>
                             <span class="nav-text truncate">Gudang & Cabang</span>
                         </a>
+                        @endcan
                     </div>
+                    @endcanany
+
+                    <!-- Section: Resto & Kuliner (F&B) -->
+                    @if(in_array(\App\Models\Setting::get('business_type', 'retail'), ['fnb', 'hybrid']))
+                    @canany(['tables.view', 'tables.reservations', 'modifiers.manage', 'kitchen.view', 'recipes.view'])
+                    <div class="pt-3">
+                        <p class="section-header px-3 text-[10px] font-extrabold tracking-wider text-amber-500 dark:text-amber-400 uppercase mb-1.5">Resto & F&B</p>
+
+                        @can('tables.view')
+                        <a href="{{ route('tables.index') }}" title="Denah & Meja Resto" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->routeIs('tables.index') ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
+                            <i data-lucide="layout-grid" class="w-4 h-4 shrink-0 text-amber-500"></i>
+                            <span class="nav-text truncate">Denah & Meja Resto</span>
+                        </a>
+                        @endcan
+
+                        @can('tables.reservations')
+                        <a href="{{ route('tables.reservations') }}" title="Reservasi Meja" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->routeIs('tables.reservations*') ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
+                            <i data-lucide="calendar" class="w-4 h-4 shrink-0 text-amber-500"></i>
+                            <span class="nav-text truncate">Reservasi Meja</span>
+                        </a>
+                        @endcan
+
+                        @can('recipes.view')
+                        <a href="{{ route('products.index') }}?type=fnb" title="Resep Menu & BOM" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->get('type') === 'fnb' ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
+                            <i data-lucide="chef-hat" class="w-4 h-4 shrink-0 text-amber-500"></i>
+                            <span class="nav-text truncate">Resep Menu (BOM)</span>
+                        </a>
+                        @endcan
+
+                        @can('products.view')
+                        <a href="{{ route('raw-materials.index') }}" title="Bahan Baku Dapur" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->routeIs('raw-materials*') ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
+                            <i data-lucide="boxes" class="w-4 h-4 shrink-0 text-amber-500"></i>
+                            <span class="nav-text truncate">Bahan Baku (Dapur)</span>
+                        </a>
+                        @endcan
+
+                        @can('modifiers.manage')
+                        <a href="{{ route('modifiers.index') }}" title="Menu Modifiers" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->routeIs('modifiers*') ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
+                            <i data-lucide="sliders" class="w-4 h-4 shrink-0 text-amber-500"></i>
+                            <span class="nav-text truncate">Modifiers & Topping</span>
+                        </a>
+                        @endcan
+
+                        @can('kitchen.view')
+                        <a href="{{ route('kitchen.index') }}" title="Layar Dapur (KDS)" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->routeIs('kitchen*') ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
+                            <i data-lucide="flame" class="w-4 h-4 shrink-0 text-amber-500"></i>
+                            <span class="nav-text truncate">Layar Dapur (KDS)</span>
+                        </a>
+                        @endcan
+                    </div>
+                    @endcanany
+                    @endif
+
+                    <!-- Section: Layanan & Jasa (Service) -->
+                    @if(in_array(\App\Models\Setting::get('business_type', 'retail'), ['service', 'hybrid']))
+                    @canany(['service_queue.view', 'service_bookings.manage', 'service_staff.manage'])
+                    <div class="pt-3">
+                        <p class="section-header px-3 text-[10px] font-extrabold tracking-wider text-emerald-600 dark:text-emerald-400 uppercase mb-1.5">Layanan & Jasa</p>
+
+                        @can('service_queue.view')
+                        <a href="{{ route('service-queue.index') }}" title="Antrian Layanan" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->routeIs('service-queue*') ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
+                            <i data-lucide="activity" class="w-4 h-4 shrink-0 text-emerald-500"></i>
+                            <span class="nav-text truncate">Monitoring Antrian</span>
+                        </a>
+                        @endcan
+
+                        @can('service_bookings.manage')
+                        <a href="{{ route('service-bookings.index') }}" title="Booking & Janji Temu" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->routeIs('service-bookings*') ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
+                            <i data-lucide="calendar-check-2" class="w-4 h-4 shrink-0 text-emerald-500"></i>
+                            <span class="nav-text truncate">Booking & Janji Temu</span>
+                        </a>
+                        @endcan
+
+                        @can('service_staff.manage')
+                        <a href="{{ route('service-staff.index') }}" title="Staff & Komisi" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->routeIs('service-staff*') ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
+                            <i data-lucide="user-check" class="w-4 h-4 shrink-0 text-emerald-500"></i>
+                            <span class="nav-text truncate">Staff & Komisi Jasa</span>
+                        </a>
+                        @endcan
+                    </div>
+                    @endcanany
+                    @endif
 
                     <!-- Section: Transaksi & Stok -->
+                    @canany(['discounts.view', 'purchases.view', 'purchases.receive', 'purchases.return', 'stocks.view', 'stocks.opname', 'stocks.transfer', 'stocks.adjust', 'sales.view', 'sales.return'])
                     <div class="pt-3">
                         <p class="section-header px-3 text-[10px] font-extrabold tracking-wider text-slate-400 dark:text-slate-500 uppercase mb-1.5">Operasional</p>
                         
+                        @can('discounts.view')
                         <a href="{{ route('discounts.index') ?? url('/discounts') }}" title="Diskon & Promo" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->is('discounts*') ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
                             <i data-lucide="badge-percent" class="w-4 h-4 shrink-0 text-slate-400"></i>
                             <span class="nav-text truncate">Diskon & Promo</span>
                         </a>
+                        @endcan
 
+                        @can('purchases.view')
                         <a href="{{ route('purchase-orders.index') }}" title="Purchase Order (PO)" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->is('purchase-orders*') ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
                             <i data-lucide="clipboard-list" class="w-4 h-4 shrink-0 text-slate-400"></i>
                             <span class="nav-text truncate">Purchase Order (PO)</span>
                         </a>
+                        @endcan
 
+                        @can('purchases.receive')
                         <a href="{{ route('purchase-receipts.index') }}" title="Penerimaan Barang (GRN)" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->is('purchase-receipts*') ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
                             <i data-lucide="package-check" class="w-4 h-4 shrink-0 text-slate-400"></i>
                             <span class="nav-text truncate">Penerimaan Barang (GRN)</span>
                         </a>
+                        @endcan
 
+                        @can('purchases.return')
                         <a href="{{ route('purchase-returns.index') }}" title="Retur Pembelian" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->is('purchase-returns*') ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
                             <i data-lucide="rotate-ccw" class="w-4 h-4 shrink-0 text-slate-400"></i>
                             <span class="nav-text truncate">Retur Pembelian</span>
                         </a>
+                        @endcan
 
+                        @can('stocks.view')
                         <a href="{{ route('stocks.index') }}" title="Kartu Stok" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->is('stocks*') ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
                             <i data-lucide="boxes" class="w-4 h-4 shrink-0 text-slate-400"></i>
                             <span class="nav-text truncate">Kartu Stok (FIFO)</span>
                         </a>
+                        @endcan
 
+                        @can('stocks.opname')
                         <a href="{{ route('stock-opnames.index') }}" title="Stok Opname" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->is('stock-opnames*') ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
                             <i data-lucide="clipboard-check" class="w-4 h-4 shrink-0 text-slate-400"></i>
                             <span class="nav-text truncate">Stok Opname</span>
                         </a>
+                        @endcan
 
+                        @can('stocks.transfer')
                         <a href="{{ route('stock-transfers.index') }}" title="Transfer Stok" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->is('stock-transfers*') ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
                             <i data-lucide="arrow-left-right" class="w-4 h-4 shrink-0 text-slate-400"></i>
                             <span class="nav-text truncate">Transfer Antar Gudang</span>
                         </a>
+                        @endcan
 
+                        @can('stocks.adjust')
                         <a href="{{ route('stock-adjustments.index') }}" title="Penyesuaian Stok" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->is('stock-adjustments*') ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
                             <i data-lucide="sliders-horizontal" class="w-4 h-4 shrink-0 text-slate-400"></i>
                             <span class="nav-text truncate">Penyesuaian Stok (Adj)</span>
                         </a>
+                        @endcan
 
+                        @can('stocks.view')
                         <a href="{{ route('stocks.alerts') }}" title="Peringatan Stok" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->is('stock-alerts*') ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
                             <i data-lucide="alert-triangle" class="w-4 h-4 shrink-0 text-amber-500"></i>
                             <span class="nav-text truncate">Peringatan Stok</span>
                         </a>
+                        @endcan
 
-                        <a href="{{ url('/sales') }}" title="Riwayat Penjualan" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->is('sales*') ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
+                        @can('sales.view')
+                        <a href="{{ route('sales.index') }}" title="Riwayat Penjualan" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->routeIs('sales*') ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
                             <i data-lucide="receipt" class="w-4 h-4 shrink-0 text-slate-400"></i>
                             <span class="nav-text truncate">Riwayat Penjualan</span>
                         </a>
+                        @endcan
 
+                        @can('sales.return')
                         <a href="{{ route('sale-returns.index') }}" title="Retur Penjualan" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->is('sale-returns*') ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
                             <i data-lucide="rotate-ccw" class="w-4 h-4 shrink-0 text-slate-400"></i>
                             <span class="nav-text truncate">Retur Penjualan</span>
                         </a>
+                        @endcan
                     </div>
+                    @endcanany
 
                     <!-- Section: Keuangan & Finansial (Phase 5) -->
+                    @canany(['finance.accounts', 'finance.payable', 'finance.receivable', 'finance.cashflow', 'finance.transfer'])
                     <div class="pt-3">
                         <p class="section-header px-3 text-[10px] font-extrabold tracking-wider text-slate-400 dark:text-slate-500 uppercase mb-1.5">Keuangan & Kas</p>
 
+                        @can('finance.accounts')
                         <a href="{{ route('accounts.index') }}" title="Akun Kas & Bank" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->is('accounts*') ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
                             <i data-lucide="wallet" class="w-4 h-4 shrink-0 text-slate-400"></i>
                             <span class="nav-text truncate">Akun Kas & Bank</span>
                         </a>
+                        @endcan
 
+                        @can('finance.payable')
                         <a href="{{ route('payables.index') }}" title="Hutang Usaha" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->is('payables*') ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
                             <i data-lucide="receipt-text" class="w-4 h-4 shrink-0 text-slate-400"></i>
                             <span class="nav-text truncate">Hutang Pembelian (AP)</span>
                         </a>
+                        @endcan
 
+                        @can('finance.receivable')
                         <a href="{{ route('receivables.index') }}" title="Piutang Usaha" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->is('receivables*') ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
                             <i data-lucide="coins" class="w-4 h-4 shrink-0 text-slate-400"></i>
                             <span class="nav-text truncate">Piutang Penjualan (AR)</span>
                         </a>
+                        @endcan
 
+                        @can('finance.cashflow')
                         <a href="{{ route('cash-flows.index') }}" title="Arus Kas" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->is('cash-flows*') ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
                             <i data-lucide="arrow-down-up" class="w-4 h-4 shrink-0 text-slate-400"></i>
                             <span class="nav-text truncate">Arus Kas Masuk & Keluar</span>
                         </a>
+                        @endcan
 
+                        @can('finance.transfer')
                         <a href="{{ route('account-transfers.index') }}" title="Transfer Kas/Bank" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->is('account-transfers*') ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
                             <i data-lucide="arrow-left-right" class="w-4 h-4 shrink-0 text-slate-400"></i>
                             <span class="nav-text truncate">Transfer Kas & Bank</span>
                         </a>
+                        @endcan
                     </div>
+                    @endcanany
 
                     <!-- Section: Laporan & User -->
+                    @canany(['reports.sales', 'reports.purchases', 'reports.inventory', 'reports.finance', 'reports.shifts', 'users.view', 'roles.manage', 'settings.manage', 'audit.view'])
                     <div class="pt-3">
                         <p class="section-header px-3 text-[10px] font-extrabold tracking-wider text-slate-400 dark:text-slate-500 uppercase mb-1.5">Laporan & Pengaturan</p>
 
+                        @canany(['reports.sales', 'reports.purchases', 'reports.inventory', 'reports.finance', 'reports.shifts'])
                         <a href="{{ route('reports.sales') }}" title="Laporan & Laba Rugi" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->is('reports*') ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
                             <i data-lucide="bar-chart-3" class="w-4 h-4 shrink-0 text-slate-400"></i>
                             <span class="nav-text truncate">Laporan & Analitik</span>
                         </a>
+                        @endcanany
 
+                        @can('users.view')
                         <a href="{{ route('users.index') }}" title="Manajemen Pengguna" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->routeIs('users*') ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
                             <i data-lucide="users" class="w-4 h-4 shrink-0 text-slate-400"></i>
                             <span class="nav-text truncate">Staf & Pengguna</span>
                         </a>
+                        @endcan
 
+                        @can('roles.manage')
+                        <a href="{{ route('roles.index') }}" title="Hak Akses & Peran" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->routeIs('roles*') ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
+                            <i data-lucide="shield-check" class="w-4 h-4 shrink-0 text-slate-400"></i>
+                            <span class="nav-text truncate">Hak Akses & Peran</span>
+                        </a>
+                        @endcan
+
+                        @can('settings.manage')
                         <a href="{{ route('settings.index') }}" title="Pengaturan Toko" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->routeIs('settings*') ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
                             <i data-lucide="settings" class="w-4 h-4 shrink-0 text-slate-400"></i>
                             <span class="nav-text truncate">Pengaturan Toko</span>
                         </a>
+                        @endcan
 
+                        @can('audit.view')
                         <a href="{{ route('audit-trails.index') }}" title="Log Aktivitas & Audit Trail" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->routeIs('audit-trails*') ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
-                            <i data-lucide="shield-check" class="w-4 h-4 shrink-0 text-slate-400"></i>
+                            <i data-lucide="shield-alert" class="w-4 h-4 shrink-0 text-slate-400"></i>
                             <span class="nav-text truncate">Audit Trail (Log)</span>
                         </a>
+                        @endcan
                     </div>
+                    @endcanany
                 </div>
             </div>
 
@@ -687,6 +877,42 @@
             });
         }
 
+        // Global Flatpickr Initializer
+        function initFlatpickr(context = document) {
+            if (typeof flatpickr !== 'undefined') {
+                const dateInputs = context.querySelectorAll ? context.querySelectorAll("input[type='date'], .datepicker, .flatpickr") : document.querySelectorAll("input[type='date'], .datepicker, .flatpickr");
+                dateInputs.forEach(input => {
+                    if (!input._flatpickr) {
+                        flatpickr(input, {
+                            dateFormat: "Y-m-d",
+                            altInput: true,
+                            altFormat: "d M Y",
+                            allowInput: true,
+                            locale: "id",
+                            disableMobile: true
+                        });
+                    }
+                });
+
+                const timeInputs = context.querySelectorAll ? context.querySelectorAll("input[type='time'], .timepicker") : document.querySelectorAll("input[type='time'], .timepicker");
+                timeInputs.forEach(input => {
+                    if (!input._flatpickr) {
+                        flatpickr(input, {
+                            enableTime: true,
+                            noCalendar: true,
+                            dateFormat: "H:i",
+                            time_24hr: true,
+                            disableMobile: true
+                        });
+                    }
+                });
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initFlatpickr();
+        });
+
         // Global Modal Helper Functions
         function openModal(modalId) {
             const el = document.getElementById(modalId);
@@ -696,6 +922,9 @@
                 if (window.lucide) {
                     lucide.createIcons();
                 }
+                setTimeout(() => {
+                    initFlatpickr(el);
+                }, 50);
             }
         }
 

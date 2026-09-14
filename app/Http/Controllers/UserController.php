@@ -20,7 +20,7 @@ class UserController extends Controller
         $users = User::with('roles')
             ->when($search, function ($query, $search) {
                 $query->where('name', 'like', "%{$search}%")
-                      ->orWhere('email', 'like', "%{$search}%");
+                    ->orWhere('email', 'like', "%{$search}%");
             })
             ->when($roleFilter, function ($query, $roleFilter) {
                 $query->whereHas('roles', function ($q) use ($roleFilter) {
@@ -76,7 +76,7 @@ class UserController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,' . $user->id],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,'.$user->id],
             'password' => ['nullable', 'string', 'min:8'],
             'role' => ['required', 'string', 'exists:roles,name'],
             'phone' => ['nullable', 'string', 'max:20'],
@@ -90,7 +90,7 @@ class UserController extends Controller
             'is_active' => $request->has('is_active'),
         ];
 
-        if (!empty($validated['password'])) {
+        if (! empty($validated['password'])) {
             $userData['password'] = Hash::make($validated['password']);
         }
 
@@ -110,6 +110,7 @@ class UserController extends Controller
         }
 
         $user->delete();
+
         return redirect()->route('users.index')->with('success', 'Pengguna berhasil dihapus.');
     }
 }

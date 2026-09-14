@@ -19,10 +19,10 @@ class SupplierController extends Controller
         $suppliers = Supplier::query()
             ->when($search, function ($query, $search) {
                 $query->where('name', 'like', "%{$search}%")
-                      ->orWhere('code', 'like', "%{$search}%")
-                      ->orWhere('contact_person', 'like', "%{$search}%")
-                      ->orWhere('phone', 'like', "%{$search}%")
-                      ->orWhere('city', 'like', "%{$search}%");
+                    ->orWhere('code', 'like', "%{$search}%")
+                    ->orWhere('contact_person', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%")
+                    ->orWhere('city', 'like', "%{$search}%");
             })
             ->latest()
             ->paginate(10)
@@ -50,7 +50,7 @@ class SupplierController extends Controller
             // Generate auto code if empty
             if (empty($validated['code'])) {
                 $count = Supplier::count() + 1;
-                $validated['code'] = 'SUP-' . str_pad($count, 4, '0', STR_PAD_LEFT);
+                $validated['code'] = 'SUP-'.str_pad($count, 4, '0', STR_PAD_LEFT);
             }
 
             $validated['is_active'] = $request->has('is_active') ? true : false;
@@ -60,7 +60,7 @@ class SupplierController extends Controller
 
             return redirect()->route('suppliers.index')->with('success', 'Pemasok berhasil ditambahkan.');
         } catch (\Exception $e) {
-            return redirect()->back()->withInput()->with('error', 'Gagal menambahkan pemasok: ' . $e->getMessage());
+            return redirect()->back()->withInput()->with('error', 'Gagal menambahkan pemasok: '.$e->getMessage());
         }
     }
 
@@ -79,7 +79,7 @@ class SupplierController extends Controller
 
             return redirect()->route('suppliers.index')->with('success', 'Pemasok berhasil diperbarui.');
         } catch (\Exception $e) {
-            return redirect()->back()->withInput()->with('error', 'Gagal memperbarui pemasok: ' . $e->getMessage());
+            return redirect()->back()->withInput()->with('error', 'Gagal memperbarui pemasok: '.$e->getMessage());
         }
     }
 
@@ -90,9 +90,10 @@ class SupplierController extends Controller
     {
         try {
             $supplier->delete();
+
             return redirect()->route('suppliers.index')->with('success', 'Pemasok berhasil dihapus.');
         } catch (\Exception $e) {
-            return redirect()->route('suppliers.index')->with('error', 'Gagal menghapus pemasok: ' . $e->getMessage());
+            return redirect()->route('suppliers.index')->with('error', 'Gagal menghapus pemasok: '.$e->getMessage());
         }
     }
 }

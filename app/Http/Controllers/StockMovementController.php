@@ -25,16 +25,16 @@ class StockMovementController extends Controller
 
         // Main Query for Stock Movements
         $query = StockMovement::with(['product.baseUnit', 'warehouse', 'creator'])
-            ->when($productId, fn($q) => $q->where('product_id', $productId))
-            ->when($warehouseId, fn($q) => $q->where('warehouse_id', $warehouseId))
-            ->when($type, fn($q) => $q->where('type', $type))
-            ->when($startDate, fn($q) => $q->whereDate('created_at', '>=', $startDate))
-            ->when($endDate, fn($q) => $q->whereDate('created_at', '<=', $endDate))
+            ->when($productId, fn ($q) => $q->where('product_id', $productId))
+            ->when($warehouseId, fn ($q) => $q->where('warehouse_id', $warehouseId))
+            ->when($type, fn ($q) => $q->where('type', $type))
+            ->when($startDate, fn ($q) => $q->whereDate('created_at', '>=', $startDate))
+            ->when($endDate, fn ($q) => $q->whereDate('created_at', '<=', $endDate))
             ->when($search, function ($q, $search) {
                 $q->where(function ($sq) use ($search) {
                     $sq->where('description', 'like', "%{$search}%")
-                      ->orWhere('reference_type', 'like', "%{$search}%")
-                      ->orWhereHas('product', fn($pq) => $pq->where('name', 'like', "%{$search}%")->orWhere('code', 'like', "%{$search}%"));
+                        ->orWhere('reference_type', 'like', "%{$search}%")
+                        ->orWhereHas('product', fn ($pq) => $pq->where('name', 'like', "%{$search}%")->orWhere('code', 'like', "%{$search}%"));
                 });
             });
 
@@ -46,8 +46,8 @@ class StockMovementController extends Controller
 
         // Active Stock Batches (FIFO overview)
         $batches = StockBatch::with(['product.baseUnit', 'warehouse'])
-            ->when($productId, fn($q) => $q->where('product_id', $productId))
-            ->when($warehouseId, fn($q) => $q->where('warehouse_id', $warehouseId))
+            ->when($productId, fn ($q) => $q->where('product_id', $productId))
+            ->when($warehouseId, fn ($q) => $q->where('warehouse_id', $warehouseId))
             ->where('qty_remaining', '>', 0)
             ->orderBy('entry_date', 'asc')
             ->limit(30)

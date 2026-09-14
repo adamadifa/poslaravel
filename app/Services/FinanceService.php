@@ -17,17 +17,18 @@ class FinanceService
      */
     public function generatePaymentNumber(): string
     {
-        $prefix = 'PAY-' . now()->format('Y-m-');
+        $prefix = 'PAY-'.now()->format('Y-m-');
         $last = Payment::where('payment_number', 'like', "{$prefix}%")
             ->orderBy('payment_number', 'desc')
             ->first();
 
-        if (!$last) {
-            return $prefix . '0001';
+        if (! $last) {
+            return $prefix.'0001';
         }
 
         $lastSeq = (int) substr($last->payment_number, -4);
-        return $prefix . str_pad($lastSeq + 1, 4, '0', STR_PAD_LEFT);
+
+        return $prefix.str_pad($lastSeq + 1, 4, '0', STR_PAD_LEFT);
     }
 
     /**
@@ -35,17 +36,18 @@ class FinanceService
      */
     public function generateCashFlowNumber(): string
     {
-        $prefix = 'CF-' . now()->format('Y-m-');
+        $prefix = 'CF-'.now()->format('Y-m-');
         $last = CashFlow::where('cash_flow_number', 'like', "{$prefix}%")
             ->orderBy('cash_flow_number', 'desc')
             ->first();
 
-        if (!$last) {
-            return $prefix . '0001';
+        if (! $last) {
+            return $prefix.'0001';
         }
 
         $lastSeq = (int) substr($last->cash_flow_number, -4);
-        return $prefix . str_pad($lastSeq + 1, 4, '0', STR_PAD_LEFT);
+
+        return $prefix.str_pad($lastSeq + 1, 4, '0', STR_PAD_LEFT);
     }
 
     /**
@@ -53,17 +55,18 @@ class FinanceService
      */
     public function generateTransferNumber(): string
     {
-        $prefix = 'TRF-ACC-' . now()->format('Y-m-');
+        $prefix = 'TRF-ACC-'.now()->format('Y-m-');
         $last = AccountTransfer::where('transfer_number', 'like', "{$prefix}%")
             ->orderBy('transfer_number', 'desc')
             ->first();
 
-        if (!$last) {
-            return $prefix . '0001';
+        if (! $last) {
+            return $prefix.'0001';
         }
 
         $lastSeq = (int) substr($last->transfer_number, -4);
-        return $prefix . str_pad($lastSeq + 1, 4, '0', STR_PAD_LEFT);
+
+        return $prefix.str_pad($lastSeq + 1, 4, '0', STR_PAD_LEFT);
     }
 
     /**
@@ -270,7 +273,7 @@ class FinanceService
                 'transaction_date' => $transfer->transfer_date,
                 'reference_type' => AccountTransfer::class,
                 'reference_id' => $transfer->id,
-                'description' => "Transfer ke {$toAccount->name}" . ($fee > 0 ? " (Biaya Admin: Rp " . number_format($fee, 0, ',', '.') . ")" : ""),
+                'description' => "Transfer ke {$toAccount->name}".($fee > 0 ? ' (Biaya Admin: Rp '.number_format($fee, 0, ',', '.').')' : ''),
                 'created_by' => auth()->id(),
             ]);
 

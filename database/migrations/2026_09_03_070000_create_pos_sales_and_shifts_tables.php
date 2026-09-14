@@ -38,7 +38,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete(); // Kasir
             $table->foreignId('customer_id')->nullable()->constrained('customers')->nullOnDelete();
             $table->dateTime('sale_date');
-            
+
             // Kalkulasi Nilai Transaksi
             $table->decimal('subtotal', 15, 2)->default(0);
             $table->decimal('discount_amount', 15, 2)->default(0);
@@ -53,7 +53,7 @@ return new class extends Migration
             $table->enum('status', ['completed', 'void', 'draft'])->default('completed');
             $table->string('reference_number', 100)->nullable(); // Nomor Ref Transfer/QRIS
             $table->text('notes')->nullable();
-            
+
             // Void Meta
             $table->foreignId('void_by')->nullable()->constrained('users')->nullOnDelete();
             $table->dateTime('void_at')->nullable();

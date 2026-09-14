@@ -22,10 +22,10 @@ class CustomerController extends Controller
             ->when($search, function ($query, $search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
-                      ->orWhere('code', 'like', "%{$search}%")
-                      ->orWhere('phone', 'like', "%{$search}%")
-                      ->orWhere('email', 'like', "%{$search}%")
-                      ->orWhere('city', 'like', "%{$search}%");
+                        ->orWhere('code', 'like', "%{$search}%")
+                        ->orWhere('phone', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%")
+                        ->orWhere('city', 'like', "%{$search}%");
                 });
             })
             ->when($groupId, function ($query, $groupId) {
@@ -61,7 +61,7 @@ class CustomerController extends Controller
             // Auto-generate Customer Code if blank
             if (empty($validated['code'])) {
                 $count = Customer::count() + 1;
-                $validated['code'] = 'CUST-' . str_pad($count, 4, '0', STR_PAD_LEFT);
+                $validated['code'] = 'CUST-'.str_pad($count, 4, '0', STR_PAD_LEFT);
             }
 
             $validated['is_active'] = $request->has('is_active') ? true : false;
@@ -83,10 +83,11 @@ class CustomerController extends Controller
             if ($request->wantsJson()) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'Gagal menambahkan pelanggan: ' . $e->getMessage(),
+                    'message' => 'Gagal menambahkan pelanggan: '.$e->getMessage(),
                 ], 422);
             }
-            return redirect()->back()->withInput()->with('error', 'Gagal menambahkan pelanggan: ' . $e->getMessage());
+
+            return redirect()->back()->withInput()->with('error', 'Gagal menambahkan pelanggan: '.$e->getMessage());
         }
     }
 
@@ -105,7 +106,7 @@ class CustomerController extends Controller
 
             return redirect()->route('customers.index')->with('success', 'Data pelanggan berhasil diperbarui.');
         } catch (\Exception $e) {
-            return redirect()->back()->withInput()->with('error', 'Gagal memperbarui pelanggan: ' . $e->getMessage());
+            return redirect()->back()->withInput()->with('error', 'Gagal memperbarui pelanggan: '.$e->getMessage());
         }
     }
 
@@ -116,9 +117,10 @@ class CustomerController extends Controller
     {
         try {
             $customer->delete();
+
             return redirect()->route('customers.index')->with('success', 'Pelanggan berhasil dihapus.');
         } catch (\Exception $e) {
-            return redirect()->route('customers.index')->with('error', 'Gagal menghapus pelanggan: ' . $e->getMessage());
+            return redirect()->route('customers.index')->with('error', 'Gagal menghapus pelanggan: '.$e->getMessage());
         }
     }
 }

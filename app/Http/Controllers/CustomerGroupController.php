@@ -55,7 +55,7 @@ class CustomerGroupController extends Controller
     public function update(Request $request, CustomerGroup $customerGroup)
     {
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:100', 'unique:customer_groups,name,' . $customerGroup->id],
+            'name' => ['required', 'string', 'max:100', 'unique:customer_groups,name,'.$customerGroup->id],
             'discount_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'description' => ['nullable', 'string', 'max:255'],
         ], [
@@ -87,6 +87,7 @@ class CustomerGroupController extends Controller
         }
 
         $customerGroup->delete();
+
         return redirect()->route('customers.index')->with('success', 'Grup member berhasil dihapus.');
     }
 }

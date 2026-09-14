@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 class SaleReturnService
 {
     protected StockService $stockService;
+
     protected FinanceService $financeService;
 
     public function __construct(StockService $stockService, FinanceService $financeService)
@@ -27,17 +28,18 @@ class SaleReturnService
      */
     public function generateReturnNumber(): string
     {
-        $prefix = 'SR-' . now()->format('Y-m-');
+        $prefix = 'SR-'.now()->format('Y-m-');
         $last = SaleReturn::where('return_number', 'like', "{$prefix}%")
             ->orderBy('return_number', 'desc')
             ->first();
 
-        if (!$last) {
-            return $prefix . '0001';
+        if (! $last) {
+            return $prefix.'0001';
         }
 
         $lastSeq = (int) substr($last->return_number, -4);
-        return $prefix . str_pad($lastSeq + 1, 4, '0', STR_PAD_LEFT);
+
+        return $prefix.str_pad($lastSeq + 1, 4, '0', STR_PAD_LEFT);
     }
 
     /**
@@ -57,7 +59,9 @@ class SaleReturnService
             // 1. Process Retur Items (Barang Masuk / IN)
             foreach ($data['items'] as $item) {
                 $qty = (float) $item['quantity'];
-                if ($qty <= 0) continue;
+                if ($qty <= 0) {
+                    continue;
+                }
 
                 $product = Product::findOrFail($item['product_id']);
                 $unitId = $item['unit_id'] ?? $product->base_unit_id;
@@ -98,10 +102,12 @@ class SaleReturnService
             $replacementItemsData = [];
             $totalReplacement = 0;
 
-            if ($refundMethod === 'exchange' && !empty($data['replacement_items'])) {
+            if ($refundMethod === 'exchange' && ! empty($data['replacement_items'])) {
                 foreach ($data['replacement_items'] as $rep) {
                     $repQty = (float) ($rep['quantity'] ?? 0);
-                    if ($repQty <= 0) continue;
+                    if ($repQty <= 0) {
+                        continue;
+                    }
 
                     $product = Product::findOrFail($rep['product_id']);
                     $unitId = $rep['unit_id'] ?? $product->base_unit_id;
@@ -171,7 +177,7 @@ class SaleReturnService
                 );
 
                 // Restore / Buat Batch Baru
-                $generatedBatchNumber = $item['batch_number'] ?? ('SR-' . $saleReturn->return_number . '-' . rand(100, 999));
+                $generatedBatchNumber = $item['batch_number'] ?? ('SR-'.$saleReturn->return_number.'-'.rand(100, 999));
                 $this->stockService->createStockBatch(
                     $item['product_id'],
                     $saleReturn->warehouse_id,
@@ -244,6 +250,7 @@ class SaleReturnService
         DB::transaction(function () use ($saleReturn) {
             if ($saleReturn->status === 'cancelled') {
                 $saleReturn->delete();
+
                 return;
             }
 
@@ -286,7 +293,7 @@ class SaleReturnService
                     $rep->base_quantity,
                     $rep->unit_price,
                     null,
-                    'SR-EXCH-RESTORE-' . now()->format('ymd'),
+                    'SR-EXCH-RESTORE-'.now()->format('ymd'),
                     null
                 );
             }

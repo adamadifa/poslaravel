@@ -22,17 +22,18 @@ class StockTransferService
      */
     public function generateTransferNumber(): string
     {
-        $prefix = 'TRF-' . now()->format('Y-m-');
+        $prefix = 'TRF-'.now()->format('Y-m-');
         $last = StockTransfer::where('transfer_number', 'like', "{$prefix}%")
             ->orderBy('transfer_number', 'desc')
             ->first();
 
-        if (!$last) {
-            return $prefix . '0001';
+        if (! $last) {
+            return $prefix.'0001';
         }
 
         $lastSeq = (int) substr($last->transfer_number, -4);
-        return $prefix . str_pad($lastSeq + 1, 4, '0', STR_PAD_LEFT);
+
+        return $prefix.str_pad($lastSeq + 1, 4, '0', STR_PAD_LEFT);
     }
 
     /**
@@ -149,12 +150,12 @@ class StockTransferService
             }
 
             foreach ($transfer->items as $item) {
-                $receivedQty = isset($receivedData['items'][$item->id]['quantity_received']) 
+                $receivedQty = isset($receivedData['items'][$item->id]['quantity_received'])
                     ? (float) $receivedData['items'][$item->id]['quantity_received']
                     : $item->quantity_sent;
 
-                $conversionRatio = $item->quantity_sent > 0 
-                    ? ($item->base_quantity_sent / $item->quantity_sent) 
+                $conversionRatio = $item->quantity_sent > 0
+                    ? ($item->base_quantity_sent / $item->quantity_sent)
                     : 1.0;
 
                 $baseReceivedQty = $receivedQty * $conversionRatio;
@@ -184,7 +185,7 @@ class StockTransferService
                         $baseReceivedQty,
                         $item->unit_cost,
                         null,
-                        $item->batch_number ?? ('TRF-BATCH-' . now()->format('ymd') . '-' . $transfer->id),
+                        $item->batch_number ?? ('TRF-BATCH-'.now()->format('ymd').'-'.$transfer->id),
                         null
                     );
                 }
@@ -228,7 +229,7 @@ class StockTransferService
                         $item->base_quantity_sent,
                         $item->unit_cost,
                         null,
-                        $item->batch_number ?? ('RESTORE-TRF-' . now()->format('ymd')),
+                        $item->batch_number ?? ('RESTORE-TRF-'.now()->format('ymd')),
                         null
                     );
                 }

@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\Customer;
-use App\Models\CustomerGroup;
 use App\Models\PriceList;
 use App\Models\Product;
 use App\Models\TieredPrice;
@@ -13,12 +12,6 @@ class PricingService
 {
     /**
      * Resolve final unit selling price and HPP based on Product, Unit, Quantity, and Customer.
-     *
-     * @param Product $product
-     * @param int $unitId
-     * @param float $quantity
-     * @param Customer|null $customer
-     * @return array
      */
     public function resolvePrice(Product $product, int $unitId, float $quantity = 1, ?Customer $customer = null): array
     {
@@ -85,7 +78,7 @@ class PricingService
 
         // 4. Apply Customer Group Member Discount (if not overridden by strict tiered pricing)
         $discountAmount = 0;
-        if (!$isTieredApplied && $groupDiscountPercent > 0) {
+        if (! $isTieredApplied && $groupDiscountPercent > 0) {
             $discountAmount = ($unitSellingPrice * $groupDiscountPercent) / 100;
         }
 

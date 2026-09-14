@@ -25,8 +25,8 @@
                 </div>
             </div>
 
-            <!-- Customer Picker & Manual Price Setting Toggle -->
-            <div class="flex items-center gap-2">
+            <!-- Customer Picker, Table Picker & Manual Price Setting Toggle -->
+            <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
                 <!-- Clickable Customer Card Button (F2) -->
                 <button 
                     type="button" 
@@ -40,11 +40,29 @@
                     </div>
                     <div class="text-left">
                         <span class="text-[9px] font-bold text-slate-400 block uppercase tracking-wider leading-none">Pelanggan (F2)</span>
-                        <span id="posCustomerDisplay" class="font-bold text-slate-900 text-xs truncate max-w-[150px] inline-block mt-0.5">Umum (Retail)</span>
+                        <span id="posCustomerDisplay" class="font-bold text-slate-900 text-xs truncate max-w-[130px] inline-block mt-0.5">Umum (Retail)</span>
                     </div>
                     <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400 group-hover:text-brand-500 transition ml-1"></i>
                 </button>
                 <input type="hidden" id="posCustomerSelect" value="">
+
+                <!-- Service Type & Table Picker Button (F3) -->
+                <button 
+                    type="button" 
+                    id="posTableBtn" 
+                    onclick="openTableModal()" 
+                    title="Pilih Meja / Tipe Pesanan (F3)" 
+                    class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 hover:border-brand-500/60 text-xs font-semibold text-slate-700 transition shadow-2xs cursor-pointer group"
+                >
+                    <div class="w-6 h-6 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-xs shrink-0">
+                        <i data-lucide="utensils" class="w-3.5 h-3.5"></i>
+                    </div>
+                    <div class="text-left">
+                        <span class="text-[9px] font-bold text-slate-400 block uppercase tracking-wider leading-none">Layanan (F3)</span>
+                        <span id="posTableDisplay" class="font-bold text-slate-900 text-xs truncate max-w-[140px] inline-block mt-0.5">Dine In - Tanpa Meja</span>
+                    </div>
+                    <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400 group-hover:text-brand-500 transition ml-1"></i>
+                </button>
 
                 <!-- Toggle Setting: Input Qty & Harga Manual Modal -->
                 <button 
@@ -193,6 +211,7 @@
 @include('pos._item_modal')
 @include('pos._discount_modal')
 @include('pos._customer_modals')
+@include('pos._table_modal')
 
 @endsection
 
@@ -203,7 +222,12 @@
     let activeShift = @json($activeShift);
     let allProducts = [];
     let allCustomers = @json($customers);
+    let allDiningTables = @json($diningTables);
     let selectedCustomer = null;
+    let selectedServiceType = 'dine_in';
+    let selectedTable = null;
+    let guestCount = 1;
+    let selectedTableArea = 'all';
     let cart = [];
     let selectedCategoryId = null;
     let appliedPromoCode = '';
@@ -259,7 +283,7 @@
             }
         });
 
-        // Global Shortcuts (F1, F2, F7, F9, F12, Escape)
+        // Global Shortcuts (F1, F2, F3, F7, F9, F12, Escape)
         window.addEventListener('keydown', (e) => {
             const key = e.key;
 
@@ -273,6 +297,9 @@
             } else if (key === 'F2') {
                 e.preventDefault();
                 openCustomerModal();
+            } else if (key === 'F3') {
+                e.preventDefault();
+                openTableModal();
             } else if (key === 'F7') {
                 e.preventDefault();
                 openModal('holdModal');
@@ -292,6 +319,7 @@
                 openPaymentModal();
             } else if (key === 'Escape') {
                 closeModal('itemModal');
+                closeModal('tableModal');
                 closeModal('paymentModal');
                 closeModal('holdModal');
                 closeModal('recallModal');
@@ -401,6 +429,150 @@
 
         closeModal('customerModal');
         onCustomerChange();
+    }
+
+    // ==========================================
+    // TABLE & SERVICE TYPE MODAL HANDLERS
+    // ==========================================
+    function openTableModal() {
+        renderTableModalUI();
+        openModal('tableModal');
+    }
+
+    function selectServiceType(type) {
+        selectedServiceType = type;
+        const dineInSec = document.getElementById('dine_in_section');
+        
+        ['dine_in', 'takeaway', 'delivery'].forEach(t => {
+            const btn = document.getElementById(`st_btn_${t}`);
+            if (btn) {
+                if (t === type) {
+                    btn.className = 'p-3 rounded-xl border-2 border-brand-500 bg-brand-50/50 text-brand-700 font-bold text-xs flex flex-col items-center justify-center gap-1.5 transition shadow-2xs cursor-pointer';
+                    const icon = btn.querySelector('i');
+                    if (icon) icon.className = 'w-5 h-5 text-brand-600';
+                } else {
+                    btn.className = 'p-3 rounded-xl border border-slate-200 hover:border-slate-300 bg-white text-slate-600 font-bold text-xs flex flex-col items-center justify-center gap-1.5 transition shadow-2xs cursor-pointer';
+                    const icon = btn.querySelector('i');
+                    if (icon) icon.className = 'w-5 h-5 text-slate-500';
+                }
+            }
+        });
+
+        if (type === 'dine_in') {
+            if (dineInSec) dineInSec.classList.remove('hidden');
+        } else {
+            if (dineInSec) dineInSec.classList.add('hidden');
+            selectedTable = null;
+        }
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    function adjustGuestCount(delta) {
+        const inEl = document.getElementById('modal_guest_count');
+        if (!inEl) return;
+        let current = parseInt(inEl.value) || 1;
+        let next = Math.max(1, current + delta);
+        inEl.value = next;
+        guestCount = next;
+    }
+
+    function renderTableModalUI() {
+        selectServiceType(selectedServiceType);
+        const gIn = document.getElementById('modal_guest_count');
+        if (gIn) gIn.value = guestCount;
+
+        // Render Area Filter Pills
+        const areaContainer = document.getElementById('table_area_filters');
+        if (areaContainer) {
+            const areas = [...new Set(allDiningTables.map(t => t.area || 'Utama'))];
+            let areaHtml = `<button type="button" onclick="filterTableArea('all', this)" class="table-area-pill px-3 py-1 rounded-lg text-[11px] font-bold ${selectedTableArea === 'all' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'} shadow-2xs shrink-0 cursor-pointer">Semua Area</button>`;
+            areas.forEach(area => {
+                areaHtml += `<button type="button" onclick="filterTableArea('${area}', this)" class="table-area-pill px-3 py-1 rounded-lg text-[11px] font-bold ${selectedTableArea === area ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'} shadow-2xs shrink-0 cursor-pointer">${area}</button>`;
+            });
+            areaContainer.innerHTML = areaHtml;
+        }
+
+        renderTablesGrid();
+    }
+
+    function filterTableArea(area, btn) {
+        selectedTableArea = area;
+        document.querySelectorAll('.table-area-pill').forEach(el => {
+            el.className = 'table-area-pill px-3 py-1 rounded-lg text-[11px] font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 shadow-2xs shrink-0 cursor-pointer';
+        });
+        btn.className = 'table-area-pill px-3 py-1 rounded-lg text-[11px] font-bold bg-slate-900 text-white shadow-2xs shrink-0 cursor-pointer';
+        renderTablesGrid();
+    }
+
+    function renderTablesGrid() {
+        const grid = document.getElementById('pos_tables_grid');
+        if (!grid) return;
+        grid.innerHTML = '';
+
+        let filtered = allDiningTables;
+        if (selectedTableArea !== 'all') {
+            filtered = allDiningTables.filter(t => (t.area || 'Utama') === selectedTableArea);
+        }
+
+        if (filtered.length === 0) {
+            grid.innerHTML = '<div class="col-span-full py-8 text-center text-slate-400 text-xs">Belum ada data meja di area ini.</div>';
+            return;
+        }
+
+        filtered.forEach(table => {
+            const isSelected = selectedTable && selectedTable.id === table.id;
+            const isOccupied = table.status === 'occupied';
+
+            const card = document.createElement('div');
+            card.className = `p-3 rounded-xl border-2 transition cursor-pointer flex flex-col justify-between ${
+                isSelected 
+                    ? 'border-brand-500 bg-brand-50/70 shadow-xs' 
+                    : isOccupied 
+                        ? 'border-rose-200 bg-rose-50/40 hover:border-rose-300' 
+                        : 'border-slate-200 hover:border-brand-500/50 bg-white hover:bg-slate-50/70'
+            }`;
+            card.onclick = () => {
+                selectedTable = table;
+                const infoText = document.getElementById('selected_table_info_text');
+                if (infoText) infoText.innerText = `Terpilih: ${table.table_number} (${table.area || 'Utama'})`;
+                renderTablesGrid();
+            };
+
+            card.innerHTML = `
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="font-bold text-xs ${isSelected ? 'text-brand-700' : 'text-slate-900'}">${table.table_number}</span>
+                    <span class="px-1.5 py-0.2 rounded text-[9px] font-bold ${isOccupied ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'}">
+                        ${isOccupied ? 'Terisi' : 'Kosong'}
+                    </span>
+                </div>
+                <div class="flex items-center justify-between text-[10px] text-slate-400">
+                    <span>${table.area || 'Utama'}</span>
+                    <span>${table.capacity || 2} Kursi</span>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+    }
+
+    function confirmTableSelection() {
+        const gIn = document.getElementById('modal_guest_count');
+        guestCount = gIn ? (parseInt(gIn.value) || 1) : 1;
+        const display = document.getElementById('posTableDisplay');
+
+        if (display) {
+            if (selectedServiceType === 'takeaway') {
+                display.innerText = 'Take Away (Bungkus)';
+            } else if (selectedServiceType === 'delivery') {
+                display.innerText = 'Delivery (Kirim)';
+            } else {
+                if (selectedTable) {
+                    display.innerText = `${selectedTable.table_number} (${guestCount} Tamu)`;
+                } else {
+                    display.innerText = `Dine In (${guestCount} Tamu)`;
+                }
+            }
+        }
+        closeModal('tableModal');
     }
 
     function openNewCustomerModal() {
@@ -720,23 +892,139 @@
         // Initial Qty & Price
         if (isEditing) {
             document.getElementById('modal_item_qty').value = currentCartItem.quantity;
-            document.getElementById('modal_item_price').value = currentCartItem.price;
+            document.getElementById('modal_item_price').value = currentCartItem.base_price !== undefined ? currentCartItem.base_price : currentCartItem.price;
         } else {
             document.getElementById('modal_item_qty').value = '1';
             await resolveModalPrice();
         }
 
+        // Render Modifier Groups & Toppings
+        renderModalModifiersUI(product, currentCartItem);
+
+        // Notes per item
+        const notesInput = document.getElementById('modal_item_notes');
+        if (notesInput) {
+            notesInput.value = isEditing ? (currentCartItem.notes || '') : '';
+        }
+
         calculateModalSubtotal();
 
         openModal('itemModal');
-        lucide.createIcons();
+        if (typeof lucide !== 'undefined') lucide.createIcons();
 
         // Auto focus Qty
         setTimeout(() => {
             const qtyIn = document.getElementById('modal_item_qty');
-            qtyIn.focus();
-            qtyIn.select();
+            if (qtyIn) {
+                qtyIn.focus();
+                qtyIn.select();
+            }
         }, 100);
+    }
+
+    function renderModalModifiersUI(product, currentCartItem = null) {
+        const wrapper = document.getElementById('modal_modifiers_wrapper');
+        const container = document.getElementById('modal_modifiers_container');
+        if (!wrapper || !container) return;
+
+        const modifierGroups = product.modifier_groups || [];
+        if (modifierGroups.length === 0) {
+            wrapper.classList.add('hidden');
+            container.innerHTML = '';
+            return;
+        }
+
+        wrapper.classList.remove('hidden');
+        let html = '';
+
+        const selectedModIds = currentCartItem && currentCartItem.modifiers ? currentCartItem.modifiers.map(m => m.id) : [];
+
+        modifierGroups.forEach(group => {
+            const isSingle = group.selection_type === 'single';
+            const isRequired = group.is_required;
+            const modifiers = group.modifiers || [];
+
+            html += `
+                <div class="p-3 bg-slate-50 border border-slate-200/90 rounded-xl space-y-2">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-xs font-bold text-slate-800">${group.name}</span>
+                            ${isRequired ? '<span class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-rose-50 text-rose-600 border border-rose-200">Wajib</span>' : '<span class="px-1.5 py-0.2 rounded text-[9px] font-medium text-slate-400">Opsional</span>'}
+                        </div>
+                        <span class="text-[10px] text-slate-400 font-medium">
+                            ${isSingle ? 'Pilih 1' : 'Bisa lebih dari 1'}
+                        </span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-0.5">
+            `;
+
+            modifiers.forEach((mod, modIdx) => {
+                const priceAdj = parseFloat(mod.price_adjustment) || 0;
+                let isChecked = false;
+                if (currentCartItem) {
+                    isChecked = selectedModIds.includes(mod.id);
+                } else {
+                    isChecked = isSingle ? (mod.is_default || modIdx === 0) : mod.is_default;
+                }
+
+                if (isSingle) {
+                    html += `
+                        <label class="flex items-center justify-between p-2 rounded-lg bg-white border border-slate-200 hover:border-brand-500 hover:bg-brand-50/20 cursor-pointer transition text-xs">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <input type="radio" 
+                                       name="mod_group_${group.id}" 
+                                       value="${mod.id}" 
+                                       data-group-id="${group.id}"
+                                       data-group-name="${group.name}"
+                                       data-group-required="${isRequired ? '1' : '0'}"
+                                       data-mod-id="${mod.id}" 
+                                       data-name="${mod.name}" 
+                                       data-price="${priceAdj}" 
+                                       onchange="calculateModalSubtotal()"
+                                       ${isChecked ? 'checked' : ''}
+                                       class="text-brand-600 focus:ring-brand-500">
+                                <span class="font-medium text-slate-800 truncate">${mod.name}</span>
+                            </div>
+                            <span class="text-[10px] font-bold ${priceAdj > 0 ? 'text-amber-600 font-mono' : 'text-slate-400'} shrink-0 ml-1">
+                                ${priceAdj > 0 ? '+Rp ' + Math.round(priceAdj).toLocaleString('id-ID') : 'Rp 0'}
+                            </span>
+                        </label>
+                    `;
+                } else {
+                    html += `
+                        <label class="flex items-center justify-between p-2 rounded-lg bg-white border border-slate-200 hover:border-brand-500 hover:bg-brand-50/20 cursor-pointer transition text-xs">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <input type="checkbox" 
+                                       name="mod_group_${group.id}[]" 
+                                       value="${mod.id}" 
+                                       data-group-id="${group.id}"
+                                       data-group-name="${group.name}"
+                                       data-group-required="${isRequired ? '1' : '0'}"
+                                       data-mod-id="${mod.id}" 
+                                       data-name="${mod.name}" 
+                                       data-price="${priceAdj}" 
+                                       onchange="calculateModalSubtotal()"
+                                       ${isChecked ? 'checked' : ''}
+                                       class="rounded text-brand-600 focus:ring-brand-500">
+                                <span class="font-medium text-slate-800 truncate">${mod.name}</span>
+                            </div>
+                            <span class="text-[10px] font-bold ${priceAdj > 0 ? 'text-amber-600 font-mono' : 'text-slate-400'} shrink-0 ml-1">
+                                ${priceAdj > 0 ? '+Rp ' + Math.round(priceAdj).toLocaleString('id-ID') : 'Rp 0'}
+                            </span>
+                        </label>
+                    `;
+                }
+            });
+
+            html += `
+                    </div>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+        if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
     async function onModalUnitChange() {
@@ -771,11 +1059,22 @@
 
     function calculateModalSubtotal() {
         const qty = parseFloat(document.getElementById('modal_item_qty').value) || 0;
-        const price = parseFloat(document.getElementById('modal_item_price').value) || 0;
-        const subtotal = qty * price;
+        const basePrice = parseFloat(document.getElementById('modal_item_price').value) || 0;
+        
+        let modSum = 0;
+        document.querySelectorAll('#modal_modifiers_container input:checked').forEach(inp => {
+            modSum += parseFloat(inp.getAttribute('data-price')) || 0;
+        });
 
-        document.getElementById('modal_subtotal_calc_text').innerText = `${qty} x Rp ${parseInt(price).toLocaleString('id-ID')}`;
-        document.getElementById('modal_item_subtotal_display').innerText = `Rp ${parseInt(subtotal).toLocaleString('id-ID')}`;
+        const unitTotal = basePrice + modSum;
+        const subtotal = qty * unitTotal;
+
+        if (modSum > 0) {
+            document.getElementById('modal_subtotal_calc_text').innerText = `${qty} x (Rp ${Math.round(basePrice).toLocaleString('id-ID')} + Rp ${Math.round(modSum).toLocaleString('id-ID')} Topping)`;
+        } else {
+            document.getElementById('modal_subtotal_calc_text').innerText = `${qty} x Rp ${Math.round(basePrice).toLocaleString('id-ID')}`;
+        }
+        document.getElementById('modal_item_subtotal_display').innerText = `Rp ${Math.round(subtotal).toLocaleString('id-ID')}`;
     }
 
     function handleItemModalSubmit(e) {
@@ -784,36 +1083,66 @@
 
         const unitId = parseInt(document.getElementById('modal_item_unit').value);
         const qty = parseFloat(document.getElementById('modal_item_qty').value) || 1;
-        const customPrice = parseFloat(document.getElementById('modal_item_price').value) || 0;
+        const basePrice = parseFloat(document.getElementById('modal_item_price').value) || 0;
+        const itemNotes = document.getElementById('modal_item_notes') ? document.getElementById('modal_item_notes').value.trim() : '';
+
+        // Collect Selected Modifiers
+        const selectedModifiers = [];
+        let modSum = 0;
+        document.querySelectorAll('#modal_modifiers_container input:checked').forEach(inp => {
+            const priceAdj = parseFloat(inp.getAttribute('data-price')) || 0;
+            modSum += priceAdj;
+            selectedModifiers.push({
+                id: parseInt(inp.value),
+                name: inp.getAttribute('data-name'),
+                price_adjustment: priceAdj,
+                group_id: parseInt(inp.getAttribute('data-group-id'))
+            });
+        });
+
+        const finalUnitPrice = basePrice + modSum;
 
         if (modalEditingCartIndex !== null && cart[modalEditingCartIndex]) {
             // Update existing cart item
             cart[modalEditingCartIndex].unit_id = unitId;
             cart[modalEditingCartIndex].quantity = qty;
-            cart[modalEditingCartIndex].price = customPrice;
+            cart[modalEditingCartIndex].base_price = basePrice;
+            cart[modalEditingCartIndex].price = finalUnitPrice;
+            cart[modalEditingCartIndex].modifiers = selectedModifiers;
+            cart[modalEditingCartIndex].notes = itemNotes;
             cart[modalEditingCartIndex].is_custom_price = true;
             renderCart();
         } else {
-            // Add new to cart with custom price
-            addToCartWithCustomPrice(modalCurrentProduct, unitId, qty, customPrice, modalUnitsList);
+            // Add new to cart with custom price, modifiers, and notes
+            addToCartWithCustomPrice(modalCurrentProduct, unitId, qty, basePrice, finalUnitPrice, selectedModifiers, itemNotes, modalUnitsList);
         }
 
         closeModal('itemModal');
     }
 
-    async function addToCartWithCustomPrice(product, unitId, qty, customPrice, unitsList) {
-        const existingIdx = cart.findIndex(i => i.product.id === product.id && i.unit_id === unitId);
+    async function addToCartWithCustomPrice(product, unitId, qty, basePrice, finalUnitPrice, modifiers = [], notes = '', unitsList = null) {
+        // If has modifiers or notes, treat as distinct cart line
+        const hasCustomizations = (modifiers && modifiers.length > 0) || (notes && notes.length > 0);
+        
+        let existingIdx = -1;
+        if (!hasCustomizations) {
+            existingIdx = cart.findIndex(i => i.product.id === product.id && i.unit_id === unitId && (!i.modifiers || i.modifiers.length === 0) && !i.notes);
+        }
 
         if (existingIdx > -1) {
             cart[existingIdx].quantity += qty;
-            cart[existingIdx].price = customPrice; // update custom price
+            cart[existingIdx].base_price = basePrice;
+            cart[existingIdx].price = finalUnitPrice;
             cart[existingIdx].is_custom_price = true;
         } else {
             cart.push({
                 product,
                 unit_id: unitId,
                 quantity: qty,
-                price: customPrice,
+                base_price: basePrice,
+                price: finalUnitPrice,
+                modifiers: modifiers || [],
+                notes: notes || '',
                 is_custom_price: true,
                 unitsList: unitsList || [{ id: product.base_unit_id, name: product.base_unit ? product.base_unit.name : 'Pcs', short_name: product.base_unit ? product.base_unit.short_name : 'pcs', ratio: 1 }]
             });
@@ -902,16 +1231,51 @@
         recalculateCartPrices().then(renderCart);
     }
 
+    let cartCalculationResult = {
+        subtotal: 0,
+        total_discount: 0,
+        grand_total: 0,
+        item_discounts: [],
+        invoice_discounts: [],
+        free_rewards: []
+    };
+
     function clearCart() {
-        if (cart.length === 0) return;
         cart = [];
+        appliedPromoCode = '';
+        appliedManualDiscount = 0;
+        const dCode = document.getElementById('discount_promo_code');
+        const dAmt = document.getElementById('discount_manual_amount');
+        if (dCode) dCode.value = '';
+        if (dAmt) dAmt.value = '';
+        cartCalculationResult = {
+            subtotal: 0,
+            total_discount: 0,
+            grand_total: 0,
+            item_discounts: [],
+            invoice_discounts: [],
+            free_rewards: []
+        };
         renderCart();
     }
 
     // Dynamic Price Recalculation (PricingService & Discounts via AJAX)
     async function recalculateCartPrices() {
+        if (cart.length === 0) {
+            cartCalculationResult = {
+                subtotal: 0,
+                total_discount: 0,
+                grand_total: 0,
+                item_discounts: [],
+                invoice_discounts: [],
+                free_rewards: []
+            };
+            return;
+        }
+
         const customerId = document.getElementById('posCustomerSelect').value;
 
+        // 1. Resolve individual item pricing & wholesale/tiered pricing
         for (let i = 0; i < cart.length; i++) {
             const item = cart[i];
             if (item.is_custom_price) continue; // preserve manual custom price
@@ -928,6 +1292,36 @@
             } catch (err) {
                 console.error(err);
             }
+        }
+
+        // 2. Call backend DiscountService for real-time automatic discounts, invoice promos, and Buy X Get Y
+        try {
+            const res = await fetch('{{ route("pos.calculate-cart") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    customer_id: customerId || null,
+                    items: cart.map(item => ({
+                        product_id: item.product.id,
+                        unit_id: item.unit_id,
+                        quantity: item.quantity,
+                        price: item.price
+                    })),
+                    promo_code: appliedPromoCode || null,
+                    manual_discount: appliedManualDiscount || 0
+                })
+            });
+
+            const data = await res.json();
+            if (data.status === 'success') {
+                cartCalculationResult = data.data;
+            }
+        } catch (err) {
+            console.error('Failed to calculate discounts:', err);
         }
     }
 
@@ -953,16 +1347,12 @@
         countBadge.innerText = `${cart.length} Item`;
 
         let subtotal = 0;
-        let totalDiscount = 0;
         let totalQty = 0;
 
         cart.forEach((item, idx) => {
-            const lineTotal = item.price * item.quantity;
-            subtotal += lineTotal;
+            const lineSubtotal = item.price * item.quantity;
+            subtotal += lineSubtotal;
             totalQty += item.quantity;
-            if (item.discount_amount) {
-                totalDiscount += item.discount_amount * item.quantity;
-            }
 
             let unitOptions = '';
             item.unitsList.forEach(u => {
@@ -973,6 +1363,47 @@
             const imgHtml = item.product.image_path 
                 ? `<img src="/storage/${item.product.image_path}" class="w-full h-full object-cover rounded-lg">`
                 : `<i data-lucide="package" class="w-5 h-5 text-slate-400"></i>`;
+
+            // Check if there are item-specific discounts from DiscountService
+            const itemDiscounts = (cartCalculationResult.item_discounts || []).filter(d => d.cart_index === idx);
+            let itemDiscountsHtml = '';
+            let totalItemDisc = 0;
+
+            if (itemDiscounts.length > 0) {
+                itemDiscounts.forEach(d => {
+                    totalItemDisc += parseFloat(d.amount);
+                    itemDiscountsHtml += `
+                        <div class="flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/70 mt-1">
+                            <i data-lucide="tag" class="w-3 h-3 text-emerald-600 shrink-0"></i>
+                            <span class="truncate">${d.discount_name} (-Rp ${parseInt(d.amount).toLocaleString('id-ID')})</span>
+                        </div>
+                    `;
+                });
+            }
+
+            // Render Modifier Badges
+            let modifiersHtml = '';
+            if (item.modifiers && item.modifiers.length > 0) {
+                modifiersHtml = '<div class="flex flex-wrap gap-1 mt-1">';
+                item.modifiers.forEach(m => {
+                    const adjText = m.price_adjustment > 0 ? ` (+Rp ${Math.round(m.price_adjustment).toLocaleString('id-ID')})` : '';
+                    modifiersHtml += `<span class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-50 text-amber-800 border border-amber-200">+ ${m.name}${adjText}</span>`;
+                });
+                modifiersHtml += '</div>';
+            }
+
+            // Render Item Note
+            let notesHtml = '';
+            if (item.notes && item.notes.trim() !== '') {
+                notesHtml = `
+                    <div class="flex items-center gap-1 text-[10px] text-slate-500 italic mt-0.5">
+                        <i data-lucide="message-square" class="w-3 h-3 text-slate-400 shrink-0"></i>
+                        <span class="truncate">${item.notes}</span>
+                    </div>
+                `;
+            }
+
+            const netLineTotal = Math.max(0, lineSubtotal - totalItemDisc);
 
             const row = document.createElement('div');
             row.className = 'cart-item-row p-3 bg-white border border-slate-200/90 hover:border-brand-500/60 hover:shadow-md hover:shadow-brand-500/5 rounded-2xl transition space-y-2 shadow-2xs cursor-pointer group';
@@ -988,7 +1419,7 @@
                     <!-- Details -->
                     <div class="min-w-0 flex-1">
                         <div class="flex items-center justify-between gap-1">
-                            <div class="flex items-center gap-1.5 min-w-0">
+                            <div class="flex items-center gap-1.5 min-w-0 flex-wrap">
                                 <h5 class="text-xs font-bold text-slate-900 group-hover:text-brand-600 transition truncate">${item.product.name}</h5>
                                 ${item.is_tiered ? `<span class="px-1.5 py-0.2 rounded text-[8px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">Grosir</span>` : ''}
                                 ${item.is_custom_price ? `<span class="px-1.5 py-0.2 rounded text-[8px] font-bold bg-amber-50 text-amber-700 border border-amber-200 shrink-0">Custom</span>` : ''}
@@ -1003,6 +1434,9 @@
                                 ${unitOptions}
                             </select>
                         </div>
+                        ${modifiersHtml}
+                        ${notesHtml}
+                        ${itemDiscountsHtml}
                     </div>
                 </div>
 
@@ -1022,21 +1456,70 @@
                         >
                         <button onclick="updateCartQty(${idx}, 1)" class="w-6 h-6 rounded-lg bg-white hover:bg-slate-100 text-slate-700 flex items-center justify-center text-xs font-bold transition shadow-2xs border border-slate-200/70 cursor-pointer">+</button>
                     </div>
-                    <span class="text-xs font-black text-slate-900 font-mono-num">Rp ${parseInt(lineTotal).toLocaleString('id-ID')}</span>
+                    <div class="text-right">
+                        ${totalItemDisc > 0 ? `<span class="text-[10px] text-slate-400 line-through block font-mono-num">Rp ${parseInt(lineSubtotal).toLocaleString('id-ID')}</span>` : ''}
+                        <span class="text-xs font-black text-slate-900 font-mono-num">Rp ${parseInt(netLineTotal).toLocaleString('id-ID')}</span>
+                    </div>
                 </div>
             `;
             container.appendChild(row);
         });
 
-        updateSummary(subtotal, totalDiscount, totalQty);
+        // Render Free Rewards (Buy X Get Y)
+        if (cartCalculationResult.free_rewards && cartCalculationResult.free_rewards.length > 0) {
+            cartCalculationResult.free_rewards.forEach(reward => {
+                const rewardRow = document.createElement('div');
+                rewardRow.className = 'cart-item-row p-3 bg-gradient-to-r from-amber-50 to-orange-50/80 border border-amber-200 rounded-2xl flex items-center justify-between shadow-2xs';
+                rewardRow.innerHTML = `
+                    <div class="flex items-center gap-2.5 min-w-0">
+                        <div class="w-9 h-9 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
+                            <i data-lucide="gift" class="w-4 h-4"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <h6 class="text-xs font-bold text-slate-900 truncate">${reward.product_name}</h6>
+                            <p class="text-[10px] text-amber-700 font-semibold truncate">${reward.discount_name} • Qty: ${reward.quantity}</p>
+                        </div>
+                    </div>
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500 text-white tracking-wider shrink-0 shadow-xs">GRATIS</span>
+                `;
+                container.appendChild(rewardRow);
+            });
+        }
+
+        // Render Active Invoice Discounts (if any)
+        if (cartCalculationResult.invoice_discounts && cartCalculationResult.invoice_discounts.length > 0) {
+            cartCalculationResult.invoice_discounts.forEach(invDisc => {
+                const invRow = document.createElement('div');
+                invRow.className = 'cart-item-row p-2.5 bg-emerald-50/80 border border-emerald-200/80 rounded-xl flex items-center justify-between shadow-2xs text-xs';
+                invRow.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <span class="p-1 rounded-lg bg-emerald-100 text-emerald-700"><i data-lucide="percent" class="w-3.5 h-3.5"></i></span>
+                        <div>
+                            <span class="font-bold text-emerald-900">${invDisc.discount_name}</span>
+                            <span class="text-[10px] text-emerald-600 block">${invDisc.type === 'percentage' ? invDisc.value + '% Diskon Faktur' : 'Potongan Faktur'}</span>
+                        </div>
+                    </div>
+                    <span class="font-bold text-emerald-700 font-mono-num">- Rp ${parseInt(invDisc.amount).toLocaleString('id-ID')}</span>
+                `;
+                container.appendChild(invRow);
+            });
+        }
+
+        updateSummary(
+            cartCalculationResult.subtotal !== undefined ? cartCalculationResult.subtotal : subtotal,
+            cartCalculationResult.total_discount !== undefined ? cartCalculationResult.total_discount : 0,
+            totalQty
+        );
         lucide.createIcons();
     }
 
     function updateSummary(subtotal, discount, qty) {
-        const totalDiscount = discount + appliedManualDiscount;
-        const grandTotal = Math.max(0, subtotal - totalDiscount);
+        const grandTotal = cartCalculationResult.grand_total !== undefined 
+            ? cartCalculationResult.grand_total 
+            : Math.max(0, subtotal - discount);
+
         document.getElementById('cartSubtotalText').innerText = `Rp ${parseInt(subtotal).toLocaleString('id-ID')}`;
-        document.getElementById('cartDiscountText').innerText = `- Rp ${parseInt(totalDiscount).toLocaleString('id-ID')}`;
+        document.getElementById('cartDiscountText').innerText = `- Rp ${parseInt(discount).toLocaleString('id-ID')}`;
         document.getElementById('cartTotalQtyText').innerText = `${qty} Qty Total`;
         document.getElementById('cartGrandTotalText').innerText = `Rp ${parseInt(grandTotal).toLocaleString('id-ID')}`;
         window.currentCartGrandTotal = grandTotal;
@@ -1132,7 +1615,17 @@
         const payload = {
             warehouse_id: currentWarehouseId,
             customer_id: customerId || null,
-            items: cart.map(i => ({ product_id: i.product.id, unit_id: i.unit_id, quantity: i.quantity, price: i.price })),
+            service_type: selectedServiceType,
+            dining_table_id: selectedTable ? selectedTable.id : null,
+            guest_count: selectedServiceType === 'dine_in' ? guestCount : null,
+            items: cart.map(i => ({
+                product_id: i.product.id,
+                unit_id: i.unit_id,
+                quantity: i.quantity,
+                price: i.price,
+                notes: i.notes || null,
+                modifiers: (i.modifiers || []).map(m => ({ id: m.id, name: m.name, price_adjustment: m.price_adjustment }))
+            })),
             paid_amount: method === 'cash' ? paidAmount : window.currentCartGrandTotal,
             payment_method: method,
             reference_number: refNo,
@@ -1179,25 +1672,42 @@
         const paper = document.getElementById('thermal_receipt_paper');
         let itemsHtml = '';
         (sale.items || []).forEach(it => {
+            const isFreeReward = parseFloat(it.unit_price) === 0;
+            
+            let itemModHtml = '';
+            if (it.modifiers && it.modifiers.length > 0) {
+                itemModHtml = `<div class="text-[9px] text-slate-500 pl-2 font-medium">${it.modifiers.map(m => '+ ' + (m.modifier_name || m.name)).join(', ')}</div>`;
+            }
+            let itemNoteHtml = '';
+            if (it.notes) {
+                itemNoteHtml = `<div class="text-[9px] text-slate-400 italic pl-2">"${it.notes}"</div>`;
+            }
+
             itemsHtml += `
                 <div class="flex justify-between">
-                    <span>${it.product ? it.product.name : 'Item'}</span>
+                    <span>${it.product ? it.product.name : 'Item'} ${isFreeReward ? '<b class="text-emerald-700">[GRATIS]</b>' : ''}</span>
                 </div>
+                ${itemModHtml}
+                ${itemNoteHtml}
                 <div class="flex justify-between text-slate-500 text-[10px]">
-                    <span>${it.quantity} x ${parseInt(it.unit_price).toLocaleString('id-ID')}</span>
+                    <span>${it.quantity} x ${parseInt(it.unit_price).toLocaleString('id-ID')} ${it.discount_amount > 0 ? `(Disc: -Rp ${parseInt(it.discount_amount).toLocaleString('id-ID')})` : ''}</span>
                     <span class="font-bold text-slate-800">Rp ${parseInt(it.subtotal).toLocaleString('id-ID')}</span>
                 </div>
             `;
         });
 
+        const serviceTypeLabel = sale.service_type ? sale.service_type.toUpperCase().replace('_', ' ') : 'DINE IN';
+        const tableLabel = sale.dining_table ? `Meja ${sale.dining_table.table_number}` : '';
+
         paper.innerHTML = `
             <div class="text-center space-y-0.5 pb-2 border-b border-dashed border-slate-300">
-                <h4 class="font-black text-xs uppercase tracking-wider">POS RETAIL PRO</h4>
+                <h4 class="font-black text-xs uppercase tracking-wider">POS RETAIL & RESTO</h4>
                 <p class="text-[10px] text-slate-500">${sale.warehouse ? sale.warehouse.name : 'Cabang Utama'}</p>
                 <p class="text-[9px] text-slate-400">Telp: ${sale.warehouse ? (sale.warehouse.phone || '-') : '-'}</p>
             </div>
             <div class="text-[10px] space-y-0.5 py-1 border-b border-dashed border-slate-300">
                 <div class="flex justify-between"><span>No. Faktur</span><span class="font-bold">${sale.invoice_number}</span></div>
+                <div class="flex justify-between"><span>Layanan</span><span class="font-bold text-brand-700">${serviceTypeLabel} ${tableLabel ? '• ' + tableLabel : ''}</span></div>
                 <div class="flex justify-between"><span>Kasir</span><span>${sale.user ? sale.user.name : '-'}</span></div>
                 <div class="flex justify-between"><span>Pelanggan</span><span>${sale.customer ? sale.customer.name : 'Umum (Retail)'}</span></div>
                 <div class="flex justify-between"><span>Waktu</span><span>${new Date(sale.sale_date).toLocaleString('id-ID')}</span></div>

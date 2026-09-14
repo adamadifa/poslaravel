@@ -5,11 +5,15 @@ namespace App\Http\Controllers;
 use App\Models\CashierShift;
 use App\Models\Category;
 use App\Models\Customer;
-use App\Models\Discount;
+use App\Models\CustomerGroup;
+use App\Models\DiningTable;
 use App\Models\HeldTransaction;
+use App\Models\ModifierGroup;
 use App\Models\Product;
 use App\Models\Sale;
+use App\Models\Setting;
 use App\Models\Unit;
+use App\Models\User;
 use App\Models\Warehouse;
 use App\Services\DiscountService;
 use App\Services\PricingService;
@@ -19,7 +23,9 @@ use Illuminate\Http\Request;
 class PosController extends Controller
 {
     protected SaleService $saleService;
+
     protected PricingService $pricingService;
+
     protected DiscountService $discountService;
 
     public function __construct(
@@ -49,8 +55,15 @@ class PosController extends Controller
 
         $categories = Category::where('is_active', true)->orderBy('sort_order')->orderBy('name')->get();
         $customers = Customer::with('group')->where('is_active', true)->orderBy('name')->get();
-        $customerGroups = \App\Models\CustomerGroup::orderBy('name')->get();
+        $customerGroups = CustomerGroup::orderBy('name')->get();
         $units = Unit::where('is_active', true)->get();
+
+        // Multi Business Type & Hybrid data
+        $businessType = Setting::get('business_type', 'retail');
+        $diningTables = DiningTable::with('currentSale')->where('is_active', true)->orderBy('table_number')->get();
+        $modifierGroups = ModifierGroup::with('modifiers')->where('is_active', true)->orderBy('sort_order')->get();
+        $serviceStaff = User::orderBy('name')->get();
+        $fnbServiceCharge = (float) Setting::get('fnb_service_charge_percent', '0');
 
         return view('pos.index', [
             'title' => 'Kasir POS Modern',
@@ -61,6 +74,11 @@ class PosController extends Controller
             'customers' => $customers,
             'customerGroups' => $customerGroups,
             'units' => $units,
+            'businessType' => $businessType,
+            'diningTables' => $diningTables,
+            'modifierGroups' => $modifierGroups,
+            'serviceStaff' => $serviceStaff,
+            'fnbServiceCharge' => $fnbServiceCharge,
         ]);
     }
 
@@ -81,32 +99,70 @@ class PosController extends Controller
             'conversions.toUnit',
             'priceLists.unit',
             'tieredPrices',
+            'modifierGroups.modifiers',
+            'serviceStaff.user',
             'stocks' => function ($q) use ($warehouseId) {
                 if ($warehouseId) {
                     $q->where('warehouse_id', $warehouseId);
                 }
-            }
+            },
         ])
-        ->where('is_active', true)
-        ->when($search, function ($query, $search) {
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('code', 'like', "%{$search}%")
-                  ->orWhere('barcode', 'like', "%{$search}%")
-                  ->orWhereHas('barcodes', function ($b) use ($search) {
-                      $b->where('barcode', 'like', "%{$search}%");
-                  });
-            });
-        })
-        ->when($categoryId, function ($query, $categoryId) {
-            $query->where('category_id', $categoryId);
-        })
-        ->take(40)
-        ->get();
+            ->where('is_active', true)
+            ->where('product_type', '!=', 'raw_material')
+            ->when($search, function ($query, $search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('code', 'like', "%{$search}%")
+                        ->orWhere('barcode', 'like', "%{$search}%")
+                        ->orWhereHas('barcodes', function ($b) use ($search) {
+                            $b->where('barcode', 'like', "%{$search}%");
+                        });
+                });
+            })
+            ->when($categoryId, function ($query, $categoryId) {
+                $query->where('category_id', $categoryId);
+            })
+            ->take(40)
+            ->get();
 
         return response()->json([
             'status' => 'success',
             'data' => $products,
+        ]);
+    }
+
+    /**
+     * AJAX calculate cart discounts and grand total in real-time.
+     */
+    public function calculateCart(Request $request)
+    {
+        $validated = $request->validate([
+            'customer_id' => ['nullable', 'exists:customers,id'],
+            'items' => ['required', 'array'],
+            'items.*.product_id' => ['required', 'exists:products,id'],
+            'items.*.unit_id' => ['required', 'exists:units,id'],
+            'items.*.quantity' => ['required', 'numeric', 'min:0.0001'],
+            'items.*.price' => ['required', 'numeric', 'min:0'],
+            'promo_code' => ['nullable', 'string'],
+            'manual_discount' => ['nullable', 'numeric', 'min:0'],
+        ]);
+
+        $customer = ! empty($validated['customer_id']) ? Customer::with('group')->find($validated['customer_id']) : null;
+        $items = $validated['items'];
+        $promoCode = $validated['promo_code'] ?? null;
+        $manualDiscount = (float) ($validated['manual_discount'] ?? 0);
+
+        $discResult = $this->discountService->calculateCartDiscounts($items, $customer, $promoCode);
+        $totalDiscount = $discResult['total_discount'] + $manualDiscount;
+        $grandTotal = max(0, $discResult['subtotal'] - $totalDiscount);
+
+        return response()->json([
+            'status' => 'success',
+            'data' => array_merge($discResult, [
+                'manual_discount' => $manualDiscount,
+                'total_discount' => $totalDiscount,
+                'grand_total' => $grandTotal,
+            ]),
         ]);
     }
 
@@ -118,11 +174,19 @@ class PosController extends Controller
         $validated = $request->validate([
             'warehouse_id' => ['required', 'exists:warehouses,id'],
             'customer_id' => ['nullable', 'exists:customers,id'],
+            'service_type' => ['nullable', 'string', 'in:dine_in,takeaway,delivery'],
+            'dining_table_id' => ['nullable', 'exists:dining_tables,id'],
+            'guest_count' => ['nullable', 'integer', 'min:1'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.product_id' => ['required', 'exists:products,id'],
             'items.*.unit_id' => ['required', 'exists:units,id'],
             'items.*.quantity' => ['required', 'numeric', 'min:0.0001'],
             'items.*.price' => ['required', 'numeric', 'min:0'],
+            'items.*.notes' => ['nullable', 'string', 'max:255'],
+            'items.*.modifiers' => ['nullable', 'array'],
+            'items.*.modifiers.*.id' => ['nullable', 'exists:modifiers,id'],
+            'items.*.modifiers.*.name' => ['nullable', 'string'],
+            'items.*.modifiers.*.price_adjustment' => ['nullable', 'numeric', 'min:0'],
             'paid_amount' => ['nullable', 'numeric', 'min:0'],
             'payment_method' => ['required', 'in:cash,transfer,qris,credit,split'],
             'reference_number' => ['nullable', 'string', 'max:100'],
@@ -143,7 +207,7 @@ class PosController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Gagal memproses transaksi: ' . $e->getMessage(),
+                'message' => 'Gagal memproses transaksi: '.$e->getMessage(),
             ], 422);
         }
     }
@@ -232,7 +296,7 @@ class PosController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Gagal melakukan void: ' . $e->getMessage(),
+                'message' => 'Gagal melakukan void: '.$e->getMessage(),
             ], 422);
         }
     }

@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Account;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class AccountController extends Controller
 {
@@ -16,12 +15,12 @@ class AccountController extends Controller
         $type = $request->query('type');
         $search = $request->query('search');
 
-        $accounts = Account::when($type, fn($q) => $q->where('type', $type))
+        $accounts = Account::when($type, fn ($q) => $q->where('type', $type))
             ->when($search, function ($q, $search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('account_code', 'like', "%{$search}%")
-                  ->orWhere('account_number', 'like', "%{$search}%")
-                  ->orWhere('bank_name', 'like', "%{$search}%");
+                    ->orWhere('account_code', 'like', "%{$search}%")
+                    ->orWhere('account_number', 'like', "%{$search}%")
+                    ->orWhere('bank_name', 'like', "%{$search}%");
             })
             ->orderByDesc('is_default')
             ->orderBy('name')
@@ -133,6 +132,7 @@ class AccountController extends Controller
         }
 
         $account->delete();
+
         return redirect()->route('accounts.index')->with('success', "Akun {$account->name} berhasil dihapus.");
     }
 }

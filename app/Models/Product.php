@@ -5,12 +5,13 @@ namespace App\Models;
 use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Product extends Model
 {
-    use SoftDeletes, Auditable;
+    use Auditable, SoftDeletes;
 
     protected $fillable = [
         'category_id',
@@ -18,6 +19,11 @@ class Product extends Model
         'code',
         'barcode',
         'name',
+        'product_type',
+        'duration_minutes',
+        'is_bookable',
+        'require_staff_assignment',
+        'max_concurrent',
         'slug',
         'brand',
         'description',
@@ -33,6 +39,10 @@ class Product extends Model
     ];
 
     protected $casts = [
+        'duration_minutes' => 'integer',
+        'is_bookable' => 'boolean',
+        'require_staff_assignment' => 'boolean',
+        'max_concurrent' => 'integer',
         'purchase_price' => 'decimal:2',
         'selling_price' => 'decimal:2',
         'min_stock' => 'decimal:4',
@@ -75,5 +85,60 @@ class Product extends Model
     public function stocks(): HasMany
     {
         return $this->hasMany(ProductStock::class);
+    }
+
+    public function modifierGroups(): BelongsToMany
+    {
+        return $this->belongsToMany(ModifierGroup::class, 'product_modifier_groups')
+            ->withPivot('sort_order')
+            ->withTimestamps();
+    }
+
+    public function serviceStaff(): HasMany
+    {
+        return $this->hasMany(ServiceStaff::class);
+    }
+
+    public function recipes(): HasMany
+    {
+        return $this->hasMany(Recipe::class, 'product_id')->with(['ingredient.baseUnit', 'unit']);
+    }
+
+    public function usedInRecipes(): HasMany
+    {
+        return $this->hasMany(Recipe::class, 'ingredient_product_id');
+    }
+
+    /**
+     * Calculate total recipe cost (HPP) based on all recipe ingredients.
+     */
+    public function calculateRecipeHpp(): float
+    {
+        $totalCost = 0;
+        foreach ($this->recipes as $recipe) {
+            $totalCost += $recipe->calculateCost();
+        }
+
+        return $totalCost;
+    }
+
+    public function scopeServices($query)
+    {
+        return $query->where('product_type', 'service');
+    }
+
+    public function scopeFnb($query)
+    {
+        return $query->whereIn('product_type', ['food', 'beverage']);
+    }
+
+    public function scopeRawMaterials($query)
+    {
+        return $query->where('product_type', 'raw_material');
+    }
+
+    public function scopeForSale($query)
+    {
+        return $query->where('product_type', '!=', 'raw_material');
     }
 }

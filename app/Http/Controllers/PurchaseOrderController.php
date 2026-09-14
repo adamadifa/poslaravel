@@ -108,7 +108,7 @@ class PurchaseOrderController extends Controller
                 return response()->json([
                     'status' => 'success',
                     'message' => "Purchase Order {$po->po_number} berhasil dibuat.",
-                    'data' => $po
+                    'data' => $po,
                 ]);
             }
 
@@ -117,7 +117,8 @@ class PurchaseOrderController extends Controller
             if ($request->wantsJson()) {
                 return response()->json(['status' => 'error', 'message' => $e->getMessage()], 422);
             }
-            return redirect()->back()->withInput()->with('error', 'Gagal membuat PO: ' . $e->getMessage());
+
+            return redirect()->back()->withInput()->with('error', 'Gagal membuat PO: '.$e->getMessage());
         }
     }
 
@@ -155,7 +156,7 @@ class PurchaseOrderController extends Controller
                 return response()->json([
                     'status' => 'success',
                     'message' => "Purchase Order {$po->po_number} berhasil diperbarui.",
-                    'data' => $po
+                    'data' => $po,
                 ]);
             }
 
@@ -164,7 +165,8 @@ class PurchaseOrderController extends Controller
             if ($request->wantsJson()) {
                 return response()->json(['status' => 'error', 'message' => $e->getMessage()], 422);
             }
-            return redirect()->back()->withInput()->with('error', 'Gagal memperbarui PO: ' . $e->getMessage());
+
+            return redirect()->back()->withInput()->with('error', 'Gagal memperbarui PO: '.$e->getMessage());
         }
     }
 
@@ -207,9 +209,10 @@ class PurchaseOrderController extends Controller
     public function getDetails(PurchaseOrder $purchaseOrder)
     {
         $purchaseOrder->load(['supplier', 'warehouse', 'items.product.baseUnit', 'items.unit']);
+
         return response()->json([
             'status' => 'success',
-            'data' => $purchaseOrder
+            'data' => $purchaseOrder,
         ]);
     }
 }

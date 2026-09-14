@@ -111,7 +111,24 @@
                                         @endif
                                     </div>
                                     <div>
-                                        <div class="font-bold text-slate-900 leading-snug">{{ $product->name }}</div>
+                                        <div class="flex items-center gap-1.5 flex-wrap">
+                                            <span class="font-bold text-slate-900 leading-snug">{{ $product->name }}</span>
+                                            @if($product->product_type === 'raw_material')
+                                                <span class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-50 text-amber-700 border border-amber-200">Bahan Baku</span>
+                                            @elseif($product->product_type === 'food')
+                                                <span class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-orange-50 text-orange-700 border border-orange-200">Food</span>
+                                            @elseif($product->product_type === 'beverage')
+                                                <span class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-blue-50 text-blue-700 border border-blue-200">Beverage</span>
+                                            @elseif($product->product_type === 'service')
+                                                <span class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-purple-50 text-purple-700 border border-purple-200">Jasa</span>
+                                            @endif
+                                            @if($product->recipes && $product->recipes->count() > 0)
+                                                <span class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-0.5" title="Resep BOM Aktif">
+                                                    <i data-lucide="chef-hat" class="w-2.5 h-2.5"></i>
+                                                    {{ $product->recipes->count() }} Bahan
+                                                </span>
+                                            @endif
+                                        </div>
                                         <div class="text-[10px] text-slate-400 font-mono flex items-center gap-1.5">
                                             <span class="text-brand-600 font-semibold">{{ $product->code }}</span>
                                             <span>•</span>
@@ -170,6 +187,11 @@
                             <!-- Aksi -->
                             <td class="py-2.5 px-6 text-right">
                                 <div class="flex items-center justify-end gap-1">
+                                    @if($product->product_type !== 'raw_material' && $product->product_type !== 'service')
+                                        <button onclick="openRecipeModal({{ $product->id }}, '{{ addslashes($product->name) }}', {{ $product->selling_price }}, '{{ $product->product_type }}')" class="p-1 rounded-lg text-slate-400 hover:text-amber-600 hover:bg-amber-50 transition" title="Kelola Resep (BOM)">
+                                            <i data-lucide="chef-hat" class="w-3.5 h-3.5"></i>
+                                        </button>
+                                    @endif
                                     <button onclick="openEditProductModal({{ json_encode($product) }})" class="p-1 rounded-lg text-slate-400 hover:text-brand-600 hover:bg-slate-100 transition" title="Edit Produk">
                                         <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
                                     </button>
@@ -205,9 +227,10 @@
 @endsection
 
 @push('modals')
-<!-- CREATE & EDIT MODALS -->
+<!-- CREATE, EDIT & RECIPE MODALS -->
 @include('products._create_modal')
 @include('products._edit_modal')
+@include('products._recipe_modal')
 @endpush
 
 @push('scripts')
@@ -457,6 +480,7 @@
         document.getElementById('edit_product_id').value = product.id;
 
         document.getElementById('edit_input_name').value = product.name || '';
+        document.getElementById('edit_input_product_type').value = product.product_type || 'standard';
         document.getElementById('edit_input_code').value = product.code || '';
         document.getElementById('edit_input_barcode').value = product.barcode || '';
         document.getElementById('edit_input_category_id').value = product.category_id || '';
@@ -555,6 +579,292 @@
             unitInput.addEventListener('change', function() {
                 if (this.value === '') setFieldStatus(prefix, 'base_unit_id', 'Satuan dasar wajib dipilih.');
                 else setFieldStatus(prefix, 'base_unit_id', null);
+            });
+        }
+    });
+
+    // ==========================================
+    // RECIPE & BOM MODAL CONTROLLER
+    // ==========================================
+    let currentRecipeProductId = null;
+    let currentRecipeProductSellingPrice = 0;
+    let currentRecipeList = [];
+    let availableRecipeIngredients = [];
+    let availableRecipeUnits = [];
+
+    function openRecipeModal(productId, productName, sellingPrice, productType) {
+        currentRecipeProductId = productId;
+        currentRecipeProductSellingPrice = parseFloat(sellingPrice) || 0;
+        currentRecipeList = [];
+
+        document.getElementById('recipe_modal_product_name').innerText = productName;
+        document.getElementById('recipe_modal_product_badge').innerText = productType ? productType.toUpperCase() : 'PRODUK';
+        document.getElementById('recipe_modal_selling_price').innerText = 'Rp ' + Math.round(currentRecipeProductSellingPrice).toLocaleString('id-ID');
+
+        const modal = document.getElementById('recipeModal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+
+        const tbody = document.getElementById('recipe_table_body');
+        tbody.innerHTML = '<tr><td colspan="6" class="py-6 text-center text-slate-400 text-xs">Memuat resep bahan baku...</td></tr>';
+
+        fetch(`/products/${productId}/recipes`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    availableRecipeIngredients = data.available_ingredients || [];
+                    availableRecipeUnits = data.units || [];
+
+                    // Populate ingredient dropdown
+                    const ingSelect = document.getElementById('recipe_new_ingredient_id');
+                    ingSelect.innerHTML = '<option value="">Pilih Bahan Baku...</option>';
+                    availableRecipeIngredients.forEach(ing => {
+                        const baseUnitName = ing.base_unit ? (ing.base_unit.short_name || ing.base_unit.name) : '';
+                        const typeTag = ing.product_type === 'raw_material' ? '[Bahan]' : '';
+                        ingSelect.innerHTML += `<option value="${ing.id}" data-price="${ing.purchase_price}" data-unit="${ing.base_unit_id}">${typeTag} ${ing.name} (HPP: Rp ${Math.round(ing.purchase_price).toLocaleString('id-ID')}/${baseUnitName})</option>`;
+                    });
+
+                    // Populate unit dropdown
+                    const unitSelect = document.getElementById('recipe_new_unit_id');
+                    unitSelect.innerHTML = '<option value="">Pilih Satuan...</option>';
+                    availableRecipeUnits.forEach(u => {
+                        unitSelect.innerHTML += `<option value="${u.id}">${u.name} (${u.short_name})</option>`;
+                    });
+
+                    // Map existing recipes
+                    currentRecipeList = (data.recipes || []).map(r => ({
+                        ingredient_product_id: r.ingredient_product_id,
+                        ingredient_name: r.ingredient ? r.ingredient.name : 'Bahan',
+                        quantity: parseFloat(r.quantity) || 0,
+                        unit_id: r.unit_id,
+                        unit_name: r.unit ? (r.unit.short_name || r.unit.name) : '',
+                        waste_percent: parseFloat(r.waste_percent) || 0,
+                        cost_estimate: parseFloat(r.cost_estimate) || 0,
+                        notes: r.notes || ''
+                    }));
+
+                    renderRecipeTable();
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                tbody.innerHTML = '<tr><td colspan="6" class="py-6 text-center text-rose-500 text-xs">Gagal memuat resep produk.</td></tr>';
+            });
+
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    function closeRecipeModal() {
+        const modal = document.getElementById('recipeModal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+
+    function renderRecipeTable() {
+        const tbody = document.getElementById('recipe_table_body');
+        document.getElementById('recipe_items_count').innerText = currentRecipeList.length;
+
+        if (currentRecipeList.length === 0) {
+            tbody.innerHTML = `<tr>
+                <td colspan="6" class="py-6 text-center text-slate-400 text-xs">
+                    Belum ada bahan baku pada resep ini. Tambahkan bahan racikan di atas.
+                </td>
+            </tr>`;
+            calculateRecipeTotals();
+            return;
+        }
+
+        let html = '';
+        currentRecipeList.forEach((item, idx) => {
+            html += `
+                <tr class="hover:bg-slate-50/70 transition">
+                    <td class="py-2.5 px-4 font-semibold text-slate-900">
+                        ${item.ingredient_name}
+                    </td>
+                    <td class="py-2.5 px-3 text-center">
+                        <input type="number" step="any" min="0.001" value="${item.quantity}" onchange="updateRecipeQty(${idx}, this.value)" class="w-20 text-center text-xs font-semibold bg-white border border-slate-200 rounded-md py-1 px-1 focus:border-brand-500 focus:outline-none">
+                    </td>
+                    <td class="py-2.5 px-3">
+                        <select onchange="updateRecipeUnit(${idx}, this.value)" class="text-xs bg-white border border-slate-200 rounded-md py-1 px-1.5 focus:border-brand-500 focus:outline-none">
+                            ${availableRecipeUnits.map(u => `<option value="${u.id}" ${u.id == item.unit_id ? 'selected' : ''}>${u.short_name || u.name}</option>`).join('')}
+                        </select>
+                    </td>
+                    <td class="py-2.5 px-3 text-center">
+                        <input type="number" step="any" min="0" max="100" value="${item.waste_percent}" onchange="updateRecipeWaste(${idx}, this.value)" class="w-16 text-center text-xs font-semibold bg-white border border-slate-200 rounded-md py-1 px-1 focus:border-brand-500 focus:outline-none">
+                    </td>
+                    <td class="py-2.5 px-4 text-right font-mono font-bold text-slate-800">
+                        Rp ${Math.round(item.cost_estimate || 0).toLocaleString('id-ID')}
+                    </td>
+                    <td class="py-2.5 px-3 text-center">
+                        <button type="button" onclick="removeRecipeIngredientRow(${idx})" class="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition" title="Hapus Bahan">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+        tbody.innerHTML = html;
+        calculateRecipeTotals();
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    function addRecipeIngredientRow() {
+        const ingSelect = document.getElementById('recipe_new_ingredient_id');
+        const qtyInput = document.getElementById('recipe_new_qty');
+        const unitSelect = document.getElementById('recipe_new_unit_id');
+
+        const ingId = parseInt(ingSelect.value);
+        const qty = parseFloat(qtyInput.value);
+        const unitId = parseInt(unitSelect.value);
+
+        if (!ingId) {
+            alert('Silakan pilih bahan baku terlebih dahulu.');
+            return;
+        }
+        if (!qty || qty <= 0) {
+            alert('Silakan masukkan takaran yang valid.');
+            return;
+        }
+        if (!unitId) {
+            alert('Silakan pilih satuan takaran.');
+            return;
+        }
+
+        const existing = currentRecipeList.find(r => r.ingredient_product_id === ingId);
+        if (existing) {
+            alert('Bahan baku ini sudah ada di resep.');
+            return;
+        }
+
+        const ingData = availableRecipeIngredients.find(i => i.id === ingId);
+        const unitData = availableRecipeUnits.find(u => u.id === unitId);
+
+        let costEst = (parseFloat(ingData?.purchase_price) || 0) * qty;
+
+        currentRecipeList.push({
+            ingredient_product_id: ingId,
+            ingredient_name: ingData ? ingData.name : 'Bahan',
+            quantity: qty,
+            unit_id: unitId,
+            unit_name: unitData ? (unitData.short_name || unitData.name) : '',
+            waste_percent: 0,
+            cost_estimate: costEst,
+            notes: ''
+        });
+
+        ingSelect.value = '';
+        qtyInput.value = '';
+        renderRecipeTable();
+    }
+
+    function updateRecipeQty(idx, val) {
+        if (currentRecipeList[idx]) {
+            currentRecipeList[idx].quantity = parseFloat(val) || 0;
+            const ingData = availableRecipeIngredients.find(i => i.id === currentRecipeList[idx].ingredient_product_id);
+            currentRecipeList[idx].cost_estimate = (parseFloat(ingData?.purchase_price) || 0) * currentRecipeList[idx].quantity;
+            renderRecipeTable();
+        }
+    }
+
+    function updateRecipeUnit(idx, val) {
+        if (currentRecipeList[idx]) {
+            currentRecipeList[idx].unit_id = parseInt(val);
+            const unitData = availableRecipeUnits.find(u => u.id === parseInt(val));
+            currentRecipeList[idx].unit_name = unitData ? (unitData.short_name || unitData.name) : '';
+        }
+    }
+
+    function updateRecipeWaste(idx, val) {
+        if (currentRecipeList[idx]) {
+            currentRecipeList[idx].waste_percent = parseFloat(val) || 0;
+            calculateRecipeTotals();
+        }
+    }
+
+    function removeRecipeIngredientRow(idx) {
+        currentRecipeList.splice(idx, 1);
+        renderRecipeTable();
+    }
+
+    function calculateRecipeTotals() {
+        let totalHpp = 0;
+        currentRecipeList.forEach(item => {
+            totalHpp += (parseFloat(item.cost_estimate) || 0) * (1 + ((parseFloat(item.waste_percent) || 0) / 100));
+        });
+
+        document.getElementById('recipe_modal_total_cost').innerText = 'Rp ' + Math.round(totalHpp).toLocaleString('id-ID');
+
+        let margin = 0;
+        if (currentRecipeProductSellingPrice > 0) {
+            margin = ((currentRecipeProductSellingPrice - totalHpp) / currentRecipeProductSellingPrice) * 100;
+        }
+
+        const marginEl = document.getElementById('recipe_modal_margin');
+        marginEl.innerText = margin.toFixed(1) + '%';
+        if (margin >= 40) {
+            marginEl.className = 'text-sm font-extrabold text-emerald-600 font-mono mt-0.5';
+        } else if (margin >= 20) {
+            marginEl.className = 'text-sm font-extrabold text-amber-600 font-mono mt-0.5';
+        } else {
+            marginEl.className = 'text-sm font-extrabold text-rose-600 font-mono mt-0.5';
+        }
+    }
+
+    function saveProductRecipes() {
+        if (!currentRecipeProductId) return;
+
+        const btn = document.getElementById('saveRecipeBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin"></i><span>Menyimpan...</span>';
+
+        const payload = {
+            recipes: currentRecipeList.map(r => ({
+                ingredient_product_id: r.ingredient_product_id,
+                quantity: r.quantity,
+                unit_id: r.unit_id,
+                waste_percent: r.waste_percent,
+                notes: r.notes || null
+            }))
+        };
+
+        fetch(`/products/${currentRecipeProductId}/recipes`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}'
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(data => {
+            btn.disabled = false;
+            btn.innerHTML = '<i data-lucide="save" class="w-4 h-4"></i><span>Simpan Resep</span>';
+            if (data.status === 'success') {
+                alert(data.message);
+                closeRecipeModal();
+                window.location.reload();
+            } else {
+                alert(data.message || 'Gagal menyimpan resep.');
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            btn.disabled = false;
+            btn.innerHTML = '<i data-lucide="save" class="w-4 h-4"></i><span>Simpan Resep</span>';
+            alert('Terjadi kesalahan koneksi saat menyimpan resep.');
+        });
+    }
+
+    // Auto-select unit when ingredient is selected
+    document.addEventListener('DOMContentLoaded', function() {
+        const ingSelect = document.getElementById('recipe_new_ingredient_id');
+        if (ingSelect) {
+            ingSelect.addEventListener('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+                const defaultUnitId = selectedOption ? selectedOption.getAttribute('data-unit') : null;
+                if (defaultUnitId) {
+                    document.getElementById('recipe_new_unit_id').value = defaultUnitId;
+                }
             });
         }
     });

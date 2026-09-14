@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Customer;
 use App\Models\Product;
+use App\Models\PurchaseReceipt;
 use App\Models\Sale;
+use App\Models\SaleItem;
 use App\Models\StockBatch;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
@@ -28,10 +30,10 @@ class DashboardController extends Controller
         // 3. Sales Timeframe Metrics
         $todaySales = Sale::whereDate('sale_date', today())->where('status', 'completed')->sum('grand_total');
         $todayTransactions = Sale::whereDate('sale_date', today())->where('status', 'completed')->count();
-        
+
         $thisWeekSales = Sale::whereBetween('sale_date', [now()->startOfWeek(), now()->endOfWeek()])
             ->where('status', 'completed')->sum('grand_total');
-            
+
         $thisMonthSales = Sale::whereBetween('sale_date', [now()->startOfMonth(), now()->endOfMonth()])
             ->where('status', 'completed')->sum('grand_total');
 
@@ -41,7 +43,7 @@ class DashboardController extends Controller
             ->whereDate('sale_date', '<=', now()->subDays(30))
             ->sum(DB::raw('grand_total - paid_amount'));
 
-        $overduePayables = \App\Models\PurchaseReceipt::join('purchase_orders', 'purchase_receipts.purchase_order_id', '=', 'purchase_orders.id')
+        $overduePayables = PurchaseReceipt::join('purchase_orders', 'purchase_receipts.purchase_order_id', '=', 'purchase_orders.id')
             ->where('purchase_receipts.status', 'received')
             ->whereDate('purchase_receipts.receipt_date', '<=', now()->subDays(30))
             ->sum('purchase_orders.grand_total');
@@ -72,7 +74,7 @@ class DashboardController extends Controller
         }
 
         // 6. Top 10 Produk Terlaris (30 Hari Terakhir / All Time)
-        $topProducts = \App\Models\SaleItem::join('sales', 'sale_items.sale_id', '=', 'sales.id')
+        $topProducts = SaleItem::join('sales', 'sale_items.sale_id', '=', 'sales.id')
             ->join('products', 'sale_items.product_id', '=', 'products.id')
             ->where('sales.status', 'completed')
             ->select(
@@ -87,7 +89,7 @@ class DashboardController extends Controller
             ->get();
 
         // 7. Penjualan per Kategori (Pie/Donut Chart Data)
-        $categorySales = \App\Models\SaleItem::join('sales', 'sale_items.sale_id', '=', 'sales.id')
+        $categorySales = SaleItem::join('sales', 'sale_items.sale_id', '=', 'sales.id')
             ->join('products', 'sale_items.product_id', '=', 'products.id')
             ->leftJoin('categories', 'products.category_id', '=', 'categories.id')
             ->where('sales.status', 'completed')
@@ -146,7 +148,7 @@ class DashboardController extends Controller
             ->limit(6)
             ->get();
 
-        $totalCustomers = \App\Models\Customer::where('is_active', true)->count();
+        $totalCustomers = Customer::where('is_active', true)->count();
         $totalProducts = Product::where('is_active', true)->count();
 
         return view('dashboard.index', [

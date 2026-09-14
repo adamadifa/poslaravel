@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Setting;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 
 class SettingController extends Controller
 {
@@ -44,6 +43,24 @@ class SettingController extends Controller
         $receiptPaperSize = Setting::get('receipt_paper_size', '58mm');
         $receiptShowLogo = Setting::get('receipt_show_logo', '1');
 
+        // Business Type & Mode Settings
+        $businessType = Setting::get('business_type', 'retail');
+        $fnbEnableTableManagement = Setting::get('fnb_enable_table_management', '1');
+        $fnbEnableKitchenDisplay = Setting::get('fnb_enable_kitchen_display', '1');
+        $fnbEnableModifiers = Setting::get('fnb_enable_modifiers', '1');
+        $fnbEnableReservation = Setting::get('fnb_enable_reservation', '1');
+        $fnbDefaultServiceType = Setting::get('fnb_default_service_type', 'dine_in');
+        $fnbServiceChargePercent = Setting::get('fnb_service_charge_percent', '0');
+        $fnbAutoPrintKitchenTicket = Setting::get('fnb_auto_print_kitchen_ticket', '0');
+        $fnbEnableQueueNumber = Setting::get('fnb_enable_queue_number', '1');
+
+        $serviceEnableBooking = Setting::get('service_enable_booking', '1');
+        $serviceEnableTechnicianAssignment = Setting::get('service_enable_technician_assignment', '1');
+        $serviceEnableDurationTracking = Setting::get('service_enable_duration_tracking', '1');
+        $serviceBookingSlotMinutes = Setting::get('service_booking_slot_minutes', '30');
+        $serviceAutoQueue = Setting::get('service_auto_queue', '1');
+        $serviceEnableMaterialUsage = Setting::get('service_enable_material_usage', '0');
+
         return view('settings.index', compact(
             'tab',
             'companyName',
@@ -66,7 +83,22 @@ class SettingController extends Controller
             'receiptHeader',
             'receiptFooter',
             'receiptPaperSize',
-            'receiptShowLogo'
+            'receiptShowLogo',
+            'businessType',
+            'fnbEnableTableManagement',
+            'fnbEnableKitchenDisplay',
+            'fnbEnableModifiers',
+            'fnbEnableReservation',
+            'fnbDefaultServiceType',
+            'fnbServiceChargePercent',
+            'fnbAutoPrintKitchenTicket',
+            'fnbEnableQueueNumber',
+            'serviceEnableBooking',
+            'serviceEnableTechnicianAssignment',
+            'serviceEnableDurationTracking',
+            'serviceBookingSlotMinutes',
+            'serviceAutoQueue',
+            'serviceEnableMaterialUsage'
         ));
     }
 
@@ -158,5 +190,40 @@ class SettingController extends Controller
         Setting::set('receipt_show_logo', $request->has('receipt_show_logo') ? '1' : '0', 'receipt', 'boolean', 'Tampilkan Logo di Struk');
 
         return redirect()->route('settings.index', ['tab' => 'receipt'])->with('success', 'Template struk kasir berhasil diperbarui.');
+    }
+
+    /**
+     * Save/Update Business Type & Hybrid Operating Settings.
+     */
+    public function updateBusinessType(Request $request)
+    {
+        $validated = $request->validate([
+            'business_type' => 'required|in:retail,fnb,service,hybrid',
+            'fnb_default_service_type' => 'nullable|in:dine_in,take_away',
+            'fnb_service_charge_percent' => 'nullable|numeric|min:0|max:100',
+            'service_booking_slot_minutes' => 'nullable|integer|in:15,30,45,60,90,120',
+        ]);
+
+        Setting::set('business_type', $validated['business_type'], 'business_type', 'string', 'Jenis Model Usaha');
+
+        // FNB settings
+        Setting::set('fnb_enable_table_management', $request->has('fnb_enable_table_management') ? '1' : '0', 'fnb', 'boolean', 'Manajemen Meja');
+        Setting::set('fnb_enable_kitchen_display', $request->has('fnb_enable_kitchen_display') ? '1' : '0', 'fnb', 'boolean', 'Kitchen Display System');
+        Setting::set('fnb_enable_modifiers', $request->has('fnb_enable_modifiers') ? '1' : '0', 'fnb', 'boolean', 'Menu Modifiers / Topping');
+        Setting::set('fnb_enable_reservation', $request->has('fnb_enable_reservation') ? '1' : '0', 'fnb', 'boolean', 'Reservasi Meja');
+        Setting::set('fnb_default_service_type', $request->get('fnb_default_service_type', 'dine_in'), 'fnb', 'string', 'Default Tipe Layanan FNB');
+        Setting::set('fnb_service_charge_percent', $request->get('fnb_service_charge_percent', '0'), 'fnb', 'numeric', 'Service Charge (%)');
+        Setting::set('fnb_auto_print_kitchen_ticket', $request->has('fnb_auto_print_kitchen_ticket') ? '1' : '0', 'fnb', 'boolean', 'Auto Print Tiket Dapur');
+        Setting::set('fnb_enable_queue_number', $request->has('fnb_enable_queue_number') ? '1' : '0', 'fnb', 'boolean', 'Nomor Antrian Take Away');
+
+        // Service settings
+        Setting::set('service_enable_booking', $request->has('service_enable_booking') ? '1' : '0', 'service', 'boolean', 'Booking & Appointment Jasa');
+        Setting::set('service_enable_technician_assignment', $request->has('service_enable_technician_assignment') ? '1' : '0', 'service', 'boolean', 'Assignment Teknisi / Terapis');
+        Setting::set('service_enable_duration_tracking', $request->has('service_enable_duration_tracking') ? '1' : '0', 'service', 'boolean', 'Tracking Durasi Layanan');
+        Setting::set('service_booking_slot_minutes', $request->get('service_booking_slot_minutes', '30'), 'service', 'integer', 'Durasi Slot Booking (menit)');
+        Setting::set('service_auto_queue', $request->has('service_auto_queue') ? '1' : '0', 'service', 'boolean', 'Antrian Layanan Otomatis');
+        Setting::set('service_enable_material_usage', $request->has('service_enable_material_usage') ? '1' : '0', 'service', 'boolean', 'Tracking Pemakaian Bahan / Material');
+
+        return redirect()->route('settings.index', ['tab' => 'business_type'])->with('success', 'Pengaturan jenis usaha berhasil diperbarui.');
     }
 }

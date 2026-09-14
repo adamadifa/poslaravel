@@ -2,24 +2,15 @@
 
 namespace App\Services;
 
+use App\Models\Product;
 use App\Models\ProductStock;
+use App\Models\StockBatch;
 use App\Models\StockMovement;
-use Illuminate\Support\Facades\DB;
 
 class StockService
 {
     /**
      * Deduct stock for a product from a warehouse and record stock movement.
-     *
-     * @param int $productId
-     * @param int $warehouseId
-     * @param float $qtyInBaseUnit
-     * @param string $referenceType
-     * @param int $referenceId
-     * @param float $unitCost
-     * @param string|null $description
-     * @param int|null $userId
-     * @return ProductStock
      */
     public function deductStock(
         int $productId,
@@ -114,8 +105,8 @@ class StockService
         ?int $purchaseReceiptItemId = null,
         ?string $batchNumber = null,
         ?string $expiryDate = null
-    ): \App\Models\StockBatch {
-        return \App\Models\StockBatch::create([
+    ): StockBatch {
+        return StockBatch::create([
             'product_id' => $productId,
             'warehouse_id' => $warehouseId,
             'purchase_receipt_item_id' => $purchaseReceiptItemId,
@@ -132,14 +123,11 @@ class StockService
      * Consume stock batches using FIFO (First-In, First-Out) algorithm upon POS sale.
      * Returns total cost of goods sold (COGS / HPP).
      *
-     * @param int $productId
-     * @param int $warehouseId
-     * @param float $qtyToConsume
      * @return float Total COGS consumed
      */
     public function consumeFifoBatches(int $productId, int $warehouseId, float $qtyToConsume): float
     {
-        $batches = \App\Models\StockBatch::where('product_id', $productId)
+        $batches = StockBatch::where('product_id', $productId)
             ->where('warehouse_id', $warehouseId)
             ->where('qty_remaining', '>', 0)
             ->orderBy('entry_date', 'asc')
@@ -150,7 +138,9 @@ class StockService
         $totalCogs = 0;
 
         foreach ($batches as $batch) {
-            if ($remainingNeeded <= 0) break;
+            if ($remainingNeeded <= 0) {
+                break;
+            }
 
             $take = min((float) $batch->qty_remaining, $remainingNeeded);
             $batch->qty_remaining -= $take;
@@ -162,7 +152,7 @@ class StockService
 
         // If not enough batches existed, fallback cost to product purchase_price
         if ($remainingNeeded > 0) {
-            $product = \App\Models\Product::find($productId);
+            $product = Product::find($productId);
             $fallbackCost = $product ? (float) $product->purchase_price : 0;
             $totalCogs += $remainingNeeded * $fallbackCost;
         }

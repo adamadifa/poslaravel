@@ -17,7 +17,7 @@ class UnitController extends Controller
         $units = Unit::withCount('products')
             ->when($search, function ($query, $search) {
                 $query->where('name', 'like', "%{$search}%")
-                      ->orWhere('short_name', 'like', "%{$search}%");
+                    ->orWhere('short_name', 'like', "%{$search}%");
             })
             ->latest()
             ->paginate(10)
@@ -59,7 +59,7 @@ class UnitController extends Controller
     public function update(Request $request, Unit $unit)
     {
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:50', 'unique:units,name,' . $unit->id],
+            'name' => ['required', 'string', 'max:50', 'unique:units,name,'.$unit->id],
             'short_name' => ['required', 'string', 'max:15'],
             'is_active' => ['nullable', 'boolean'],
         ]);
@@ -83,6 +83,7 @@ class UnitController extends Controller
         }
 
         $unit->delete();
+
         return redirect()->route('units.index')->with('success', 'Satuan berhasil dihapus.');
     }
 }

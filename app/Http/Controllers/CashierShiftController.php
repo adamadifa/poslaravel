@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\CashierShift;
-use App\Models\Warehouse;
 use Illuminate\Http\Request;
 
 class CashierShiftController extends Controller

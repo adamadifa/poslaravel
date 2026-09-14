@@ -59,4 +59,3 @@ class AuditTrail extends Model
         ]);
     }
 }
-

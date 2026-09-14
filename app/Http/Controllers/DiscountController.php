@@ -26,8 +26,8 @@ class DiscountController extends Controller
             ->when($search, function ($query, $search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
-                      ->orWhere('code', 'like', "%{$search}%")
-                      ->orWhere('description', 'like', "%{$search}%");
+                        ->orWhere('code', 'like', "%{$search}%")
+                        ->orWhere('description', 'like', "%{$search}%");
                 });
             })
             ->when($type, function ($query, $type) {
@@ -74,7 +74,7 @@ class DiscountController extends Controller
             $discount = Discount::create($validated);
 
             // Sync Selected Products for Item-based discounts or Buy X Get Y
-            if (!empty($request->input('product_ids'))) {
+            if (! empty($request->input('product_ids'))) {
                 foreach ($request->input('product_ids') as $pId) {
                     DiscountItem::create([
                         'discount_id' => $discount->id,
@@ -88,7 +88,8 @@ class DiscountController extends Controller
             return redirect()->route('discounts.index')->with('success', 'Promo diskon berhasil dibuat.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->withInput()->with('error', 'Gagal menambahkan promo: ' . $e->getMessage());
+
+            return redirect()->back()->withInput()->with('error', 'Gagal menambahkan promo: '.$e->getMessage());
         }
     }
 
@@ -109,7 +110,7 @@ class DiscountController extends Controller
 
             // Sync Selected Products
             $discount->items()->delete();
-            if (!empty($request->input('product_ids'))) {
+            if (! empty($request->input('product_ids'))) {
                 foreach ($request->input('product_ids') as $pId) {
                     DiscountItem::create([
                         'discount_id' => $discount->id,
@@ -123,7 +124,8 @@ class DiscountController extends Controller
             return redirect()->route('discounts.index')->with('success', 'Promo diskon berhasil diperbarui.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->withInput()->with('error', 'Gagal memperbarui promo: ' . $e->getMessage());
+
+            return redirect()->back()->withInput()->with('error', 'Gagal memperbarui promo: '.$e->getMessage());
         }
     }
 
@@ -134,9 +136,10 @@ class DiscountController extends Controller
     {
         try {
             $discount->delete();
+
             return redirect()->route('discounts.index')->with('success', 'Promo diskon berhasil dihapus.');
         } catch (\Exception $e) {
-            return redirect()->route('discounts.index')->with('error', 'Gagal menghapus promo: ' . $e->getMessage());
+            return redirect()->route('discounts.index')->with('error', 'Gagal menghapus promo: '.$e->getMessage());
         }
     }
 }

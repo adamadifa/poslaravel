@@ -38,9 +38,9 @@ class AuditTrailController extends Controller
             $term = $request->search;
             $query->where(function ($q) use ($term) {
                 $q->where('description', 'like', "%{$term}%")
-                  ->orWhere('user_name', 'like', "%{$term}%")
-                  ->orWhere('action', 'like', "%{$term}%")
-                  ->orWhere('ip_address', 'like', "%{$term}%");
+                    ->orWhere('user_name', 'like', "%{$term}%")
+                    ->orWhere('action', 'like', "%{$term}%")
+                    ->orWhere('ip_address', 'like', "%{$term}%");
             });
         }
 
