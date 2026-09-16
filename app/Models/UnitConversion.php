@@ -15,7 +15,7 @@ class UnitConversion extends Model
     ];
 
     protected $casts = [
-        'conversion_value' => 'decimal:4',
+        'conversion_value' => 'float',
     ];
 
     public function product(): BelongsTo

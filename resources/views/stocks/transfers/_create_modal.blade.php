@@ -428,6 +428,9 @@
                 tbody.innerHTML = '';
 
                 trf.items.forEach(item => {
+                    const cleanSent = parseFloat(item.quantity_sent) || 0;
+                    const cleanReceived = parseFloat(item.quantity_received) || cleanSent;
+
                     const row = document.createElement('tr');
                     row.className = 'hover:bg-slate-50/70 border-b border-slate-100';
                     row.innerHTML = `
@@ -436,10 +439,10 @@
                             <div class="text-[10px] text-slate-400 font-mono">${item.product?.code} • Satuan: ${item.unit ? item.unit.name : 'Unit'}</div>
                         </td>
                         <td class="py-3 px-3 text-center font-mono-num font-bold text-slate-600">
-                            ${parseFloat(item.quantity_sent).toLocaleString('id-ID')}
+                            ${cleanSent.toLocaleString('id-ID')}
                         </td>
                         <td class="py-3 px-3 text-center">
-                            <input type="number" step="any" min="0" name="items[${item.id}][quantity_received]" value="${item.quantity_sent}" required class="w-28 mx-auto bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-center text-xs font-bold text-slate-900 font-mono-num focus:bg-white focus:outline-none focus:border-brand-500">
+                            <input type="number" step="any" min="0" name="items[${item.id}][quantity_received]" value="${cleanReceived}" required class="w-28 mx-auto bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-center text-xs font-bold text-slate-900 font-mono-num focus:bg-white focus:outline-none focus:border-brand-500">
                         </td>
                     `;
                     tbody.appendChild(row);
@@ -449,4 +452,25 @@
                 lucide.createIcons();
             });
     }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const createForm = document.getElementById('createTransferForm');
+        if (createForm) {
+            createForm.addEventListener('submit', function(e) {
+                const fromId = document.getElementById('transfer_from_warehouse_id')?.value;
+                const toId = document.getElementById('transfer_to_warehouse_id')?.value;
+                if (fromId && toId && fromId === toId) {
+                    e.preventDefault();
+                    alert('Gudang Asal dan Gudang Tujuan tidak boleh sama!');
+                    return false;
+                }
+                const rows = document.querySelectorAll('#transfer_items_tbody tr');
+                if (rows.length === 0) {
+                    e.preventDefault();
+                    alert('Pilih minimal satu barang untuk ditransfer!');
+                    return false;
+                }
+            });
+        }
+    });
 </script>

@@ -68,6 +68,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('shifts/{shift}/close', [CashierShiftController::class, 'close'])->name('shifts.close');
 
     // 3. Master Data Routes
+    Route::get('products/barcode-search', [ProductController::class, 'searchForBarcode'])->name('products.barcode-search');
     Route::get('products/{product}/get-price', [ProductController::class, 'getPrice'])->name('products.get-price');
     Route::get('products/{product}/recipes', [RecipeController::class, 'getProductRecipes'])->name('products.recipes');
     Route::post('products/{product}/recipes', [RecipeController::class, 'syncProductRecipes'])->name('products.recipes.sync');
@@ -116,6 +117,7 @@ Route::middleware(['auth'])->group(function () {
 
     // 4. Purchasing & Procurement Routes (Phase 3)
     Route::get('purchase-orders/{purchaseOrder}/details', [PurchaseOrderController::class, 'getDetails'])->name('purchase-orders.details');
+    Route::get('purchase-orders/{purchaseOrder}/print', [PurchaseOrderController::class, 'print'])->name('purchase-orders.print');
     Route::patch('purchase-orders/{purchaseOrder}/status', [PurchaseOrderController::class, 'updateStatus'])->name('purchase-orders.update-status');
     Route::resource('purchase-orders', PurchaseOrderController::class)->except(['create', 'show', 'edit']);
     Route::resource('purchase-receipts', PurchaseReceiptController::class)->except(['create', 'show', 'edit']);

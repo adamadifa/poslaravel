@@ -10,6 +10,7 @@ use App\Models\CustomerGroup;
 use App\Models\Product;
 use App\Models\ProductBarcode;
 use App\Models\ProductStock;
+use App\Models\Setting;
 use App\Models\TieredPrice;
 use App\Models\Unit;
 use App\Models\UnitConversion;
@@ -70,6 +71,7 @@ class ProductController extends Controller
         $categories = Category::where('is_active', true)->orderBy('name')->get();
         $units = Unit::where('is_active', true)->orderBy('name')->get();
         $customerGroups = CustomerGroup::orderBy('name')->get();
+        $storeName = Setting::get('store_name', config('app.name', 'POS Retail Pro'));
 
         return view('products.index', [
             'title' => 'Master Produk',
@@ -83,6 +85,106 @@ class ProductController extends Controller
             'customerGroups' => $customerGroups,
             'search' => $search,
             'categoryId' => $categoryId,
+            'storeName' => $storeName,
+        ]);
+    }
+
+    /**
+     * Search products with barcodes and multi-units for barcode printing queue.
+     */
+    public function searchForBarcode(Request $request)
+    {
+        $q = $request->query('q');
+        $pricingService = app(PricingService::class);
+
+        $products = Product::with(['baseUnit', 'barcodes.unit', 'conversions.toUnit', 'conversions.fromUnit', 'priceLists.unit'])
+            ->where('is_active', true)
+            ->when($q, function ($query, $q) {
+                $query->where(function ($sub) use ($q) {
+                    $sub->where('name', 'like', "%{$q}%")
+                        ->orWhere('code', 'like', "%{$q}%")
+                        ->orWhere('barcode', 'like', "%{$q}%");
+                });
+            })
+            ->limit(25)
+            ->get();
+
+        $results = [];
+        foreach ($products as $prod) {
+            $baseBarcode = $prod->barcode ?: $prod->code;
+            $baseUnitName = $prod->baseUnit ? $prod->baseUnit->display_name : 'Pcs';
+            $basePrice = (float) $prod->selling_price;
+
+            // 1. Base unit item
+            $results[] = [
+                'id' => $prod->id.'_base',
+                'product_id' => $prod->id,
+                'name' => $prod->name,
+                'code' => $prod->code,
+                'barcode' => $baseBarcode,
+                'unit_id' => $prod->base_unit_id,
+                'unit_name' => $baseUnitName,
+                'price' => $basePrice,
+                'is_base' => true,
+                'label' => "{$prod->name} ({$baseUnitName}) - {$baseBarcode} - Rp ".number_format($basePrice, 0, ',', '.'),
+            ];
+
+            $processedUnits = [$prod->base_unit_id];
+
+            // 2. Barcodes per unit
+            if ($prod->barcodes) {
+                foreach ($prod->barcodes as $mb) {
+                    if ($mb->unit_id && ! in_array($mb->unit_id, $processedUnits)) {
+                        $mUnitName = $mb->unit ? $mb->unit->display_name : 'Satuan';
+                        $unitPriceData = $pricingService->resolvePrice($prod, $mb->unit_id, 1);
+                        $resolvedPrice = (float) ($unitPriceData['regular_unit_price'] ?? $prod->selling_price);
+                        $processedUnits[] = $mb->unit_id;
+
+                        $results[] = [
+                            'id' => $prod->id.'_barcode_'.$mb->id,
+                            'product_id' => $prod->id,
+                            'name' => $prod->name,
+                            'code' => $prod->code,
+                            'barcode' => $mb->barcode ?: $baseBarcode,
+                            'unit_id' => $mb->unit_id,
+                            'unit_name' => $mUnitName,
+                            'price' => $resolvedPrice,
+                            'is_base' => false,
+                            'label' => "{$prod->name} [{$mUnitName}] - ".($mb->barcode ?: $baseBarcode).' - Rp '.number_format($resolvedPrice, 0, ',', '.'),
+                        ];
+                    }
+                }
+            }
+
+            // 3. Conversions without explicit barcode row
+            if ($prod->conversions) {
+                foreach ($prod->conversions as $conv) {
+                    if ($conv->from_unit_id && ! in_array($conv->from_unit_id, $processedUnits)) {
+                        $fromUnitName = $conv->fromUnit ? $conv->fromUnit->display_name : 'Satuan';
+                        $unitPriceData = $pricingService->resolvePrice($prod, $conv->from_unit_id, 1);
+                        $resolvedPrice = (float) ($unitPriceData['regular_unit_price'] ?? ($prod->selling_price * $conv->conversion_value));
+                        $processedUnits[] = $conv->from_unit_id;
+
+                        $results[] = [
+                            'id' => $prod->id.'_conv_'.$conv->id,
+                            'product_id' => $prod->id,
+                            'name' => $prod->name,
+                            'code' => $prod->code,
+                            'barcode' => $baseBarcode,
+                            'unit_id' => $conv->from_unit_id,
+                            'unit_name' => $fromUnitName,
+                            'price' => $resolvedPrice,
+                            'is_base' => false,
+                            'label' => "{$prod->name} [{$fromUnitName}] - {$baseBarcode} - Rp ".number_format($resolvedPrice, 0, ',', '.'),
+                        ];
+                    }
+                }
+            }
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'results' => $results,
         ]);
     }
 

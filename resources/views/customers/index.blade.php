@@ -33,7 +33,7 @@
                 </label>
                 <div class="flex items-center gap-2">
                     <i data-lucide="users" class="w-4 h-4 text-slate-400 shrink-0"></i>
-                    <select name="customer_group_id" onchange="this.form.submit()" class="w-full bg-transparent border-0 p-0 text-xs font-semibold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
+                    <select name="customer_group_id" onchange="this.form.submit()" class="select2-filter w-full bg-transparent border-0 p-0 text-xs font-semibold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
                         <option value="">Semua Grup</option>
                         @foreach($customerGroups as $grp)
                             <option value="{{ $grp->id }}" {{ request('customer_group_id') == $grp->id ? 'selected' : '' }}>

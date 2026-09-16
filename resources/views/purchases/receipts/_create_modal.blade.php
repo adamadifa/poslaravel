@@ -274,6 +274,16 @@
     let grnRowIndex = 0;
     let grnTargetContext = 'grn';
 
+    // Helper to format clean numeric values (remove trailing zeros, max 2 decimals for prices, 4 for qty)
+    function formatNumberClean(val, defaultVal = 0, maxDecimals = 2) {
+        if (val === '' || val === null || val === undefined) return defaultVal;
+        const strVal = String(val).replace(',', '.').trim();
+        const num = parseFloat(strVal);
+        if (isNaN(num)) return defaultVal;
+        const factor = Math.pow(10, maxDecimals);
+        return Number(Math.round(num * factor) / factor);
+    }
+
     function openCreateGrnModal() {
         document.getElementById('createGrnForm').reset();
         document.getElementById('grn_items_tbody').innerHTML = '';
@@ -341,6 +351,9 @@
         let product = grnProducts.find(p => p.id == prefilled?.product_id);
         if (!product) return;
 
+        const formattedQty = formatNumberClean(prefilled ? prefilled.qty : '1', 1, 4);
+        const formattedCost = formatNumberClean(prefilled ? prefilled.cost : (product.purchase_price || 0), 0, 2);
+
         // Populate unit options
         let unitOptions = `<option value="${product.base_unit_id}" selected>${product.base_unit ? product.base_unit.name : 'Pcs'}</option>`;
         if (product.conversions) {
@@ -370,10 +383,10 @@
                 </select>
             </td>
             <td class="py-3 px-3">
-                <input type="number" step="any" min="0.0001" name="items[${idx}][quantity_received]" id="grn_qty_${idx}" oninput="calculateGrnRow(${idx})" value="${prefilled ? prefilled.qty : '1'}" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-center text-xs font-bold text-slate-900 font-mono-num focus:bg-white focus:outline-none focus:border-brand-500">
+                <input type="number" step="any" min="0.0001" name="items[${idx}][quantity_received]" id="grn_qty_${idx}" oninput="calculateGrnRow(${idx})" value="${formattedQty}" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-center text-xs font-bold text-slate-900 font-mono-num focus:bg-white focus:outline-none focus:border-brand-500">
             </td>
             <td class="py-3 px-3">
-                <input type="number" step="any" min="0" name="items[${idx}][unit_cost]" id="grn_price_${idx}" oninput="calculateGrnRow(${idx})" value="${prefilled ? prefilled.cost : (product.purchase_price || 0)}" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-right text-xs font-bold text-slate-900 font-mono-num focus:bg-white focus:outline-none focus:border-brand-500">
+                <input type="number" step="any" min="0" name="items[${idx}][unit_cost]" id="grn_price_${idx}" oninput="calculateGrnRow(${idx})" value="${formattedCost}" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-right text-xs font-bold text-slate-900 font-mono-num focus:bg-white focus:outline-none focus:border-brand-500">
             </td>
             <td class="py-3 px-3">
                 <input type="text" name="items[${idx}][batch_number]" value="${autoBatch}" placeholder="Batch #" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:bg-white focus:outline-none focus:border-brand-500 font-mono">
@@ -414,8 +427,11 @@
     }
 
     function calculateGrnRow(idx) {
-        const qty = parseFloat(document.getElementById(`grn_qty_${idx}`)?.value) || 0;
-        const cost = parseFloat(document.getElementById(`grn_price_${idx}`)?.value) || 0;
+        const qtyRaw = document.getElementById(`grn_qty_${idx}`)?.value || '0';
+        const costRaw = document.getElementById(`grn_price_${idx}`)?.value || '0';
+
+        const qty = parseFloat(String(qtyRaw).replace(',', '.')) || 0;
+        const cost = parseFloat(String(costRaw).replace(',', '.')) || 0;
         const subtotal = qty * cost;
 
         const disp = document.getElementById(`grn_subtotal_display_${idx}`);
@@ -433,7 +449,8 @@
             subtotal += parseFloat(el.dataset.val) || 0;
         });
 
-        const taxAmount = parseFloat(document.getElementById('grn_tax_amount')?.value) || 0;
+        const taxRaw = document.getElementById('grn_tax_amount')?.value || '0';
+        const taxAmount = parseFloat(String(taxRaw).replace(',', '.')) || 0;
         const grandTotal = subtotal + taxAmount;
 
         document.getElementById('grn_summary_subtotal').innerText = `Rp ${parseInt(subtotal).toLocaleString('id-ID')}`;

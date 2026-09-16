@@ -111,12 +111,15 @@
                 <label class="absolute -top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold text-slate-700">
                     Tipe Akun
                 </label>
-                <select name="type" onchange="this.form.submit()" class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
-                    <option value="">Semua Tipe Akun</option>
-                    <option value="cash" {{ request('type') === 'cash' ? 'selected' : '' }}>Kas Fisik (Cash)</option>
-                    <option value="bank" {{ request('type') === 'bank' ? 'selected' : '' }}>Rekening Bank (Bank)</option>
-                    <option value="other" {{ request('type') === 'other' ? 'selected' : '' }}>Lainnya / E-Wallet</option>
-                </select>
+                <div class="flex items-center gap-2">
+                    <i data-lucide="layers" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                    <select name="type" onchange="this.form.submit()" class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
+                        <option value="">Semua Tipe Akun</option>
+                        <option value="cash" {{ request('type') === 'cash' ? 'selected' : '' }}>Kas Fisik (Cash)</option>
+                        <option value="bank" {{ request('type') === 'bank' ? 'selected' : '' }}>Rekening Bank (Bank)</option>
+                        <option value="other" {{ request('type') === 'other' ? 'selected' : '' }}>Lainnya / E-Wallet</option>
+                    </select>
+                </div>
             </div>
 
             <!-- Reset (Col 1) -->

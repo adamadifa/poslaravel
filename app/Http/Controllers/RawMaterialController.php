@@ -49,6 +49,13 @@ class RawMaterialController extends Controller
         $units = Unit::where('is_active', true)->orderBy('name')->get();
         $warehouses = Warehouse::where('is_active', true)->get();
 
+        $defaultCategory = Category::where('slug', 'bahan-baku-dapur')
+            ->orWhere('name', 'like', '%Bahan%')
+            ->first() ?? Category::firstOrCreate(
+                ['slug' => 'bahan-baku-dapur'],
+                ['name' => 'Bahan Baku & Dapur', 'is_active' => true]
+            );
+
         return view('raw_materials.index', [
             'title' => 'Master Bahan Baku',
             'headerTitle' => 'Master Bahan Baku & Racikan (Raw Materials)',
@@ -57,6 +64,7 @@ class RawMaterialController extends Controller
             'breadcrumbCurrent' => 'Bahan Baku',
             'rawMaterials' => $rawMaterials,
             'categories' => $categories,
+            'defaultCategory' => $defaultCategory,
             'units' => $units,
             'warehouses' => $warehouses,
             'search' => $search,
@@ -69,6 +77,16 @@ class RawMaterialController extends Controller
      */
     public function store(Request $request)
     {
+        if ($request->has('conversions') && is_array($request->input('conversions'))) {
+            $conversions = $request->input('conversions');
+            foreach ($conversions as $i => $conv) {
+                if (isset($conv['conversion_value']) && is_string($conv['conversion_value'])) {
+                    $conversions[$i]['conversion_value'] = str_replace(',', '.', trim($conv['conversion_value']));
+                }
+            }
+            $request->merge(['conversions' => $conversions]);
+        }
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:200'],
             'code' => ['nullable', 'string', 'max:50', 'unique:products,code'],
@@ -92,6 +110,17 @@ class RawMaterialController extends Controller
             if (empty($validated['code'])) {
                 $count = Product::where('product_type', 'raw_material')->withTrashed()->count() + 1;
                 $validated['code'] = 'RAW-'.str_pad($count, 5, '0', STR_PAD_LEFT);
+            }
+
+            // Auto-assign category to Bahan Baku & Dapur if not specified
+            if (empty($validated['category_id'])) {
+                $defaultCategory = Category::where('slug', 'bahan-baku-dapur')
+                    ->orWhere('name', 'like', '%Bahan%')
+                    ->first() ?? Category::firstOrCreate(
+                        ['slug' => 'bahan-baku-dapur'],
+                        ['name' => 'Bahan Baku & Dapur', 'is_active' => true]
+                    );
+                $validated['category_id'] = $defaultCategory->id;
             }
 
             $validated['slug'] = Str::slug($validated['name']).'-'.strtolower(Str::random(5));

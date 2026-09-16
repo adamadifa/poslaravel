@@ -66,7 +66,10 @@
                 <label class="absolute -top-2.5 left-3.5 bg-white dark:bg-slate-900 px-1.5 text-[11px] font-bold text-slate-700 dark:text-slate-300">
                     Dari Tanggal
                 </label>
-                <input type="date" name="start_date" value="{{ $startDate }}" class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 dark:text-slate-100 focus:ring-0 focus:outline-none cursor-pointer">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="calendar" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                    <input type="date" name="start_date" value="{{ $startDate }}" class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 dark:text-slate-100 focus:ring-0 focus:outline-none cursor-pointer">
+                </div>
             </div>
 
             <!-- Sampai Tanggal (Col 2) -->
@@ -74,7 +77,10 @@
                 <label class="absolute -top-2.5 left-3.5 bg-white dark:bg-slate-900 px-1.5 text-[11px] font-bold text-slate-700 dark:text-slate-300">
                     Sampai Tanggal
                 </label>
-                <input type="date" name="end_date" value="{{ $endDate }}" class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 dark:text-slate-100 focus:ring-0 focus:outline-none cursor-pointer">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="calendar" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                    <input type="date" name="end_date" value="{{ $endDate }}" class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 dark:text-slate-100 focus:ring-0 focus:outline-none cursor-pointer">
+                </div>
             </div>
 
             <!-- Gudang / Cabang (Col 2) -->
@@ -82,12 +88,15 @@
                 <label class="absolute -top-2.5 left-3.5 bg-white dark:bg-slate-900 px-1.5 text-[11px] font-bold text-slate-700 dark:text-slate-300">
                     Gudang / Cabang
                 </label>
-                <select name="warehouse_id" onchange="this.form.submit()" class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 dark:text-slate-100 focus:ring-0 focus:outline-none cursor-pointer">
-                    <option value="">Semua Cabang / Gudang</option>
-                    @foreach($warehouses as $wh)
-                        <option value="{{ $wh->id }}" {{ $warehouseId == $wh->id ? 'selected' : '' }}>{{ $wh->name }}</option>
-                    @endforeach
-                </select>
+                <div class="flex items-center gap-2">
+                    <i data-lucide="warehouse" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                    <select name="warehouse_id" onchange="this.form.submit()" class="select2-filter w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 dark:text-slate-100 focus:ring-0 focus:outline-none cursor-pointer">
+                        <option value="">Semua Cabang / Gudang</option>
+                        @foreach($warehouses as $wh)
+                            <option value="{{ $wh->id }}" {{ $warehouseId == $wh->id ? 'selected' : '' }}>{{ $wh->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
             </div>
 
             <!-- Kasir / User + Action Buttons (Col 3) -->
@@ -96,12 +105,15 @@
                     <label class="absolute -top-2.5 left-3.5 bg-white dark:bg-slate-900 px-1.5 text-[11px] font-bold text-slate-700 dark:text-slate-300">
                         Kasir
                     </label>
-                    <select name="user_id" onchange="this.form.submit()" class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 dark:text-slate-100 focus:ring-0 focus:outline-none cursor-pointer">
-                        <option value="">Semua Kasir</option>
-                        @foreach($users as $u)
-                            <option value="{{ $u->id }}" {{ $userId == $u->id ? 'selected' : '' }}>{{ $u->name }}</option>
-                        @endforeach
-                    </select>
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="user" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                        <select name="user_id" onchange="this.form.submit()" class="select2-filter w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 dark:text-slate-100 focus:ring-0 focus:outline-none cursor-pointer">
+                            <option value="">Semua Kasir</option>
+                            @foreach($users as $u)
+                                <option value="{{ $u->id }}" {{ $userId == $u->id ? 'selected' : '' }}>{{ $u->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
                 </div>
 
                 <button type="submit" class="p-2.5 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-xs font-bold transition flex items-center justify-center shadow-xs shadow-brand-500/20 shrink-0 cursor-pointer" title="Terapkan Filter">

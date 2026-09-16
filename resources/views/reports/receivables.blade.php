@@ -69,12 +69,15 @@
                 <label class="absolute -top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold text-slate-700">
                     Filter Pelanggan
                 </label>
-                <select name="customer_id" onchange="this.form.submit()" class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
-                    <option value="">Semua Pelanggan</option>
-                    @foreach($customers as $c)
-                        <option value="{{ $c->id }}" {{ $customerId == $c->id ? 'selected' : '' }}>{{ $c->name }} ({{ $c->phone ?? 'No Phone' }})</option>
-                    @endforeach
-                </select>
+                <div class="flex items-center gap-2">
+                    <i data-lucide="users" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                    <select name="customer_id" onchange="this.form.submit()" class="select2-filter w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
+                        <option value="">Semua Pelanggan</option>
+                        @foreach($customers as $c)
+                            <option value="{{ $c->id }}" {{ $customerId == $c->id ? 'selected' : '' }}>{{ $c->name }} ({{ $c->phone ?? 'No Phone' }})</option>
+                        @endforeach
+                    </select>
+                </div>
             </div>
             <div class="sm:col-span-2 flex items-center justify-center">
                 @if(request()->has('customer_id'))

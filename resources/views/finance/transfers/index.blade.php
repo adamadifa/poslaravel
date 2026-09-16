@@ -91,14 +91,17 @@
                 <label class="absolute -top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold text-slate-700">
                     Dari Akun Asal
                 </label>
-                <select name="from_account_id" onchange="this.form.submit()" class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
-                    <option value="">Semua Akun Asal</option>
-                    @foreach($accounts as $acc)
-                        <option value="{{ $acc->id }}" {{ request('from_account_id') == $acc->id ? 'selected' : '' }}>
-                            {{ $acc->name }}
-                        </option>
-                    @endforeach
-                </select>
+                <div class="flex items-center gap-2">
+                    <i data-lucide="wallet" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                    <select name="from_account_id" onchange="this.form.submit()" class="select2-filter w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
+                        <option value="">Semua Akun Asal</option>
+                        @foreach($accounts as $acc)
+                            <option value="{{ $acc->id }}" {{ request('from_account_id') == $acc->id ? 'selected' : '' }}>
+                                {{ $acc->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
             </div>
 
             <!-- To Account (Col 3) -->
@@ -106,14 +109,17 @@
                 <label class="absolute -top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold text-slate-700">
                     Ke Akun Tujuan
                 </label>
-                <select name="to_account_id" onchange="this.form.submit()" class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
-                    <option value="">Semua Akun Tujuan</option>
-                    @foreach($accounts as $acc)
-                        <option value="{{ $acc->id }}" {{ request('to_account_id') == $acc->id ? 'selected' : '' }}>
-                            {{ $acc->name }}
-                        </option>
-                    @endforeach
-                </select>
+                <div class="flex items-center gap-2">
+                    <i data-lucide="landmark" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                    <select name="to_account_id" onchange="this.form.submit()" class="select2-filter w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
+                        <option value="">Semua Akun Tujuan</option>
+                        @foreach($accounts as $acc)
+                            <option value="{{ $acc->id }}" {{ request('to_account_id') == $acc->id ? 'selected' : '' }}>
+                                {{ $acc->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
             </div>
 
             <!-- Reset (Col 2) -->
@@ -149,7 +155,7 @@
                     <tr class="bg-brand-500 text-white/95 font-bold text-xs">
                         <th class="py-3 px-5 border-b border-white/10">No. Transfer</th>
                         <th class="py-3 px-4 border-b border-white/10">Tanggal</th>
-                        <th class="py-3 px-4 border-b border-white/10">Rute Akun (Asal $\rightarrow$ Tujuan)</th>
+                        <th class="py-3 px-4 border-b border-white/10">Rute Akun (Asal &rarr; Tujuan)</th>
                         <th class="py-3 px-4 border-b border-white/10 text-right">Biaya Admin</th>
                         <th class="py-3 px-5 border-b border-white/10 text-right">Nominal Transfer</th>
                     </tr>

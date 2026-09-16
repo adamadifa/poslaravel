@@ -284,6 +284,16 @@
     let poRowIndex = 0;
     let selectedPoProducts = []; // Array of {productId, unitId, qty, price, disc}
 
+    // Helper to format clean numeric values (remove trailing zeros, max 2 decimals for prices, 4 for qty)
+    function formatNumberClean(val, defaultVal = 0, maxDecimals = 2) {
+        if (val === '' || val === null || val === undefined) return defaultVal;
+        const strVal = String(val).replace(',', '.').trim();
+        const num = parseFloat(strVal);
+        if (isNaN(num)) return defaultVal;
+        const factor = Math.pow(10, maxDecimals);
+        return Number(Math.round(num * factor) / factor);
+    }
+
     function openCreatePoModal() {
         document.getElementById('createPoForm').reset();
         document.getElementById('createPoForm').action = "{{ route('purchase-orders.store') }}";
@@ -381,9 +391,9 @@
             }
 
             // Financial Summary
-            document.getElementById('po_discount_amount').value = parseFloat(po.discount_amount) || 0;
-            document.getElementById('po_tax_amount').value = parseFloat(po.tax_amount) || 0;
-            document.getElementById('po_shipping_cost').value = parseFloat(po.shipping_cost) || 0;
+            document.getElementById('po_discount_amount').value = formatNumberClean(po.discount_amount, 0, 2);
+            document.getElementById('po_tax_amount').value = formatNumberClean(po.tax_amount, 0, 2);
+            document.getElementById('po_shipping_cost').value = formatNumberClean(po.shipping_cost, 0, 2);
             const notesEl = document.getElementById('po_notes_input');
             if (notesEl) notesEl.value = po.notes || '';
 
@@ -417,6 +427,11 @@
         const tbody = document.getElementById('po_items_tbody');
         const idx = poRowIndex++;
 
+        // Clean numeric formatting for inputs
+        const formattedQty = formatNumberClean(item.quantity_ordered, 1, 4);
+        const formattedPrice = formatNumberClean(item.unit_price, 0, 2);
+        const formattedDisc = formatNumberClean(item.discount_percent, 0, 2);
+
         // Build Unit Options
         let unitOptions = `<option value="${product.base_unit_id}" ${item.unit_id == product.base_unit_id ? 'selected' : ''}>${product.base_unit ? product.base_unit.name : 'Pcs'}</option>`;
         if (product.conversions) {
@@ -443,13 +458,13 @@
                 </select>
             </td>
             <td class="py-3 px-3">
-                <input type="number" step="any" min="0.0001" name="items[${idx}][quantity_ordered]" id="po_qty_${idx}" oninput="calculatePoRow(${idx})" value="${item.quantity_ordered}" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-center text-xs font-bold text-slate-900 font-mono-num focus:bg-white focus:outline-none focus:border-brand-500">
+                <input type="number" step="any" min="0.0001" name="items[${idx}][quantity_ordered]" id="po_qty_${idx}" oninput="calculatePoRow(${idx})" value="${formattedQty}" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-center text-xs font-bold text-slate-900 font-mono-num focus:bg-white focus:outline-none focus:border-brand-500">
             </td>
             <td class="py-3 px-3">
-                <input type="number" step="any" min="0" name="items[${idx}][unit_price]" id="po_price_${idx}" oninput="calculatePoRow(${idx})" value="${item.unit_price}" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-right text-xs font-bold text-slate-900 font-mono-num focus:bg-white focus:outline-none focus:border-brand-500">
+                <input type="number" step="any" min="0" name="items[${idx}][unit_price]" id="po_price_${idx}" oninput="calculatePoRow(${idx})" value="${formattedPrice}" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-right text-xs font-bold text-slate-900 font-mono-num focus:bg-white focus:outline-none focus:border-brand-500">
             </td>
             <td class="py-3 px-3">
-                <input type="number" step="any" min="0" max="100" name="items[${idx}][discount_percent]" id="po_disc_${idx}" oninput="calculatePoRow(${idx})" value="${item.discount_percent || 0}" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-center text-xs font-medium text-slate-800 font-mono-num focus:bg-white focus:outline-none focus:border-brand-500">
+                <input type="number" step="any" min="0" max="100" name="items[${idx}][discount_percent]" id="po_disc_${idx}" oninput="calculatePoRow(${idx})" value="${formattedDisc}" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-center text-xs font-medium text-slate-800 font-mono-num focus:bg-white focus:outline-none focus:border-brand-500">
             </td>
             <td class="py-3 px-4 text-right font-black text-slate-900 font-mono-num" id="po_subtotal_display_${idx}">
                 Rp 0
@@ -621,6 +636,8 @@
             });
         }
 
+        const formattedPrice = formatNumberClean(product.purchase_price, 0, 2);
+
         const tr = document.createElement('tr');
         tr.id = `po_row_${idx}`;
         tr.className = 'hover:bg-slate-50/70 transition border-b border-slate-100';
@@ -639,7 +656,7 @@
                 <input type="number" step="any" min="0.0001" name="items[${idx}][quantity_ordered]" id="po_qty_${idx}" oninput="calculatePoRow(${idx})" value="1" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-center text-xs font-bold text-slate-900 font-mono-num focus:bg-white focus:outline-none focus:border-brand-500">
             </td>
             <td class="py-3 px-3">
-                <input type="number" step="any" min="0" name="items[${idx}][unit_price]" id="po_price_${idx}" oninput="calculatePoRow(${idx})" value="${product.purchase_price || 0}" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-right text-xs font-bold text-slate-900 font-mono-num focus:bg-white focus:outline-none focus:border-brand-500">
+                <input type="number" step="any" min="0" name="items[${idx}][unit_price]" id="po_price_${idx}" oninput="calculatePoRow(${idx})" value="${formattedPrice}" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-right text-xs font-bold text-slate-900 font-mono-num focus:bg-white focus:outline-none focus:border-brand-500">
             </td>
             <td class="py-3 px-3">
                 <input type="number" step="any" min="0" max="100" name="items[${idx}][discount_percent]" id="po_disc_${idx}" oninput="calculatePoRow(${idx})" value="0" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-center text-xs font-medium text-slate-800 font-mono-num focus:bg-white focus:outline-none focus:border-brand-500">
@@ -669,9 +686,13 @@
     }
 
     function calculatePoRow(idx) {
-        const qty = parseFloat(document.getElementById(`po_qty_${idx}`)?.value) || 0;
-        const price = parseFloat(document.getElementById(`po_price_${idx}`)?.value) || 0;
-        const discPct = parseFloat(document.getElementById(`po_disc_${idx}`)?.value) || 0;
+        const qtyRaw = document.getElementById(`po_qty_${idx}`)?.value || '0';
+        const priceRaw = document.getElementById(`po_price_${idx}`)?.value || '0';
+        const discRaw = document.getElementById(`po_disc_${idx}`)?.value || '0';
+
+        const qty = parseFloat(String(qtyRaw).replace(',', '.')) || 0;
+        const price = parseFloat(String(priceRaw).replace(',', '.')) || 0;
+        const discPct = parseFloat(String(discRaw).replace(',', '.')) || 0;
 
         const discAmt = (qty * price) * (discPct / 100);
         const subtotal = Math.max(0, (qty * price) - discAmt);
@@ -691,9 +712,13 @@
             subtotal += parseFloat(el.dataset.val) || 0;
         });
 
-        const discAmount = parseFloat(document.getElementById('po_discount_amount')?.value) || 0;
-        const taxAmount = parseFloat(document.getElementById('po_tax_amount')?.value) || 0;
-        const shippingCost = parseFloat(document.getElementById('po_shipping_cost')?.value) || 0;
+        const discRaw = document.getElementById('po_discount_amount')?.value || '0';
+        const taxRaw = document.getElementById('po_tax_amount')?.value || '0';
+        const shippingRaw = document.getElementById('po_shipping_cost')?.value || '0';
+
+        const discAmount = parseFloat(String(discRaw).replace(',', '.')) || 0;
+        const taxAmount = parseFloat(String(taxRaw).replace(',', '.')) || 0;
+        const shippingCost = parseFloat(String(shippingRaw).replace(',', '.')) || 0;
 
         const grandTotal = Math.max(0, subtotal - discAmount + taxAmount + shippingCost);
 

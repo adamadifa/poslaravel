@@ -21,4 +21,16 @@ class Unit extends Model
     {
         return $this->hasMany(Product::class, 'base_unit_id');
     }
+
+    /**
+     * Get formatted display name (avoids duplicating if name and short_name match, e.g. "Dus" instead of "Dus (dus)").
+     */
+    public function getDisplayNameAttribute(): string
+    {
+        if ($this->short_name && strcasecmp(trim($this->short_name), trim($this->name)) !== 0) {
+            return "{$this->name} ({$this->short_name})";
+        }
+
+        return $this->name;
+    }
 }

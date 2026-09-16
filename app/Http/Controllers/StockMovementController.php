@@ -16,6 +16,9 @@ class StockMovementController extends Controller
      */
     public function index(Request $request)
     {
+        $tab = $request->query('tab', 'products'); // 'products' or 'raw_materials'
+        $isRawMaterial = ($tab === 'raw_materials');
+
         $productId = $request->query('product_id');
         $warehouseId = $request->query('warehouse_id');
         $type = $request->query('type'); // in / out
@@ -23,8 +26,32 @@ class StockMovementController extends Controller
         $endDate = $request->query('end_date');
         $search = $request->query('search');
 
+        // Total movements count per tab for metric badges
+        $totalProductMovements = StockMovement::whereHas('product', fn ($q) => $q->where('product_type', '!=', 'raw_material'))->count();
+        $totalRawMaterialMovements = StockMovement::whereHas('product', fn ($q) => $q->where('product_type', 'raw_material'))->count();
+
+        // Warehouse and Product lists for filtering (scoped to active tab)
+        $warehouses = Warehouse::where('is_active', true)->orderBy('name')->get();
+        $products = Product::with('baseUnit')
+            ->where('is_active', true)
+            ->when($isRawMaterial, fn ($q) => $q->rawMaterials(), fn ($q) => $q->forSale())
+            ->orderBy('name')
+            ->get();
+
+        // Reset product_id if it does not belong to the active tab
+        if ($productId && ! $products->contains('id', (int) $productId)) {
+            $productId = null;
+        }
+
         // Main Query for Stock Movements
         $query = StockMovement::with(['product.baseUnit', 'warehouse', 'creator'])
+            ->whereHas('product', function ($q) use ($isRawMaterial) {
+                if ($isRawMaterial) {
+                    $q->where('product_type', 'raw_material');
+                } else {
+                    $q->where('product_type', '!=', 'raw_material');
+                }
+            })
             ->when($productId, fn ($q) => $q->where('product_id', $productId))
             ->when($warehouseId, fn ($q) => $q->where('warehouse_id', $warehouseId))
             ->when($type, fn ($q) => $q->where('type', $type))
@@ -40,12 +67,15 @@ class StockMovementController extends Controller
 
         $movements = $query->latest('id')->paginate(20)->withQueryString();
 
-        // Warehouse and Product lists for filtering
-        $warehouses = Warehouse::where('is_active', true)->orderBy('name')->get();
-        $products = Product::with('baseUnit')->where('is_active', true)->orderBy('name')->get();
-
-        // Active Stock Batches (FIFO overview)
+        // Active Stock Batches (FIFO overview) scoped by tab
         $batches = StockBatch::with(['product.baseUnit', 'warehouse'])
+            ->whereHas('product', function ($q) use ($isRawMaterial) {
+                if ($isRawMaterial) {
+                    $q->where('product_type', 'raw_material');
+                } else {
+                    $q->where('product_type', '!=', 'raw_material');
+                }
+            })
             ->when($productId, fn ($q) => $q->where('product_id', $productId))
             ->when($warehouseId, fn ($q) => $q->where('warehouse_id', $warehouseId))
             ->where('qty_remaining', '>', 0)
@@ -69,6 +99,9 @@ class StockMovementController extends Controller
             'headerDescription' => 'Lacak riwayat mutasi masuk/keluar barang (Stock Card), cek batch aktif FIFO, dan audit mutasi persediaan.',
             'breadcrumbParent' => 'Inventaris & Stok',
             'breadcrumbCurrent' => 'Kartu Stok',
+            'tab' => $tab,
+            'totalProductMovements' => $totalProductMovements,
+            'totalRawMaterialMovements' => $totalRawMaterialMovements,
             'movements' => $movements,
             'batches' => $batches,
             'warehouses' => $warehouses,

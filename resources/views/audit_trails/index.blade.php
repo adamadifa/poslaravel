@@ -23,35 +23,47 @@
             <!-- Search Keyword -->
             <div class="relative rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 pt-3 pb-2 focus-within:border-brand-500 focus-within:ring-1 focus-within:ring-brand-500">
                 <label class="absolute -top-2.5 left-3.5 bg-white dark:bg-slate-900 px-1.5 text-[11px] font-bold text-slate-700 dark:text-slate-300">Cari Deskripsi / User</label>
-                <input type="text" name="search" value="{{ request('search') }}" placeholder="Ketik kata kunci..." class="w-full border-0 p-0 text-xs font-semibold text-slate-800 dark:text-white bg-transparent focus:ring-0 focus:outline-none">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="search" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Ketik kata kunci..." class="w-full border-0 p-0 text-xs font-semibold text-slate-800 dark:text-white bg-transparent focus:ring-0 focus:outline-none">
+                </div>
             </div>
 
             <!-- Filter User -->
             <div class="relative rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 pt-3 pb-2 focus-within:border-brand-500 focus-within:ring-1 focus-within:ring-brand-500">
                 <label class="absolute -top-2.5 left-3.5 bg-white dark:bg-slate-900 px-1.5 text-[11px] font-bold text-slate-700 dark:text-slate-300">Pengguna (Staf)</label>
-                <select name="user_id" class="w-full border-0 p-0 text-xs font-semibold text-slate-800 dark:text-white bg-transparent focus:ring-0 focus:outline-none">
-                    <option value="">Semua Staf</option>
-                    @foreach($users as $user)
-                        <option value="{{ $user->id }}" {{ request('user_id') == $user->id ? 'selected' : '' }}>{{ $user->name }}</option>
-                    @endforeach
-                </select>
+                <div class="flex items-center gap-2">
+                    <i data-lucide="user" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                    <select name="user_id" class="select2-filter w-full border-0 p-0 text-xs font-semibold text-slate-800 dark:text-white bg-transparent focus:ring-0 focus:outline-none cursor-pointer">
+                        <option value="">Semua Staf</option>
+                        @foreach($users as $user)
+                            <option value="{{ $user->id }}" {{ request('user_id') == $user->id ? 'selected' : '' }}>{{ $user->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
             </div>
 
             <!-- Filter Action -->
             <div class="relative rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 pt-3 pb-2 focus-within:border-brand-500 focus-within:ring-1 focus-within:ring-brand-500">
                 <label class="absolute -top-2.5 left-3.5 bg-white dark:bg-slate-900 px-1.5 text-[11px] font-bold text-slate-700 dark:text-slate-300">Aksi / Event</label>
-                <select name="action" class="w-full border-0 p-0 text-xs font-semibold text-slate-800 dark:text-white bg-transparent focus:ring-0 focus:outline-none capitalize">
-                    <option value="">Semua Aksi</option>
-                    @foreach($actions as $act)
-                        <option value="{{ $act }}" {{ request('action') == $act ? 'selected' : '' }}>{{ ucfirst($act) }}</option>
-                    @endforeach
-                </select>
+                <div class="flex items-center gap-2">
+                    <i data-lucide="activity" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                    <select name="action" class="select2-filter w-full border-0 p-0 text-xs font-semibold text-slate-800 dark:text-white bg-transparent focus:ring-0 focus:outline-none capitalize cursor-pointer">
+                        <option value="">Semua Aksi</option>
+                        @foreach($actions as $act)
+                            <option value="{{ $act }}" {{ request('action') == $act ? 'selected' : '' }}>{{ ucfirst($act) }}</option>
+                        @endforeach
+                    </select>
+                </div>
             </div>
 
             <!-- Filter Tanggal Mulai -->
             <div class="relative rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 pt-3 pb-2 focus-within:border-brand-500 focus-within:ring-1 focus-within:ring-brand-500">
                 <label class="absolute -top-2.5 left-3.5 bg-white dark:bg-slate-900 px-1.5 text-[11px] font-bold text-slate-700 dark:text-slate-300">Tanggal Mulai</label>
-                <input type="date" name="start_date" value="{{ request('start_date') }}" class="w-full border-0 p-0 text-xs font-semibold text-slate-800 dark:text-white bg-transparent focus:ring-0 focus:outline-none">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="calendar" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                    <input type="date" name="start_date" value="{{ request('start_date') }}" class="w-full border-0 p-0 text-xs font-semibold text-slate-800 dark:text-white bg-transparent focus:ring-0 focus:outline-none cursor-pointer">
+                </div>
             </div>
 
             <!-- Actions Button -->

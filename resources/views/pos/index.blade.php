@@ -1077,7 +1077,7 @@
         document.getElementById('modal_item_subtotal_display').innerText = `Rp ${Math.round(subtotal).toLocaleString('id-ID')}`;
     }
 
-    function handleItemModalSubmit(e) {
+    async function handleItemModalSubmit(e) {
         e.preventDefault();
         if (!modalCurrentProduct) return;
 
@@ -1111,10 +1111,11 @@
             cart[modalEditingCartIndex].modifiers = selectedModifiers;
             cart[modalEditingCartIndex].notes = itemNotes;
             cart[modalEditingCartIndex].is_custom_price = true;
+            await recalculateCartPrices();
             renderCart();
         } else {
             // Add new to cart with custom price, modifiers, and notes
-            addToCartWithCustomPrice(modalCurrentProduct, unitId, qty, basePrice, finalUnitPrice, selectedModifiers, itemNotes, modalUnitsList);
+            await addToCartWithCustomPrice(modalCurrentProduct, unitId, qty, basePrice, finalUnitPrice, selectedModifiers, itemNotes, modalUnitsList);
         }
 
         closeModal('itemModal');
@@ -1148,6 +1149,7 @@
             });
         }
 
+        await recalculateCartPrices();
         renderCart();
     }
 
@@ -1505,18 +1507,26 @@
             });
         }
 
+        const calculatedSubtotal = (cartCalculationResult && cartCalculationResult.subtotal > 0)
+            ? cartCalculationResult.subtotal 
+            : subtotal;
+        const calculatedDiscount = (cartCalculationResult && cartCalculationResult.total_discount !== undefined) 
+            ? cartCalculationResult.total_discount 
+            : 0;
+
         updateSummary(
-            cartCalculationResult.subtotal !== undefined ? cartCalculationResult.subtotal : subtotal,
-            cartCalculationResult.total_discount !== undefined ? cartCalculationResult.total_discount : 0,
+            calculatedSubtotal,
+            calculatedDiscount,
             totalQty
         );
         lucide.createIcons();
     }
 
     function updateSummary(subtotal, discount, qty) {
-        const grandTotal = cartCalculationResult.grand_total !== undefined 
-            ? cartCalculationResult.grand_total 
-            : Math.max(0, subtotal - discount);
+        let grandTotal = Math.max(0, subtotal - discount);
+        if (cartCalculationResult && cartCalculationResult.grand_total > 0) {
+            grandTotal = cartCalculationResult.grand_total;
+        }
 
         document.getElementById('cartSubtotalText').innerText = `Rp ${parseInt(subtotal).toLocaleString('id-ID')}`;
         document.getElementById('cartDiscountText').innerText = `- Rp ${parseInt(discount).toLocaleString('id-ID')}`;
@@ -1531,6 +1541,13 @@
             Swal.fire({ icon: 'warning', title: 'Keranjang Kosong', text: 'Tambahkan produk terlebih dahulu sebelum checkout.', scrollbarPadding: false, heightAuto: false });
             return;
         }
+
+        // Safety fallback if currentCartGrandTotal is somehow 0 or unset but cart has items
+        if ((!window.currentCartGrandTotal || window.currentCartGrandTotal <= 0) && cart.length > 0) {
+            const rawSubtotal = cart.reduce((sum, item) => sum + ((parseFloat(item.price) || 0) * (parseFloat(item.quantity) || 0)), 0);
+            window.currentCartGrandTotal = Math.max(0, rawSubtotal - ((cartCalculationResult && cartCalculationResult.total_discount) || 0));
+        }
+
         document.getElementById('pay_item_summary_text').innerText = `${cart.length} Item`;
         document.getElementById('pay_grand_total_display').innerText = `Rp ${parseInt(window.currentCartGrandTotal).toLocaleString('id-ID')}`;
         document.getElementById('pay_cash_received_input').value = window.currentCartGrandTotal;
@@ -1607,7 +1624,10 @@
     async function handleProcessCheckout(e) {
         e.preventDefault();
         const method = document.querySelector('input[name="payment_method"]:checked').value;
-        const paidAmount = parseFloat(document.getElementById('pay_cash_received_input').value) || window.currentCartGrandTotal;
+        const rawCashReceived = parseFloat(document.getElementById('pay_cash_received_input').value);
+        const paidAmount = (!isNaN(rawCashReceived) && rawCashReceived > 0) 
+            ? rawCashReceived 
+            : window.currentCartGrandTotal;
         const refNo = document.getElementById('pay_reference_number_input').value;
         const notes = document.getElementById('pay_notes_input').value;
         const customerId = document.getElementById('posCustomerSelect').value;

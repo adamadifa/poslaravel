@@ -90,7 +90,10 @@
                 <label class="absolute -top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold text-slate-700">
                     Dari Tanggal
                 </label>
-                <input type="date" name="start_date" value="{{ $startDate }}" class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="calendar" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                    <input type="date" name="start_date" value="{{ $startDate }}" class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
+                </div>
             </div>
 
             <!-- Sampai Tanggal (Col 2) -->
@@ -98,7 +101,10 @@
                 <label class="absolute -top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold text-slate-700">
                     Sampai Tanggal
                 </label>
-                <input type="date" name="end_date" value="{{ $endDate }}" class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="calendar" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                    <input type="date" name="end_date" value="{{ $endDate }}" class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
+                </div>
             </div>
 
             <!-- Supplier (Col 3) -->
@@ -106,12 +112,15 @@
                 <label class="absolute -top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold text-slate-700">
                     Supplier
                 </label>
-                <select name="supplier_id" onchange="this.form.submit()" class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
-                    <option value="">Semua Supplier</option>
-                    @foreach($suppliers as $s)
-                        <option value="{{ $s->id }}" {{ $supplierId == $s->id ? 'selected' : '' }}>{{ $s->name }}</option>
-                    @endforeach
-                </select>
+                <div class="flex items-center gap-2">
+                    <i data-lucide="truck" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                    <select name="supplier_id" onchange="this.form.submit()" class="select2-filter w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
+                        <option value="">Semua Supplier</option>
+                        @foreach($suppliers as $s)
+                            <option value="{{ $s->id }}" {{ $supplierId == $s->id ? 'selected' : '' }}>{{ $s->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
             </div>
 
             <!-- Gudang / Cabang (Col 2) -->
@@ -119,12 +128,15 @@
                 <label class="absolute -top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold text-slate-700">
                     Gudang Tujuan
                 </label>
-                <select name="warehouse_id" onchange="this.form.submit()" class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
-                    <option value="">Semua Gudang</option>
-                    @foreach($warehouses as $wh)
-                        <option value="{{ $wh->id }}" {{ $warehouseId == $wh->id ? 'selected' : '' }}>{{ $wh->name }}</option>
-                    @endforeach
-                </select>
+                <div class="flex items-center gap-2">
+                    <i data-lucide="warehouse" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                    <select name="warehouse_id" onchange="this.form.submit()" class="select2-filter w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
+                        <option value="">Semua Gudang</option>
+                        @foreach($warehouses as $wh)
+                            <option value="{{ $wh->id }}" {{ $warehouseId == $wh->id ? 'selected' : '' }}>{{ $wh->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
             </div>
 
             <!-- Status PO + Reset (Col 3) -->
@@ -133,14 +145,17 @@
                     <label class="absolute -top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold text-slate-700">
                         Status Dokumen
                     </label>
-                    <select name="status" onchange="this.form.submit()" class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
-                        <option value="">Semua Status</option>
-                        <option value="draft" {{ $status === 'draft' ? 'selected' : '' }}>Draft</option>
-                        <option value="sent" {{ $status === 'sent' ? 'selected' : '' }}>Terkirim (Sent)</option>
-                        <option value="partial" {{ $status === 'partial' ? 'selected' : '' }}>Sebagian (Partial)</option>
-                        <option value="received" {{ $status === 'received' ? 'selected' : '' }}>Selesai (Received)</option>
-                        <option value="cancelled" {{ $status === 'cancelled' ? 'selected' : '' }}>Dibatalkan</option>
-                    </select>
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="check-circle" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                        <select name="status" onchange="this.form.submit()" class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
+                            <option value="">Semua Status</option>
+                            <option value="draft" {{ $status === 'draft' ? 'selected' : '' }}>Draft</option>
+                            <option value="sent" {{ $status === 'sent' ? 'selected' : '' }}>Terkirim (Sent)</option>
+                            <option value="partial" {{ $status === 'partial' ? 'selected' : '' }}>Sebagian (Partial)</option>
+                            <option value="received" {{ $status === 'received' ? 'selected' : '' }}>Selesai (Received)</option>
+                            <option value="cancelled" {{ $status === 'cancelled' ? 'selected' : '' }}>Dibatalkan</option>
+                        </select>
+                    </div>
                 </div>
 
                 @if(request()->hasAny(['start_date', 'end_date', 'supplier_id', 'warehouse_id', 'status']))

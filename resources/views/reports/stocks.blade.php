@@ -105,12 +105,15 @@
                 <label class="absolute -top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold text-slate-700">
                     Gudang
                 </label>
-                <select name="warehouse_id" onchange="this.form.submit()" class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
-                    <option value="">Semua Gudang</option>
-                    @foreach($warehouses as $wh)
-                        <option value="{{ $wh->id }}" {{ $warehouseId == $wh->id ? 'selected' : '' }}>{{ $wh->name }}</option>
-                    @endforeach
-                </select>
+                <div class="flex items-center gap-2">
+                    <i data-lucide="warehouse" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                    <select name="warehouse_id" onchange="this.form.submit()" class="select2-filter w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
+                        <option value="">Semua Gudang</option>
+                        @foreach($warehouses as $wh)
+                            <option value="{{ $wh->id }}" {{ $warehouseId == $wh->id ? 'selected' : '' }}>{{ $wh->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
             </div>
 
             <!-- Kategori (Col 2) -->
@@ -118,12 +121,15 @@
                 <label class="absolute -top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold text-slate-700">
                     Kategori
                 </label>
-                <select name="category_id" onchange="this.form.submit()" class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
-                    <option value="">Semua Kategori</option>
-                    @foreach($categories as $cat)
-                        <option value="{{ $cat->id }}" {{ $categoryId == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
-                    @endforeach
-                </select>
+                <div class="flex items-center gap-2">
+                    <i data-lucide="tag" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                    <select name="category_id" onchange="this.form.submit()" class="select2-filter w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
+                        <option value="">Semua Kategori</option>
+                        @foreach($categories as $cat)
+                            <option value="{{ $cat->id }}" {{ $categoryId == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
             </div>
 
             <!-- Filter Status Stok + Reset (Col 3) -->
@@ -132,11 +138,14 @@
                     <label class="absolute -top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold text-slate-700">
                         Status Stok
                     </label>
-                    <select name="filter_stock" onchange="this.form.submit()" class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
-                        <option value="">Semua Stok</option>
-                        <option value="low" {{ $filterStock === 'low' ? 'selected' : '' }}>Stok Kritis (<= Min)</option>
-                        <option value="out" {{ $filterStock === 'out' ? 'selected' : '' }}>Stok Habis (= 0)</option>
-                    </select>
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="layers" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                        <select name="filter_stock" onchange="this.form.submit()" class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
+                            <option value="">Semua Stok</option>
+                            <option value="low" {{ $filterStock === 'low' ? 'selected' : '' }}>Stok Kritis (<= Min)</option>
+                            <option value="out" {{ $filterStock === 'out' ? 'selected' : '' }}>Stok Habis (= 0)</option>
+                        </select>
+                    </div>
                 </div>
 
                 @if(request()->hasAny(['search', 'warehouse_id', 'category_id', 'filter_stock']))

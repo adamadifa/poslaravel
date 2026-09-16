@@ -20,11 +20,11 @@ class StockTransferItem extends Model
     ];
 
     protected $casts = [
-        'quantity_sent' => 'decimal:4',
-        'quantity_received' => 'decimal:4',
-        'base_quantity_sent' => 'decimal:4',
-        'base_quantity_received' => 'decimal:4',
-        'unit_cost' => 'decimal:4',
+        'quantity_sent' => 'float',
+        'quantity_received' => 'float',
+        'base_quantity_sent' => 'float',
+        'base_quantity_received' => 'float',
+        'unit_cost' => 'decimal:2',
     ];
 
     public function stockTransfer(): BelongsTo

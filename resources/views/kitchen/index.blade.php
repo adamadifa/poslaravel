@@ -26,11 +26,14 @@
         <div class="flex items-center gap-3">
             <!-- Outlet Selector -->
             <form method="GET" action="{{ route('kitchen.index') }}" class="flex items-center">
-                <select name="warehouse_id" onchange="this.form.submit()" class="rounded-xl border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-bold text-slate-200 focus:ring-1 focus:ring-amber-500 cursor-pointer">
-                    @foreach($warehouses as $wh)
-                        <option value="{{ $wh->id }}" {{ $warehouseId == $wh->id ? 'selected' : '' }}>{{ $wh->name }}</option>
-                    @endforeach
-                </select>
+                <div class="flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-800 px-3 py-1.5">
+                    <i data-lucide="warehouse" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                    <select name="warehouse_id" onchange="this.form.submit()" class="select2-filter bg-transparent border-0 p-0 text-xs font-bold text-slate-200 focus:ring-0 focus:outline-none cursor-pointer">
+                        @foreach($warehouses as $wh)
+                            <option value="{{ $wh->id }}" {{ $warehouseId == $wh->id ? 'selected' : '' }}>{{ $wh->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
             </form>
 
             <!-- Auto refresh status indicator -->

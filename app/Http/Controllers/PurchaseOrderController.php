@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use App\Models\PurchaseOrder;
+use App\Models\Setting;
 use App\Models\Supplier;
 use App\Models\Unit;
 use App\Models\Warehouse;
@@ -83,6 +84,8 @@ class PurchaseOrderController extends Controller
      */
     public function store(Request $request)
     {
+        $this->normalizeNumericInputs($request);
+
         $validated = $request->validate([
             'supplier_id' => 'required|exists:suppliers,id',
             'warehouse_id' => 'required|exists:warehouses,id',
@@ -130,6 +133,8 @@ class PurchaseOrderController extends Controller
         if (in_array($purchaseOrder->status, ['received', 'partial'])) {
             return redirect()->back()->with('error', 'PO yang sudah memiliki penerimaan barang (GRN) tidak dapat diedit.');
         }
+
+        $this->normalizeNumericInputs($request);
 
         $validated = $request->validate([
             'supplier_id' => 'required|exists:suppliers,id',
@@ -214,5 +219,59 @@ class PurchaseOrderController extends Controller
             'status' => 'success',
             'data' => $purchaseOrder,
         ]);
+    }
+
+    /**
+     * Print Purchase Order document in standard A4 format.
+     */
+    public function print(PurchaseOrder $purchaseOrder)
+    {
+        $purchaseOrder->load([
+            'supplier',
+            'warehouse',
+            'user',
+            'items.product.baseUnit',
+            'items.unit',
+        ]);
+
+        $company = [
+            'name' => Setting::get('company_name', 'WarungPro'),
+            'tagline' => Setting::get('company_tagline', 'Solusi Kasir & Manajemen Ritel Modern'),
+            'address' => Setting::get('company_address', 'Jl. Sudirman No. 45, Jakarta Pusat'),
+            'phone' => Setting::get('company_phone', '0812-3456-7890'),
+            'email' => Setting::get('company_email', 'support@pospro.com'),
+            'npwp' => Setting::get('company_npwp', '-'),
+            'logo' => Setting::get('company_logo', null),
+        ];
+
+        return view('purchases.orders.print', compact('purchaseOrder', 'company'));
+    }
+
+    /**
+     * Normalize comma-separated decimal inputs to standard dot notation.
+     */
+    private function normalizeNumericInputs(Request $request): void
+    {
+        if ($request->has('items') && is_array($request->input('items'))) {
+            $items = $request->input('items');
+            foreach ($items as $i => $item) {
+                if (isset($item['unit_price']) && is_string($item['unit_price'])) {
+                    $items[$i]['unit_price'] = str_replace(',', '.', trim($item['unit_price']));
+                }
+                if (isset($item['quantity_ordered']) && is_string($item['quantity_ordered'])) {
+                    $items[$i]['quantity_ordered'] = str_replace(',', '.', trim($item['quantity_ordered']));
+                }
+                if (isset($item['discount_percent']) && is_string($item['discount_percent'])) {
+                    $items[$i]['discount_percent'] = str_replace(',', '.', trim($item['discount_percent']));
+                }
+            }
+            $request->merge(['items' => $items]);
+        }
+
+        foreach (['discount_amount', 'tax_amount', 'shipping_cost'] as $field) {
+            if ($request->has($field) && is_string($request->input($field))) {
+                $request->merge([$field => str_replace(',', '.', trim($request->input($field)))]);
+            }
+        }
     }
 }

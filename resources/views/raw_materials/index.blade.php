@@ -29,7 +29,7 @@
                 </label>
                 <div class="flex items-center gap-2">
                     <i data-lucide="tag" class="w-4 h-4 text-slate-400 shrink-0"></i>
-                    <select name="category_id" onchange="this.form.submit()" class="w-full bg-transparent border-0 p-0 text-xs font-semibold text-slate-800 dark:text-white focus:ring-0 focus:outline-none cursor-pointer">
+                    <select name="category_id" onchange="this.form.submit()" class="select2-filter w-full bg-transparent border-0 p-0 text-xs font-semibold text-slate-800 dark:text-white focus:ring-0 focus:outline-none cursor-pointer">
                         <option value="">Semua Kategori</option>
                         @foreach($categories as $category)
                             <option value="{{ $category->id }}" {{ request('category_id') == $category->id ? 'selected' : '' }}>
@@ -134,7 +134,7 @@
 
                             <!-- Satuan Dasar -->
                             <td class="py-3 px-5">
-                                <span class="font-bold text-slate-800 dark:text-slate-200">{{ $item->baseUnit->name ?? '-' }} ({{ $item->baseUnit->short_name ?? '-' }})</span>
+                                <span class="font-bold text-slate-800 dark:text-slate-200">{{ $item->baseUnit ? $item->baseUnit->display_name : '-' }}</span>
                             </td>
 
                             <!-- HPP Modal -->

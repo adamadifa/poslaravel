@@ -73,7 +73,7 @@
                         <select name="base_unit_id" id="edit_raw_base_unit_id" required class="w-full bg-transparent border-0 p-0 text-xs font-semibold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
                             <option value="">Pilih Satuan</option>
                             @foreach($units as $unit)
-                                <option value="{{ $unit->id }}">{{ $unit->name }} ({{ $unit->short_name }})</option>
+                                <option value="{{ $unit->id }}">{{ $unit->display_name }}</option>
                             @endforeach
                         </select>
                     </div>

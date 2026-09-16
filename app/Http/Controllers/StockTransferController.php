@@ -70,6 +70,8 @@ class StockTransferController extends Controller
      */
     public function store(Request $request)
     {
+        $this->normalizeNumericInputs($request);
+
         $validated = $request->validate([
             'from_warehouse_id' => 'required|exists:warehouses,id|different:to_warehouse_id',
             'to_warehouse_id' => 'required|exists:warehouses,id',
@@ -125,6 +127,8 @@ class StockTransferController extends Controller
      */
     public function receive(Request $request, StockTransfer $stockTransfer)
     {
+        $this->normalizeNumericInputs($request);
+
         $validated = $request->validate([
             'items' => 'nullable|array',
             'items.*.quantity_received' => 'nullable|numeric|min:0',
@@ -136,6 +140,27 @@ class StockTransferController extends Controller
             return redirect()->route('stock-transfers.index')->with('success', "Transfer {$stockTransfer->transfer_number} telah berhasil diterima. Stok gudang tujuan telah ditambahkan.");
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Gagal mengonfirmasi penerimaan: '.$e->getMessage());
+        }
+    }
+
+    /**
+     * Normalize comma-separated decimal inputs to standard dot notation.
+     */
+    private function normalizeNumericInputs(Request $request): void
+    {
+        if ($request->has('items') && is_array($request->input('items'))) {
+            $items = $request->input('items');
+            foreach ($items as $i => $item) {
+                if (is_array($item)) {
+                    if (isset($item['quantity_sent']) && is_string($item['quantity_sent'])) {
+                        $items[$i]['quantity_sent'] = str_replace(',', '.', trim($item['quantity_sent']));
+                    }
+                    if (isset($item['quantity_received']) && is_string($item['quantity_received'])) {
+                        $items[$i]['quantity_received'] = str_replace(',', '.', trim($item['quantity_received']));
+                    }
+                }
+            }
+            $request->merge(['items' => $items]);
         }
     }
 

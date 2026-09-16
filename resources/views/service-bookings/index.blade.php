@@ -37,30 +37,39 @@
             <!-- Outlet -->
             <div class="relative rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 pt-3 pb-2">
                 <label class="absolute -top-2.5 left-3.5 bg-white dark:bg-slate-900 px-1.5 text-[11px] font-bold text-slate-700 dark:text-slate-300">Outlet</label>
-                <select name="warehouse_id" onchange="this.form.submit()" class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 dark:text-white focus:ring-0">
-                    @foreach($warehouses as $wh)
-                        <option value="{{ $wh->id }}" {{ $warehouseId == $wh->id ? 'selected' : '' }}>{{ $wh->name }}</option>
-                    @endforeach
-                </select>
+                <div class="flex items-center gap-2">
+                    <i data-lucide="warehouse" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                    <select name="warehouse_id" onchange="this.form.submit()" class="select2-filter w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 dark:text-white focus:ring-0 cursor-pointer">
+                        @foreach($warehouses as $wh)
+                            <option value="{{ $wh->id }}" {{ $warehouseId == $wh->id ? 'selected' : '' }}>{{ $wh->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
             </div>
 
             <!-- Date -->
             <div class="relative rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 pt-3 pb-2">
                 <label class="absolute -top-2.5 left-3.5 bg-white dark:bg-slate-900 px-1.5 text-[11px] font-bold text-slate-700 dark:text-slate-300">Tanggal Booking</label>
-                <input type="date" name="date" value="{{ $date }}" onchange="this.form.submit()" class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 dark:text-white focus:ring-0">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="calendar" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                    <input type="date" name="date" value="{{ $date }}" onchange="this.form.submit()" class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 dark:text-white focus:ring-0 cursor-pointer">
+                </div>
             </div>
 
             <!-- Status -->
             <div class="relative rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 pt-3 pb-2">
                 <label class="absolute -top-2.5 left-3.5 bg-white dark:bg-slate-900 px-1.5 text-[11px] font-bold text-slate-700 dark:text-slate-300">Status</label>
-                <select name="status" onchange="this.form.submit()" class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 dark:text-white focus:ring-0">
-                    <option value="">Semua Status</option>
-                    <option value="pending" {{ $status == 'pending' ? 'selected' : '' }}>Pending</option>
-                    <option value="confirmed" {{ $status == 'confirmed' ? 'selected' : '' }}>Dikonfirmasi</option>
-                    <option value="in_progress" {{ $status == 'in_progress' ? 'selected' : '' }}>Sedang Dikerjakan</option>
-                    <option value="completed" {{ $status == 'completed' ? 'selected' : '' }}>Selesai</option>
-                    <option value="cancelled" {{ $status == 'cancelled' ? 'selected' : '' }}>Dibatalkan</option>
-                </select>
+                <div class="flex items-center gap-2">
+                    <i data-lucide="check-circle" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                    <select name="status" onchange="this.form.submit()" class="select2-filter w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 dark:text-white focus:ring-0 cursor-pointer">
+                        <option value="">Semua Status</option>
+                        <option value="pending" {{ $status == 'pending' ? 'selected' : '' }}>Pending</option>
+                        <option value="confirmed" {{ $status == 'confirmed' ? 'selected' : '' }}>Dikonfirmasi</option>
+                        <option value="in_progress" {{ $status == 'in_progress' ? 'selected' : '' }}>Sedang Dikerjakan</option>
+                        <option value="completed" {{ $status == 'completed' ? 'selected' : '' }}>Selesai</option>
+                        <option value="cancelled" {{ $status == 'cancelled' ? 'selected' : '' }}>Dibatalkan</option>
+                    </select>
+                </div>
             </div>
 
             @if(request()->hasAny(['date', 'status']))

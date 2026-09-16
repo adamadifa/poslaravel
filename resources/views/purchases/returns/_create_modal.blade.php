@@ -50,15 +50,20 @@
 
                     <!-- Supplier Picker -->
                     <div class="space-y-1.5">
-                        <label class="text-xs font-bold text-slate-700 block">
-                            Supplier / Vendor <span class="text-rose-500">*</span>
-                        </label>
-                        <select name="supplier_id" id="return_supplier_id" required class="w-full bg-white border border-slate-200 hover:border-slate-300 focus:border-brand-500 rounded-xl px-3.5 py-2 text-xs font-bold text-slate-800 focus:outline-none cursor-pointer shadow-2xs h-10">
-                            <option value="">Pilih Supplier...</option>
-                            @foreach($suppliers as $s)
-                                <option value="{{ $s->id }}">{{ $s->name }} ({{ $s->code }})</option>
-                            @endforeach
-                        </select>
+                        <div class="flex items-center justify-between">
+                            <label class="text-xs font-bold text-slate-700 block">
+                                Supplier / Vendor <span class="text-rose-500">*</span>
+                            </label>
+                            <span id="return_selected_supplier_top" class="text-[10px] font-bold text-amber-600"></span>
+                        </div>
+                        <input type="hidden" name="supplier_id" id="return_supplier_id" required>
+                        <button type="button" onclick="openSupplierPickerModal()" class="w-full text-left bg-white hover:bg-slate-50 border border-slate-200 hover:border-slate-300 focus:border-amber-500 rounded-xl px-3.5 py-2.5 flex items-center justify-between transition cursor-pointer shadow-2xs h-10">
+                            <div class="flex items-center gap-2.5 min-w-0">
+                                <i data-lucide="truck" class="w-4 h-4 text-amber-500 shrink-0"></i>
+                                <span id="return_selected_supplier_name" class="font-bold text-xs text-slate-800 truncate">Pilih Supplier...</span>
+                            </div>
+                            <i data-lucide="chevrons-up-down" class="w-3.5 h-3.5 text-slate-400 shrink-0"></i>
+                        </button>
                     </div>
 
                     <!-- Warehouse -->
@@ -198,16 +203,74 @@
     </div>
 </div>
 
+<!-- MODAL CARI SUPPLIER (INSTANT FILTER FOR 1000s OF SUPPLIERS) -->
+<div id="supplierPickerModal" class="fixed inset-0 z-[110] bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center p-3 sm:p-4 overflow-y-auto">
+    <div class="bg-white border border-slate-200/90 rounded-2xl max-w-2xl w-full shadow-2xl transition-all my-auto overflow-hidden flex flex-col max-h-[85vh]">
+        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/60">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100/60">
+                    <i data-lucide="truck" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-sm text-slate-900 tracking-tight">Pilih Rekanan Supplier</h3>
+                    <p class="text-[11px] text-slate-400">Pencarian cepat database supplier untuk retur</p>
+                </div>
+            </div>
+            <button onclick="closeModal('supplierPickerModal')" type="button" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="p-4 border-b border-slate-100 bg-white">
+            <div class="relative rounded-xl border border-slate-200 bg-slate-50/70 focus-within:bg-white focus-within:border-amber-500 px-3.5 py-2 transition flex items-center gap-2.5">
+                <i data-lucide="search" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                <input 
+                    type="text" 
+                    id="supplier_picker_search" 
+                    oninput="filterSupplierPickerList()" 
+                    placeholder="Ketik nama pemasok, kontak PIC, kota, telepon, atau kode..." 
+                    class="w-full bg-transparent border-0 p-0 text-xs font-semibold text-slate-800 placeholder-slate-400 focus:ring-0 focus:outline-none"
+                >
+            </div>
+        </div>
+
+        <!-- Scrollable Suppliers Grid -->
+        <div class="flex-1 p-4 overflow-y-auto">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="supplier_picker_container">
+                <!-- Dynamically populated -->
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
+    const returnSuppliers = @json($suppliers);
     const returnProducts = @json($products);
     const returnReceipts = @json($receipts);
     let returnRowIndex = 0;
+
+    // Helper to format clean numeric values (remove trailing zeros, max 2 decimals for prices, 4 for qty)
+    function formatNumberClean(val, defaultVal = 0, maxDecimals = 2) {
+        if (val === '' || val === null || val === undefined) return defaultVal;
+        const strVal = String(val).replace(',', '.').trim();
+        const num = parseFloat(strVal);
+        if (isNaN(num)) return defaultVal;
+        const factor = Math.pow(10, maxDecimals);
+        return Number(Math.round(num * factor) / factor);
+    }
 
     function openCreateReturnModal() {
         document.getElementById('createReturnForm').reset();
         document.getElementById('return_items_tbody').innerHTML = '';
         document.getElementById('return_receipt_id').value = '';
         document.getElementById('return_grn_selector').value = '';
+        document.getElementById('return_supplier_id').value = '';
+        
+        const nameEl = document.getElementById('return_selected_supplier_name');
+        if (nameEl) nameEl.innerText = 'Pilih Supplier...';
+        const topEl = document.getElementById('return_selected_supplier_top');
+        if (topEl) topEl.innerText = '';
         
         returnRowIndex = 0;
         toggleReturnEmptyState();
@@ -239,20 +302,27 @@
             return;
         }
 
-        const rc = returnReceipts.find(r => r.id == receiptId);
-        if (!rc) return;
+        const grn = returnReceipts.find(r => r.id == receiptId);
+        if (!grn) return;
 
-        document.getElementById('return_receipt_id').value = rc.id;
-        document.getElementById('return_supplier_id').value = rc.supplier_id;
-        document.getElementById('return_warehouse_id').value = rc.warehouse_id;
+        document.getElementById('return_receipt_id').value = grn.id;
+        document.getElementById('return_supplier_id').value = grn.supplier_id;
+        document.getElementById('return_warehouse_id').value = grn.warehouse_id;
 
-        // Clear and prefill items from GRN
+        if (grn.supplier) {
+            const nameEl = document.getElementById('return_selected_supplier_name');
+            if (nameEl) nameEl.innerText = grn.supplier.name;
+            const topEl = document.getElementById('return_selected_supplier_top');
+            if (topEl) topEl.innerText = grn.supplier.payment_term_days ? `Tempo: ${grn.supplier.payment_term_days} hari` : '';
+        }
+
+        // Populate items from GRN
         const tbody = document.getElementById('return_items_tbody');
         tbody.innerHTML = '';
         returnRowIndex = 0;
 
-        if (rc.items && rc.items.length > 0) {
-            rc.items.forEach(item => {
+        if (grn.items && grn.items.length > 0) {
+            grn.items.forEach(item => {
                 addReturnItemRow({
                     product_id: item.product_id,
                     unit_id: item.unit_id,
@@ -266,6 +336,85 @@
 
         toggleReturnEmptyState();
         calculateReturnTotals();
+    }
+
+    // --- SUPPLIER PICKER MODAL ---
+    function openSupplierPickerModal() {
+        document.getElementById('supplier_picker_search').value = '';
+        renderSupplierPickerList(returnSuppliers);
+        openModal('supplierPickerModal');
+        setTimeout(() => document.getElementById('supplier_picker_search').focus(), 100);
+    }
+
+    function filterSupplierPickerList() {
+        const query = (document.getElementById('supplier_picker_search').value || '').toLowerCase();
+        const filtered = returnSuppliers.filter(s => 
+            (s.name && s.name.toLowerCase().includes(query)) ||
+            (s.code && s.code.toLowerCase().includes(query)) ||
+            (s.contact_person && s.contact_person.toLowerCase().includes(query)) ||
+            (s.city && s.city.toLowerCase().includes(query)) ||
+            (s.phone && s.phone.toLowerCase().includes(query))
+        );
+        renderSupplierPickerList(filtered);
+    }
+
+    function renderSupplierPickerList(list) {
+        const container = document.getElementById('supplier_picker_container');
+        if (!container) return;
+
+        if (list.length === 0) {
+            container.innerHTML = `
+                <div class="col-span-full py-8 text-center text-slate-400">
+                    <i data-lucide="truck" class="w-8 h-8 mx-auto mb-1 text-slate-300"></i>
+                    <p class="font-bold text-xs text-slate-600">Supplier tidak ditemukan</p>
+                </div>
+            `;
+            lucide.createIcons();
+            return;
+        }
+
+        container.innerHTML = list.map(s => `
+            <div onclick="selectReturnSupplier(${s.id})" class="p-3.5 rounded-xl border border-slate-200 hover:border-amber-500 hover:bg-amber-50/30 transition cursor-pointer flex flex-col justify-between group">
+                <div>
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="font-bold text-xs text-slate-800 group-hover:text-amber-600 transition truncate">${s.name}</span>
+                        <span class="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-100 text-slate-600 group-hover:bg-amber-100 group-hover:text-amber-700 shrink-0">${s.code}</span>
+                    </div>
+                    <div class="text-[11px] text-slate-500 mt-1 flex items-center gap-1.5">
+                        <i data-lucide="user" class="w-3 h-3 text-slate-400"></i>
+                        <span>${s.contact_person || 'No Contact Person'}</span>
+                    </div>
+                    <div class="text-[10px] text-slate-400 mt-0.5 flex items-center gap-1.5">
+                        <i data-lucide="phone" class="w-3 h-3 text-slate-400"></i>
+                        <span>${s.phone || '-'}</span>
+                        ${s.city ? `<span>•</span><span>${s.city}</span>` : ''}
+                    </div>
+                </div>
+                <div class="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px]">
+                    <span class="text-slate-400">Termin: <strong class="text-slate-700">${s.payment_term_days || 0} hari</strong></span>
+                    <span class="font-bold text-amber-600 group-hover:underline flex items-center gap-1">
+                        <span>Pilih</span>
+                        <i data-lucide="arrow-right" class="w-3 h-3"></i>
+                    </span>
+                </div>
+            </div>
+        `).join('');
+
+        lucide.createIcons();
+    }
+
+    function selectReturnSupplier(supplierId) {
+        const s = returnSuppliers.find(sup => sup.id === supplierId);
+        if (!s) return;
+
+        document.getElementById('return_supplier_id').value = s.id;
+        const nameEl = document.getElementById('return_selected_supplier_name');
+        if (nameEl) nameEl.innerText = s.name;
+        
+        const topEl = document.getElementById('return_selected_supplier_top');
+        if (topEl) topEl.innerText = s.payment_term_days ? `Tempo: ${s.payment_term_days} hari` : '';
+
+        closeModal('supplierPickerModal');
     }
 
     // --- PRODUCT PICKER MODAL ---
@@ -343,6 +492,9 @@
         let product = returnProducts.find(p => p.id == prefilled?.product_id);
         if (!product) return;
 
+        const formattedQty = formatNumberClean(prefilled ? prefilled.qty : '1', 1, 4);
+        const formattedCost = formatNumberClean(prefilled ? prefilled.cost : (product.purchase_price || 0), 0, 2);
+
         // Populate unit options
         let unitOptions = `<option value="${product.base_unit_id}" selected>${product.base_unit ? product.base_unit.name : 'Pcs'}</option>`;
         if (product.conversions) {
@@ -370,10 +522,10 @@
                 </select>
             </td>
             <td class="py-3 px-3">
-                <input type="number" step="any" min="0.0001" name="items[${idx}][quantity]" id="return_qty_${idx}" oninput="calculateReturnRow(${idx})" value="${prefilled ? prefilled.qty : '1'}" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-center text-xs font-bold text-slate-900 font-mono-num focus:bg-white focus:outline-none focus:border-amber-500">
+                <input type="number" step="any" min="0.0001" name="items[${idx}][quantity]" id="return_qty_${idx}" oninput="calculateReturnRow(${idx})" value="${formattedQty}" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-center text-xs font-bold text-slate-900 font-mono-num focus:bg-white focus:outline-none focus:border-amber-500">
             </td>
             <td class="py-3 px-3">
-                <input type="number" step="any" min="0" name="items[${idx}][unit_cost]" id="return_price_${idx}" oninput="calculateReturnRow(${idx})" value="${prefilled ? prefilled.cost : (product.purchase_price || 0)}" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-right text-xs font-bold text-slate-900 font-mono-num focus:bg-white focus:outline-none focus:border-amber-500">
+                <input type="number" step="any" min="0" name="items[${idx}][unit_cost]" id="return_price_${idx}" oninput="calculateReturnRow(${idx})" value="${formattedCost}" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-right text-xs font-bold text-slate-900 font-mono-num focus:bg-white focus:outline-none focus:border-amber-500">
             </td>
             <td class="py-3 px-3">
                 <input type="text" name="items[${idx}][batch_number]" value="${prefilled?.batch_number || ''}" placeholder="Batch #" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:bg-white focus:outline-none focus:border-amber-500 font-mono">
@@ -402,8 +554,11 @@
     }
 
     function calculateReturnRow(idx) {
-        const qty = parseFloat(document.getElementById(`return_qty_${idx}`)?.value) || 0;
-        const price = parseFloat(document.getElementById(`return_price_${idx}`)?.value) || 0;
+        const qtyRaw = document.getElementById(`return_qty_${idx}`)?.value || '0';
+        const priceRaw = document.getElementById(`return_price_${idx}`)?.value || '0';
+
+        const qty = parseFloat(String(qtyRaw).replace(',', '.')) || 0;
+        const price = parseFloat(String(priceRaw).replace(',', '.')) || 0;
         const subtotal = qty * price;
 
         const disp = document.getElementById(`return_subtotal_display_${idx}`);

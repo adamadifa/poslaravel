@@ -81,12 +81,15 @@
                 <label class="absolute -top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold text-slate-700">
                     Status Pelunasan
                 </label>
-                <select name="payment_status" onchange="this.form.submit()" class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
-                    <option value="" {{ !request()->has('payment_status') ? 'selected' : '' }}>Hutang Aktif (Belum Lunas & Cicilan)</option>
-                    <option value="unpaid" {{ request('payment_status') === 'unpaid' ? 'selected' : '' }}>Belum Dibayar (Unpaid)</option>
-                    <option value="partial" {{ request('payment_status') === 'partial' ? 'selected' : '' }}>Dibayar Sebagian (Partial)</option>
-                    <option value="paid" {{ request('payment_status') === 'paid' ? 'selected' : '' }}>Lunas (Paid)</option>
-                </select>
+                <div class="flex items-center gap-2">
+                    <i data-lucide="check-circle" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                    <select name="payment_status" onchange="this.form.submit()" class="select2-filter w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
+                        <option value="" {{ !request()->has('payment_status') ? 'selected' : '' }}>Hutang Aktif (Belum Lunas & Cicilan)</option>
+                        <option value="unpaid" {{ request('payment_status') === 'unpaid' ? 'selected' : '' }}>Belum Dibayar (Unpaid)</option>
+                        <option value="partial" {{ request('payment_status') === 'partial' ? 'selected' : '' }}>Dibayar Sebagian (Partial)</option>
+                        <option value="paid" {{ request('payment_status') === 'paid' ? 'selected' : '' }}>Lunas (Paid)</option>
+                    </select>
+                </div>
             </div>
 
             <!-- Outset Floating-label Supplier Filter (Col 3) -->
@@ -94,14 +97,17 @@
                 <label class="absolute -top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold text-slate-700">
                     Supplier / Vendor
                 </label>
-                <select name="supplier_id" onchange="this.form.submit()" class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
-                    <option value="">Semua Supplier</option>
-                    @foreach($suppliers as $sup)
-                        <option value="{{ $sup->id }}" {{ request('supplier_id') == $sup->id ? 'selected' : '' }}>
-                            {{ $sup->name }}
-                        </option>
-                    @endforeach
-                </select>
+                <div class="flex items-center gap-2">
+                    <i data-lucide="truck" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                    <select name="supplier_id" onchange="this.form.submit()" class="select2-filter w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
+                        <option value="">Semua Supplier</option>
+                        @foreach($suppliers as $sup)
+                            <option value="{{ $sup->id }}" {{ request('supplier_id') == $sup->id ? 'selected' : '' }}>
+                                {{ $sup->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
             </div>
 
             <!-- Reset Button (Col 1) -->

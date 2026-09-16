@@ -58,13 +58,16 @@
                 <label class="absolute -top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold text-slate-700">
                     Status Transfer
                 </label>
-                <select name="status" onchange="this.form.submit()" class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
-                    <option value="">Semua Status</option>
-                    <option value="draft" {{ request('status') === 'draft' ? 'selected' : '' }}>Draft</option>
-                    <option value="in_transit" {{ request('status') === 'in_transit' ? 'selected' : '' }}>Dalam Perjalanan (In Transit)</option>
-                    <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>Selesai Diterima</option>
-                    <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>Dibatalkan</option>
-                </select>
+                <div class="flex items-center gap-2">
+                    <i data-lucide="check-circle" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                    <select name="status" onchange="this.form.submit()" class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
+                        <option value="">Semua Status</option>
+                        <option value="draft" {{ request('status') === 'draft' ? 'selected' : '' }}>Draft</option>
+                        <option value="in_transit" {{ request('status') === 'in_transit' ? 'selected' : '' }}>Dalam Perjalanan (In Transit)</option>
+                        <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>Selesai Diterima</option>
+                        <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>Dibatalkan</option>
+                    </select>
+                </div>
             </div>
 
             <!-- Outset Floating-label From Warehouse Filter (Col 3) -->
@@ -72,14 +75,17 @@
                 <label class="absolute -top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold text-slate-700">
                     Gudang Asal
                 </label>
-                <select name="from_warehouse_id" onchange="this.form.submit()" class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
-                    <option value="">Semua Gudang Asal</option>
-                    @foreach($warehouses as $wh)
-                        <option value="{{ $wh->id }}" {{ request('from_warehouse_id') == $wh->id ? 'selected' : '' }}>
-                            {{ $wh->name }}
-                        </option>
-                    @endforeach
-                </select>
+                <div class="flex items-center gap-2">
+                    <i data-lucide="warehouse" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                    <select name="from_warehouse_id" onchange="this.form.submit()" class="select2-filter w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
+                        <option value="">Semua Gudang Asal</option>
+                        @foreach($warehouses as $wh)
+                            <option value="{{ $wh->id }}" {{ request('from_warehouse_id') == $wh->id ? 'selected' : '' }}>
+                                {{ $wh->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
             </div>
 
             <!-- Outset Floating-label Reset Button (Col 2) -->
@@ -88,14 +94,17 @@
                     <label class="absolute -top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold text-slate-700">
                         Gudang Tujuan
                     </label>
-                    <select name="to_warehouse_id" onchange="this.form.submit()" class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
-                        <option value="">Semua</option>
-                        @foreach($warehouses as $wh)
-                            <option value="{{ $wh->id }}" {{ request('to_warehouse_id') == $wh->id ? 'selected' : '' }}>
-                                {{ $wh->name }}
-                            </option>
-                        @endforeach
-                    </select>
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="warehouse" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                        <select name="to_warehouse_id" onchange="this.form.submit()" class="select2-filter w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
+                            <option value="">Semua</option>
+                            @foreach($warehouses as $wh)
+                                <option value="{{ $wh->id }}" {{ request('to_warehouse_id') == $wh->id ? 'selected' : '' }}>
+                                    {{ $wh->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
                 </div>
 
                 @if(request()->hasAny(['search', 'status', 'from_warehouse_id', 'to_warehouse_id', 'start_date', 'end_date']))
@@ -129,7 +138,7 @@
                     <tr class="bg-brand-500 text-white/95 uppercase font-extrabold text-[10px] tracking-wider">
                         <th class="py-3 px-5 border-b border-white/10">No. Transfer</th>
                         <th class="py-3 px-4 border-b border-white/10">Tanggal</th>
-                        <th class="py-3 px-4 border-b border-white/10">Rute Pengiriman (Asal $\rightarrow$ Tujuan)</th>
+                        <th class="py-3 px-4 border-b border-white/10">Rute Pengiriman (Asal &rarr; Tujuan)</th>
                         <th class="py-3 px-4 border-b border-white/10">Total Item</th>
                         <th class="py-3 px-4 border-b border-white/10 text-center">Status</th>
                         <th class="py-3 px-5 text-right w-40 border-b border-white/10">Aksi</th>
@@ -163,7 +172,7 @@
 
                             <!-- Total Item -->
                             <td class="py-3.5 px-4 font-bold text-slate-900 font-mono-num">
-                                {{ $tr->items->count() }} Produk <span class="text-slate-400 font-normal">({{ number_format($tr->items->sum('quantity_sent'), 2) }} unit)</span>
+                                {{ $tr->items->count() }} Produk <span class="text-slate-400 font-normal">({{ str_replace('.', ',', (string) (float) $tr->items->sum('quantity_sent')) }} unit)</span>
                             </td>
 
                             <!-- Status -->

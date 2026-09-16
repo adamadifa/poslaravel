@@ -44,19 +44,21 @@
                     </div>
                 </div>
 
-                <div class="relative rounded-xl border border-slate-200 hover:border-slate-300 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/20 bg-white transition px-4 pt-3 pb-2">
-                    <label class="absolute -top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold text-slate-700">
+                <!-- Kategori Otomatis: Bahan Baku & Dapur -->
+                <div class="relative rounded-xl border border-amber-200/80 bg-amber-50/50 px-4 pt-3 pb-2 flex items-center justify-between">
+                    <label class="absolute -top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold text-amber-700">
                         Kategori Bahan
                     </label>
                     <div class="flex items-center gap-2.5">
-                        <i data-lucide="tag" class="w-4 h-4 text-slate-400 shrink-0"></i>
-                        <select name="category_id" class="w-full bg-transparent border-0 p-0 text-xs font-semibold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
-                            <option value="">Pilih Kategori</option>
-                            @foreach($categories as $category)
-                                <option value="{{ $category->id }}">{{ $category->name }}</option>
-                            @endforeach
-                        </select>
+                        <i data-lucide="tag" class="w-4 h-4 text-amber-600 shrink-0"></i>
+                        <span class="text-xs font-bold text-slate-800">
+                            {{ $defaultCategory?->name ?? 'Bahan Baku & Dapur' }}
+                        </span>
                     </div>
+                    <span class="text-[10px] font-extrabold uppercase bg-amber-100 text-amber-700 px-2 py-0.5 rounded-md">
+                        Otomatis
+                    </span>
+                    <input type="hidden" name="category_id" value="{{ $defaultCategory?->id }}">
                 </div>
             </div>
 
@@ -71,7 +73,7 @@
                         <select name="base_unit_id" required class="w-full bg-transparent border-0 p-0 text-xs font-semibold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
                             <option value="">Pilih Satuan (Gram/ML/Pcs)</option>
                             @foreach($units as $unit)
-                                <option value="{{ $unit->id }}">{{ $unit->name }} ({{ $unit->short_name }})</option>
+                                <option value="{{ $unit->id }}">{{ $unit->display_name }}</option>
                             @endforeach
                         </select>
                     </div>

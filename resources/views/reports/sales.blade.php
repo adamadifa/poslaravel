@@ -91,7 +91,10 @@
                 <label class="absolute -top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold text-slate-700">
                     Dari Tanggal
                 </label>
-                <input type="date" name="start_date" value="{{ $startDate }}" class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="calendar" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                    <input type="date" name="start_date" value="{{ $startDate }}" class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
+                </div>
             </div>
 
             <!-- Sampai Tanggal (Col 2) -->
@@ -99,7 +102,10 @@
                 <label class="absolute -top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold text-slate-700">
                     Sampai Tanggal
                 </label>
-                <input type="date" name="end_date" value="{{ $endDate }}" class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="calendar" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                    <input type="date" name="end_date" value="{{ $endDate }}" class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
+                </div>
             </div>
 
             <!-- Gudang / Cabang (Col 3) -->
@@ -107,12 +113,15 @@
                 <label class="absolute -top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold text-slate-700">
                     Gudang / Cabang
                 </label>
-                <select name="warehouse_id" onchange="this.form.submit()" class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
-                    <option value="">Semua Cabang / Gudang</option>
-                    @foreach($warehouses as $wh)
-                        <option value="{{ $wh->id }}" {{ $warehouseId == $wh->id ? 'selected' : '' }}>{{ $wh->name }}</option>
-                    @endforeach
-                </select>
+                <div class="flex items-center gap-2">
+                    <i data-lucide="warehouse" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                    <select name="warehouse_id" onchange="this.form.submit()" class="select2-filter w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
+                        <option value="">Semua Cabang / Gudang</option>
+                        @foreach($warehouses as $wh)
+                            <option value="{{ $wh->id }}" {{ $warehouseId == $wh->id ? 'selected' : '' }}>{{ $wh->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
             </div>
 
             <!-- Kasir / User (Col 2) -->
@@ -120,12 +129,15 @@
                 <label class="absolute -top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold text-slate-700">
                     Kasir
                 </label>
-                <select name="user_id" onchange="this.form.submit()" class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
-                    <option value="">Semua Kasir</option>
-                    @foreach($cashiers as $c)
-                        <option value="{{ $c->id }}" {{ $userId == $c->id ? 'selected' : '' }}>{{ $c->name }}</option>
-                    @endforeach
-                </select>
+                <div class="flex items-center gap-2">
+                    <i data-lucide="user" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                    <select name="user_id" onchange="this.form.submit()" class="select2-filter w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
+                        <option value="">Semua Kasir</option>
+                        @foreach($cashiers as $c)
+                            <option value="{{ $c->id }}" {{ $userId == $c->id ? 'selected' : '' }}>{{ $c->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
             </div>
 
             <!-- Metode Pembayaran + Reset (Col 3) -->
@@ -134,13 +146,16 @@
                     <label class="absolute -top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold text-slate-700">
                         Metode Bayar
                     </label>
-                    <select name="payment_method" onchange="this.form.submit()" class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
-                        <option value="">Semua Metode</option>
-                        <option value="cash" {{ $paymentMethod == 'cash' ? 'selected' : '' }}>Tunai (Cash)</option>
-                        <option value="qris" {{ $paymentMethod == 'qris' ? 'selected' : '' }}>QRIS</option>
-                        <option value="transfer" {{ $paymentMethod == 'transfer' ? 'selected' : '' }}>Bank Transfer</option>
-                        <option value="credit" {{ $paymentMethod == 'credit' ? 'selected' : '' }}>Tempo / Kredit</option>
-                    </select>
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="credit-card" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                        <select name="payment_method" onchange="this.form.submit()" class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
+                            <option value="">Semua Metode</option>
+                            <option value="cash" {{ $paymentMethod == 'cash' ? 'selected' : '' }}>Tunai (Cash)</option>
+                            <option value="qris" {{ $paymentMethod == 'qris' ? 'selected' : '' }}>QRIS</option>
+                            <option value="transfer" {{ $paymentMethod == 'transfer' ? 'selected' : '' }}>Bank Transfer</option>
+                            <option value="credit" {{ $paymentMethod == 'credit' ? 'selected' : '' }}>Tempo / Kredit</option>
+                        </select>
+                    </div>
                 </div>
 
                 @if(request()->hasAny(['start_date', 'end_date', 'warehouse_id', 'user_id', 'payment_method', 'payment_status']))

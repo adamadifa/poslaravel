@@ -25,11 +25,14 @@
 
         <div class="flex items-center gap-3">
             <form method="GET" action="{{ route('service-queue.index') }}" class="flex items-center">
-                <select name="warehouse_id" onchange="this.form.submit()" class="rounded-xl border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-bold text-slate-200 focus:ring-1 focus:ring-emerald-500 cursor-pointer">
-                    @foreach($warehouses as $wh)
-                        <option value="{{ $wh->id }}" {{ $warehouseId == $wh->id ? 'selected' : '' }}>{{ $wh->name }}</option>
-                    @endforeach
-                </select>
+                <div class="flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-800 px-3 py-1.5">
+                    <i data-lucide="warehouse" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                    <select name="warehouse_id" onchange="this.form.submit()" class="select2-filter bg-transparent border-0 p-0 text-xs font-bold text-slate-200 focus:ring-0 focus:outline-none cursor-pointer">
+                        @foreach($warehouses as $wh)
+                            <option value="{{ $wh->id }}" {{ $warehouseId == $wh->id ? 'selected' : '' }}>{{ $wh->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
             </form>
 
             <button type="button" onclick="window.location.reload()" class="p-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition" title="Refresh Sekarang">

@@ -83,13 +83,20 @@ class SaleService
             $serviceCharge = (float) ($payload['service_charge'] ?? 0);
             $grandTotal = max(0, $subtotal - $discountAmount + $taxAmount + $serviceCharge);
 
-            $paidAmount = (float) ($payload['paid_amount'] ?? $grandTotal);
-            $changeAmount = max(0, $paidAmount - $grandTotal);
             $paymentMethod = $payload['payment_method'] ?? 'cash';
+
+            // For non-credit methods (cash, qris, transfer), if paid_amount was 0 or not provided, default to full payment
+            if ($paymentMethod !== 'credit' && (! isset($payload['paid_amount']) || (float) $payload['paid_amount'] <= 0)) {
+                $paidAmount = $grandTotal;
+            } else {
+                $paidAmount = (float) ($payload['paid_amount'] ?? $grandTotal);
+            }
+
+            $changeAmount = max(0, $paidAmount - $grandTotal);
 
             $paymentStatus = 'paid';
             if ($paymentMethod === 'credit' || $paidAmount < $grandTotal) {
-                $paymentStatus = $paidAmount == 0 ? 'unpaid' : 'partial';
+                $paymentStatus = $paidAmount <= 0 ? 'unpaid' : 'partial';
             }
 
             // 2. Create Sale Record

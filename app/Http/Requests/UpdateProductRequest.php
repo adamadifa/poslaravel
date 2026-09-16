@@ -16,6 +16,19 @@ class UpdateProductRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('conversions') && is_array($this->input('conversions'))) {
+            $conversions = $this->input('conversions');
+            foreach ($conversions as $i => $conv) {
+                if (isset($conv['conversion_value']) && is_string($conv['conversion_value'])) {
+                    $conversions[$i]['conversion_value'] = str_replace(',', '.', trim($conv['conversion_value']));
+                }
+            }
+            $this->merge(['conversions' => $conversions]);
+        }
+    }
+
     /**
      * Get the validation rules that apply to the request.
      *

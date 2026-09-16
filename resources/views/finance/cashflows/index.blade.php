@@ -115,11 +115,14 @@
                 <label class="absolute -top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold text-slate-700">
                     Jenis Mutasi
                 </label>
-                <select name="type" onchange="this.form.submit()" class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
-                    <option value="">Semua Mutasi</option>
-                    <option value="income" {{ request('type') === 'income' ? 'selected' : '' }}>Kas Masuk (+) [Income]</option>
-                    <option value="expense" {{ request('type') === 'expense' ? 'selected' : '' }}>Kas Keluar (-) [Expense]</option>
-                </select>
+                <div class="flex items-center gap-2">
+                    <i data-lucide="arrow-down-up" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                    <select name="type" onchange="this.form.submit()" class="select2-filter w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
+                        <option value="">Semua Mutasi</option>
+                        <option value="income" {{ request('type') === 'income' ? 'selected' : '' }}>Kas Masuk (+) [Income]</option>
+                        <option value="expense" {{ request('type') === 'expense' ? 'selected' : '' }}>Kas Keluar (-) [Expense]</option>
+                    </select>
+                </div>
             </div>
 
             <!-- Account Filter (Col 3) -->
@@ -127,14 +130,17 @@
                 <label class="absolute -top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold text-slate-700">
                     Akun Kas & Bank
                 </label>
-                <select name="account_id" onchange="this.form.submit()" class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
-                    <option value="">Semua Akun</option>
-                    @foreach($accounts as $acc)
-                        <option value="{{ $acc->id }}" {{ request('account_id') == $acc->id ? 'selected' : '' }}>
-                            {{ $acc->name }}
-                        </option>
-                    @endforeach
-                </select>
+                <div class="flex items-center gap-2">
+                    <i data-lucide="wallet" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                    <select name="account_id" onchange="this.form.submit()" class="select2-filter w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
+                        <option value="">Semua Akun</option>
+                        @foreach($accounts as $acc)
+                            <option value="{{ $acc->id }}" {{ request('account_id') == $acc->id ? 'selected' : '' }}>
+                                {{ $acc->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
             </div>
 
             <!-- Reset (Col 2) -->

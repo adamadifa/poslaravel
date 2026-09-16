@@ -130,7 +130,7 @@
                                 </label>
                                 <div class="flex items-center gap-2.5">
                                     <i data-lucide="layers" class="w-4 h-4 text-slate-400 shrink-0"></i>
-                                    <select name="product_type"
+                                    <select name="product_type" id="create_input_product_type"
                                         class="w-full bg-transparent border-0 p-0 text-xs font-semibold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
                                         <option value="standard" {{ (old('_method') ? '' : old('product_type')) == 'standard' ? 'selected' : '' }}>Standard / Retail</option>
                                         <option value="food" {{ (old('_method') ? '' : old('product_type')) == 'food' ? 'selected' : '' }}>Makanan (Food)</option>
@@ -152,7 +152,7 @@
                                 </label>
                                 <div class="flex items-center gap-2.5">
                                     <i data-lucide="tag" class="w-4 h-4 text-slate-400 shrink-0"></i>
-                                    <select name="category_id"
+                                    <select name="category_id" id="create_input_category_id"
                                         class="w-full bg-transparent border-0 p-0 text-xs font-semibold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
                                         <option value="">Pilih Kategori</option>
                                         @foreach($categories as $category)
@@ -181,7 +181,7 @@
                                         <option value="">Pilih Satuan</option>
                                         @foreach($units as $unit)
                                             <option value="{{ $unit->id }}" {{ (old('_method') ? '' : old('base_unit_id')) == $unit->id ? 'selected' : '' }}>
-                                                {{ $unit->name }} ({{ $unit->short_name }})
+                                                {{ $unit->display_name }}
                                             </option>
                                         @endforeach
                                     </select>

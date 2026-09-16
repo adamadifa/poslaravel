@@ -97,11 +97,14 @@
             @if($selectedArea)
                 <input type="hidden" name="area" value="{{ $selectedArea }}">
             @endif
-            <select name="warehouse_id" onchange="this.form.submit()" class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-bold text-slate-800 dark:text-white focus:ring-1 focus:ring-amber-500 cursor-pointer">
-                @foreach($warehouses as $wh)
-                    <option value="{{ $wh->id }}" {{ $warehouseId == $wh->id ? 'selected' : '' }}>{{ $wh->name }}</option>
-                @endforeach
-            </select>
+            <div class="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5">
+                <i data-lucide="warehouse" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                <select name="warehouse_id" onchange="this.form.submit()" class="select2-filter bg-transparent border-0 p-0 text-xs font-bold text-slate-800 dark:text-white focus:ring-0 cursor-pointer">
+                    @foreach($warehouses as $wh)
+                        <option value="{{ $wh->id }}" {{ $warehouseId == $wh->id ? 'selected' : '' }}>{{ $wh->name }}</option>
+                    @endforeach
+                </select>
+            </div>
         </form>
     </div>
 

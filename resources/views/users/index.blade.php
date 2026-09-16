@@ -15,14 +15,17 @@
             </div>
 
             <!-- Role Filter -->
-            <select name="role" onchange="this.form.submit()" class="px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none">
-                <option value="">Semua Peran (Role)</option>
-                @foreach($roles as $role)
-                    <option value="{{ $role->name }}" {{ request('role') == $role->name ? 'selected' : '' }}>
-                        {{ ucfirst(str_replace('_', ' ', $role->name)) }}
-                    </option>
-                @endforeach
-            </select>
+            <div class="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
+                <i data-lucide="shield" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                <select name="role" onchange="this.form.submit()" class="select2-filter bg-transparent border-0 p-0 text-xs font-semibold text-slate-700 focus:outline-none cursor-pointer">
+                    <option value="">Semua Peran (Role)</option>
+                    @foreach($roles as $role)
+                        <option value="{{ $role->name }}" {{ request('role') == $role->name ? 'selected' : '' }}>
+                            {{ ucfirst(str_replace('_', ' ', $role->name)) }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
 
             @if(request('search') || request('role'))
                 <a href="{{ route('users.index') }}" class="px-3 py-2 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 transition">
