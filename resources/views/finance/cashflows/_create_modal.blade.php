@@ -19,6 +19,7 @@
 
         <form id="cashFlowForm" action="{{ route('cash-flows.store') }}" method="POST" novalidate>
             @csrf
+            <div id="cf_method_container"></div>
             <input type="hidden" name="type" id="cf_type_input" value="income">
 
             <div class="p-6 space-y-4">
@@ -116,6 +117,7 @@
                         </label>
                         <textarea 
                             name="description" 
+                            id="cf_description_input"
                             rows="2" 
                             placeholder="Catatan rincian biaya / pemasukan..." 
                             class="w-full bg-transparent border-0 p-0 text-xs font-medium text-slate-800 placeholder-slate-400 focus:ring-0 focus:outline-none resize-none"

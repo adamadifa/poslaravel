@@ -179,7 +179,8 @@
                         <th class="py-3 px-4 border-b border-white/10">Akun Kas/Bank</th>
                         <th class="py-3 px-4 border-b border-white/10">Kategori & Keterangan</th>
                         <th class="py-3 px-4 border-b border-white/10 text-center">Jenis</th>
-                        <th class="py-3 px-5 border-b border-white/10 text-right">Nominal</th>
+                        <th class="py-3 px-4 border-b border-white/10 text-right">Nominal</th>
+                        <th class="py-3 px-5 border-b border-white/10 text-right w-24">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 text-xs">
@@ -192,7 +193,7 @@
                             </td>
 
                             <!-- Tanggal -->
-                            <td class="py-3.5 px-4 font-semibold text-slate-700">
+                            <td class="py-3.5 px-4 font-semibold text-slate-700 whitespace-nowrap">
                                 {{ $cf->transaction_date->format('d/m/Y') }}
                             </td>
 
@@ -223,13 +224,48 @@
                             </td>
 
                             <!-- Nominal -->
-                            <td class="py-3.5 px-5 text-right font-black font-mono-num text-sm {{ $cf->type === 'income' ? 'text-emerald-600' : 'text-rose-600' }}">
+                            <td class="py-3.5 px-4 text-right font-black font-mono-num text-sm whitespace-nowrap {{ $cf->type === 'income' ? 'text-emerald-600' : 'text-rose-600' }}">
                                 {{ $cf->type === 'income' ? '+' : '-' }}Rp {{ number_format($cf->amount, 0, ',', '.') }}
+                            </td>
+
+                            <!-- Aksi (Edit & Hapus) -->
+                            <td class="py-3.5 px-5 text-right whitespace-nowrap">
+                                @if(is_null($cf->reference_type))
+                                    <div class="flex items-center justify-end gap-1">
+                                        <!-- Edit Button -->
+                                        <button 
+                                            type="button" 
+                                            onclick="openEditCashFlowModal({{ $cf->id }})" 
+                                            class="p-1.5 rounded-lg text-slate-400 hover:text-brand-600 hover:bg-brand-50 transition cursor-pointer" 
+                                            title="Edit / Koreksi Mutasi"
+                                        >
+                                            <i data-lucide="edit-3" class="w-4 h-4"></i>
+                                        </button>
+
+                                        <!-- Delete Button -->
+                                        <form action="{{ route('cash-flows.destroy', $cf->id) }}" method="POST" class="inline" id="delete_cf_{{ $cf->id }}">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button 
+                                                type="button" 
+                                                onclick="confirmDelete('delete_cf_{{ $cf->id }}', 'Hapus Bukti Kas {{ $cf->cash_flow_number }}?', 'Data mutasi ini akan dihapus dan saldo akun kas {{ $cf->account?->name }} sebesar Rp {{ number_format($cf->amount, 0, ',', '.') }} akan dikembalikan/disesuaikan otomatis.')" 
+                                                class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer" 
+                                                title="Hapus / Batalkan Transaksi"
+                                            >
+                                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                @else
+                                    <span class="inline-flex items-center gap-1 text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md" title="Transaksi otomatis dari sistem / modul lain">
+                                        <i data-lucide="lock" class="w-3 h-3"></i> Otomatis
+                                    </span>
+                                @endif
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="py-12 text-center text-slate-400">
+                            <td colspan="7" class="py-12 text-center text-slate-400">
                                 <i data-lucide="arrow-down-up" class="w-10 h-10 mx-auto mb-2 text-slate-300"></i>
                                 <p class="font-bold text-sm text-slate-600">Belum Ada Transaksi Arus Kas</p>
                                 <p class="text-xs text-slate-400 mt-0.5">Klik tombol "+ Kas Masuk" atau "- Kas Keluar" di atas untuk mencatat mutasi.</p>
@@ -301,6 +337,16 @@
             submitBtn.className = "px-7 py-2.5 rounded-xl bg-gradient-to-r from-brand-500 to-amber-500 hover:from-brand-600 hover:to-amber-600 text-white font-bold text-xs shadow-md shadow-brand-500/25 transition flex items-center gap-2 cursor-pointer";
         }
 
+        // Reset form action to store
+        const form = document.getElementById('cashFlowForm');
+        form.action = "{{ route('cash-flows.store') }}";
+        document.getElementById('cf_method_container').innerHTML = '';
+
+        // Reset inputs
+        document.getElementById('cf_category_input').value = '';
+        document.getElementById('cf_amount_input').value = '';
+        document.getElementById('cf_description_input').value = '';
+
         // Reset fields & validation state
         setFieldStatus('cf', 'category', null);
         setFieldStatus('cf', 'amount', null);
@@ -316,6 +362,71 @@
                 locale: "id"
             });
         }
+    }
+
+    function openEditCashFlowModal(id) {
+        fetch(`/cash-flows/${id}`, {
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(res => res.json())
+        .then(res => {
+            if (res.status === 'success') {
+                const cf = res.data;
+                const isIncome = (cf.type === 'income');
+
+                document.getElementById('cf_type_input').value = cf.type;
+                document.getElementById('cfModalTitle').innerText = `Edit / Koreksi ${cf.cash_flow_number}`;
+                document.getElementById('cfModalSubtitle').innerText = `Perbarui rincian ${isIncome ? 'kas masuk' : 'kas keluar'}`;
+
+                const iconBox = document.getElementById('cfModalIconContainer');
+                const submitBtn = document.getElementById('cfSubmitBtn');
+
+                if (isIncome) {
+                    iconBox.className = "w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100/60 shadow-2xs";
+                    submitBtn.className = "px-7 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-500/25 transition flex items-center gap-2 cursor-pointer";
+                } else {
+                    iconBox.className = "w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center border border-rose-100/60 shadow-2xs";
+                    submitBtn.className = "px-7 py-2.5 rounded-xl bg-gradient-to-r from-brand-500 to-amber-500 hover:from-brand-600 hover:to-amber-600 text-white font-bold text-xs shadow-md shadow-brand-500/25 transition flex items-center gap-2 cursor-pointer";
+                }
+
+                // Set form action and PUT method
+                const form = document.getElementById('cashFlowForm');
+                form.action = `/cash-flows/${id}`;
+                document.getElementById('cf_method_container').innerHTML = '@method("PUT")';
+
+                // Populate values
+                document.getElementById('cf_account_select').value = cf.account_id;
+                document.getElementById('cf_category_input').value = cf.category;
+                document.getElementById('cf_amount_input').value = parseFloat(cf.amount);
+                document.getElementById('cf_description_input').value = cf.description || '';
+
+                // Format transaction_date (YYYY-MM-DD)
+                const txDate = cf.transaction_date ? cf.transaction_date.substring(0, 10) : '';
+                document.getElementById('cf_date_input').value = txDate;
+
+                setFieldStatus('cf', 'category', null);
+                setFieldStatus('cf', 'amount', null);
+
+                openModal('cashFlowModal');
+
+                if (window.flatpickr) {
+                    flatpickr("#cf_date_input", {
+                        dateFormat: "Y-m-d",
+                        altInput: true,
+                        altFormat: "d/m/Y",
+                        defaultDate: txDate || new Date(),
+                        locale: "id"
+                    });
+                }
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert('Gagal memuat data transaksi arus kas.');
+        });
     }
 
     document.addEventListener('DOMContentLoaded', function () {

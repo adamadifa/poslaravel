@@ -592,6 +592,11 @@
                             <i data-lucide="wallet" class="w-4 h-4 shrink-0 text-slate-400"></i>
                             <span class="nav-text truncate">Akun Kas & Bank</span>
                         </a>
+
+                        <a href="{{ route('ppob-products.index') }}" title="Katalog Produk PPOB & Pulsa" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->is('ppob-products*') ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
+                            <i data-lucide="smartphone" class="w-4 h-4 shrink-0 text-slate-400"></i>
+                            <span class="nav-text truncate">Katalog Produk PPOB</span>
+                        </a>
                         @endcan
 
                         @can('finance.payable')
@@ -1180,19 +1185,19 @@
 
         // Auto trigger toast on flash session messages
         @if(session('success'))
-            showToast('success', "{{ session('success') }}");
+            showToast('success', {!! json_encode(session('success')) !!});
         @endif
 
         @if(session('error'))
-            showToast('error', "{{ session('error') }}");
+            showToast('error', {!! json_encode(session('error')) !!});
         @endif
 
         @if(session('warning'))
-            showToast('warning', "{{ session('warning') }}");
+            showToast('warning', {!! json_encode(session('warning')) !!});
         @endif
 
         @if(session('info'))
-            showToast('info', "{{ session('info') }}");
+            showToast('info', {!! json_encode(session('info')) !!});
         @endif
     </script>
     @stack('scripts')

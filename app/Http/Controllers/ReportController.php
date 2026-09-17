@@ -1160,7 +1160,7 @@ class ReportController extends Controller
         $userId = $request->get('user_id');
         $warehouseId = $request->get('warehouse_id');
 
-        $query = CashierShift::with(['user', 'warehouse', 'expenses.user'])
+        $query = CashierShift::with(['user', 'warehouse', 'expenses.user', 'agentTransactions.account'])
             ->whereDate('opened_at', '>=', $startDate)
             ->whereDate('opened_at', '<=', $endDate);
 
@@ -1177,6 +1177,9 @@ class ReportController extends Controller
         $totalShiftExpenses = (clone $query)->sum('total_expenses');
         $totalShiftCount = (clone $query)->count();
         $totalCashDifference = (clone $query)->sum('cash_difference');
+        $totalAgentCashIn = (clone $query)->sum('total_agent_cash_in');
+        $totalAgentCashOut = (clone $query)->sum('total_agent_cash_out');
+        $totalAgentProfit = (clone $query)->sum('total_agent_profit');
 
         $cashiers = User::orderBy('name')->get();
         $warehouses = Warehouse::where('is_active', true)->get();
@@ -1187,6 +1190,9 @@ class ReportController extends Controller
             'totalShiftExpenses',
             'totalShiftCount',
             'totalCashDifference',
+            'totalAgentCashIn',
+            'totalAgentCashOut',
+            'totalAgentProfit',
             'cashiers',
             'warehouses',
             'startDate',

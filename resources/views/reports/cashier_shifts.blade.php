@@ -13,11 +13,17 @@
     ])
 
     <!-- KPI Metric Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <div class="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs">
             <p class="text-xs font-bold text-slate-500">Total Penjualan Shift</p>
             <h3 class="text-xl font-black text-slate-900 mt-1.5">Rp {{ number_format($totalShiftSales, 0, ',', '.') }}</h3>
             <p class="text-[11px] text-slate-500 mt-2">Dari seluruh sesi kasir</p>
+        </div>
+
+        <div class="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs">
+            <p class="text-xs font-bold text-slate-500">Laba Jasa Agen & PPOB</p>
+            <h3 class="text-xl font-black text-emerald-600 mt-1.5">+Rp {{ number_format($totalAgentProfit, 0, ',', '.') }}</h3>
+            <p class="text-[11px] text-slate-500 mt-2">In: Rp {{ number_format($totalAgentCashIn, 0, ',', '.') }} | Out: Rp {{ number_format($totalAgentCashOut, 0, ',', '.') }}</p>
         </div>
 
         <div class="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs">
@@ -130,6 +136,7 @@
                         <th class="py-3 px-4 border-b border-white/10">Waktu Buka / Tutup</th>
                         <th class="py-3 px-4 border-b border-white/10 text-right">Modal Awal</th>
                         <th class="py-3 px-4 border-b border-white/10 text-right">Penjualan Kas</th>
+                        <th class="py-3 px-4 border-b border-white/10 text-right">Agen & PPOB</th>
                         <th class="py-3 px-4 border-b border-white/10 text-right">Biaya / Kas Keluar</th>
                         <th class="py-3 px-4 border-b border-white/10 text-right">Fisik Kas Tutup</th>
                         <th class="py-3 px-4 border-b border-white/10 text-right">Selisih Fisik</th>
@@ -153,6 +160,19 @@
                         <td class="py-3 px-4 text-right font-bold text-slate-900">
                             Rp {{ number_format($sh->total_sales, 0, ',', '.') }}
                             <div class="text-[10px] font-normal text-slate-400">{{ $sh->total_transactions }} Struk</div>
+                        </td>
+                        <td class="py-3 px-4 text-right">
+                            <div class="font-bold text-emerald-600">
+                                +Rp {{ number_format($sh->total_agent_profit ?? 0, 0, ',', '.') }}
+                            </div>
+                            @if($sh->agentTransactions->isNotEmpty())
+                                <button type="button" onclick="showShiftAgentModal({{ json_encode($sh->agentTransactions) }}, '{{ $sh->user->name ?? 'Kasir' }}', '{{ $sh->opened_at ? $sh->opened_at->format('d/m/Y H:i') : '-' }}', {{ (float) ($sh->total_agent_cash_in ?? 0) }}, {{ (float) ($sh->total_agent_cash_out ?? 0) }}, {{ (float) ($sh->total_agent_profit ?? 0) }})" class="mt-0.5 inline-flex items-center gap-1 text-[10px] font-bold text-purple-600 hover:text-purple-700 hover:underline cursor-pointer">
+                                    <span>{{ $sh->agentTransactions->count() }} Transaksi</span>
+                                    <i data-lucide="info" class="w-3 h-3"></i>
+                                </button>
+                            @else
+                                <div class="text-[10px] text-slate-400">0 Transaksi</div>
+                            @endif
                         </td>
                         <td class="py-3 px-4 text-right">
                             <div class="font-bold {{ ($sh->total_expenses ?? 0) > 0 ? 'text-rose-600' : 'text-slate-400' }}">
@@ -185,7 +205,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="8" class="py-12 text-center text-slate-400">
+                        <td colspan="9" class="py-12 text-center text-slate-400">
                             <i data-lucide="user-check" class="w-10 h-10 text-slate-300 mb-2 mx-auto"></i>
                             <p class="font-bold text-sm text-slate-600">Tidak ada sesi shift kasir pada periode ini.</p>
                         </td>
@@ -255,6 +275,70 @@
     </div>
 </div>
 
+<!-- MODAL RINCIAN TRANSAKSI AGEN & PPOB SHIFT KASIR -->
+<div id="shiftAgentDetailModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center p-3 sm:p-4 overflow-y-auto">
+    <div class="bg-white border border-slate-200/90 rounded-2xl max-w-2xl w-full shadow-2xl transition-all my-auto overflow-hidden flex flex-col max-h-[88vh]">
+        <!-- Header -->
+        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-purple-50/70 shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-purple-600 text-white flex items-center justify-center shadow-xs">
+                    <i data-lucide="repeat" class="w-4.5 h-4.5"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-base text-slate-900 tracking-tight" id="agentModalTitle">Rincian Transaksi Agen & PPOB</h3>
+                    <p class="text-[11px] text-slate-500" id="agentModalSubtitle">Daftar transaksi transfer, tarik tunai, dan produk digital</p>
+                </div>
+            </div>
+            <button onclick="closeShiftAgentModal()" type="button" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-200/50 transition cursor-pointer">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+        </div>
+
+        <!-- Summary Bar -->
+        <div class="px-6 py-3 bg-slate-50 border-b border-slate-100 grid grid-cols-3 gap-2 text-xs shrink-0">
+            <div class="p-2.5 rounded-xl bg-white border border-slate-200">
+                <span class="text-[10px] text-slate-400 uppercase font-semibold block">Kas Masuk (In)</span>
+                <span class="font-bold text-slate-900 font-mono-num" id="agentModalCashIn">Rp 0</span>
+            </div>
+            <div class="p-2.5 rounded-xl bg-white border border-slate-200">
+                <span class="text-[10px] text-slate-400 uppercase font-semibold block">Kas Keluar (Out)</span>
+                <span class="font-bold text-rose-600 font-mono-num" id="agentModalCashOut">Rp 0</span>
+            </div>
+            <div class="p-2.5 rounded-xl bg-white border border-slate-200">
+                <span class="text-[10px] text-slate-400 uppercase font-semibold block">Laba Bersih Toko</span>
+                <span class="font-bold text-emerald-600 font-mono-num" id="agentModalNetProfit">Rp 0</span>
+            </div>
+        </div>
+
+        <!-- Body Table -->
+        <div class="p-6 overflow-y-auto">
+            <div class="rounded-xl border border-slate-200 overflow-hidden bg-white">
+                <table class="w-full text-left text-xs border-collapse">
+                    <thead class="bg-slate-50 text-slate-600 font-bold text-[11px] border-b border-slate-200">
+                        <tr>
+                            <th class="py-2.5 px-3">Tipe Layanan</th>
+                            <th class="py-2.5 px-3">Tujuan / Produk</th>
+                            <th class="py-2.5 px-3">Akun Sumber</th>
+                            <th class="py-2.5 px-3 text-right">Nominal</th>
+                            <th class="py-2.5 px-3 text-right">Laba Toko</th>
+                        </tr>
+                    </thead>
+                    <tbody id="agentModalTableBody" class="divide-y divide-slate-100">
+                        <!-- Filled by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="px-6 py-3 border-t border-slate-100 bg-slate-50 flex items-center justify-end shrink-0">
+            <button type="button" onclick="closeShiftAgentModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-200/70 transition cursor-pointer">
+                Tutup
+            </button>
+        </div>
+    </div>
+</div>
+
 @push('scripts')
 <script>
     function showShiftExpensesModal(expenses, cashierName, openedAt) {
@@ -307,6 +391,67 @@
 
     function closeShiftExpensesModal() {
         const modal = document.getElementById('shiftExpensesDetailModal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+
+    function showShiftAgentModal(transactions, cashierName, openedAt, cashIn, cashOut, netProfit) {
+        const modal = document.getElementById('shiftAgentDetailModal');
+        document.getElementById('agentModalTitle').innerText = `Transaksi Agen & PPOB: ${cashierName}`;
+        document.getElementById('agentModalSubtitle').innerText = `Sesi Shift: ${openedAt}`;
+        document.getElementById('agentModalCashIn').innerText = `Rp ${parseInt(cashIn || 0).toLocaleString('id-ID')}`;
+        document.getElementById('agentModalCashOut').innerText = `Rp ${parseInt(cashOut || 0).toLocaleString('id-ID')}`;
+        document.getElementById('agentModalNetProfit').innerText = `+Rp ${parseInt(netProfit || 0).toLocaleString('id-ID')}`;
+
+        const tbody = document.getElementById('agentModalTableBody');
+        let html = '';
+
+        if (!transactions || transactions.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="py-6 text-center text-slate-400">Tidak ada data transaksi agen.</td></tr>';
+        } else {
+            transactions.forEach((tx) => {
+                let badge = '';
+                if (tx.service_type === 'BANK_TRANSFER') {
+                    badge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700">Transfer</span>';
+                } else if (tx.service_type === 'CASH_WITHDRAWAL') {
+                    badge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700">Tarik Tunai</span>';
+                } else {
+                    badge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700">PPOB / Pulsa</span>';
+                }
+
+                const accName = tx.account ? tx.account.name : '-';
+                const target = tx.destination_target || tx.product_code || '-';
+                const holder = tx.destination_holder ? ` (${tx.destination_holder})` : '';
+
+                html += `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="py-2.5 px-3">${badge}</td>
+                        <td class="py-2.5 px-3">
+                            <div class="font-bold text-slate-900">${target}${holder}</div>
+                            <div class="text-[10px] text-slate-400 font-mono">${tx.transaction_number}</div>
+                        </td>
+                        <td class="py-2.5 px-3 text-slate-600">${accName}</td>
+                        <td class="py-2.5 px-3 text-right font-bold text-slate-900 font-mono-num whitespace-nowrap">
+                            Rp ${parseInt(tx.principal_amount || 0).toLocaleString('id-ID')}
+                        </td>
+                        <td class="py-2.5 px-3 text-right font-black text-emerald-600 font-mono-num whitespace-nowrap">
+                            +Rp ${parseInt(tx.net_profit || 0).toLocaleString('id-ID')}
+                        </td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        if (window.lucide) {
+            lucide.createIcons();
+        }
+    }
+
+    function closeShiftAgentModal() {
+        const modal = document.getElementById('shiftAgentDetailModal');
         modal.classList.add('hidden');
         modal.classList.remove('flex');
     }

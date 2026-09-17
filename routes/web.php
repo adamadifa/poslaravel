@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\AccountTransferController;
+use App\Http\Controllers\AgentTransactionController;
 use App\Http\Controllers\AuditTrailController;
 use App\Http\Controllers\CashFlowController;
 use App\Http\Controllers\CashierShiftController;
@@ -15,6 +16,7 @@ use App\Http\Controllers\KitchenController;
 use App\Http\Controllers\ModifierController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PosController;
+use App\Http\Controllers\PpobProductController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PurchaseOrderController;
@@ -68,6 +70,13 @@ Route::middleware(['auth'])->group(function () {
     Route::post('shifts/{shift}/close', [CashierShiftController::class, 'close'])->name('shifts.close');
     Route::post('shifts/{shift}/expenses', [CashierShiftController::class, 'addExpense'])->name('shifts.expenses.add');
     Route::delete('shifts/{shift}/expenses/{expense}', [CashierShiftController::class, 'deleteExpense'])->name('shifts.expenses.delete');
+
+    // Agent & PPOB Service Routes
+    Route::get('agent/balances', [AgentTransactionController::class, 'getBalances'])->name('agent.balances');
+    Route::get('agent/recent', [AgentTransactionController::class, 'getRecent'])->name('agent.recent');
+    Route::post('agent/transfer', [AgentTransactionController::class, 'storeBankTransfer'])->name('agent.transfer');
+    Route::post('agent/withdraw', [AgentTransactionController::class, 'storeCashWithdrawal'])->name('agent.withdraw');
+    Route::post('agent/ppob', [AgentTransactionController::class, 'storePpob'])->name('agent.ppob');
 
     // 3. Master Data Routes
     Route::get('products/barcode-search', [ProductController::class, 'searchForBarcode'])->name('products.barcode-search');
@@ -140,12 +149,15 @@ Route::middleware(['auth'])->group(function () {
 
     // 6. Finance & Kas/Bank (Phase 5)
     Route::post('accounts/{account}/default', [AccountController::class, 'setDefault'])->name('accounts.default');
+    Route::get('accounts/{account}/mutations', [AccountController::class, 'mutations'])->name('accounts.mutations');
     Route::resource('accounts', AccountController::class)->except(['create', 'edit']);
+    Route::get('api/ppob-products', [PpobProductController::class, 'apiList'])->name('api.ppob-products');
+    Route::resource('ppob-products', PpobProductController::class)->except(['create', 'edit']);
     Route::get('payables', [PaymentController::class, 'payables'])->name('payables.index');
     Route::post('payables', [PaymentController::class, 'storePayable'])->name('payables.store');
     Route::get('receivables', [PaymentController::class, 'receivables'])->name('receivables.index');
     Route::post('receivables', [PaymentController::class, 'storeReceivable'])->name('receivables.store');
-    Route::resource('cash-flows', CashFlowController::class)->only(['index', 'store']);
+    Route::resource('cash-flows', CashFlowController::class)->except(['create', 'edit']);
     Route::resource('account-transfers', AccountTransferController::class)->only(['index', 'store']);
 
     // 7. Penjualan & Retur Penjualan

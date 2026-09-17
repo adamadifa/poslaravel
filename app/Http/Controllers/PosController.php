@@ -15,6 +15,7 @@ use App\Models\Setting;
 use App\Models\Unit;
 use App\Models\User;
 use App\Models\Warehouse;
+use App\Services\AccountBalanceService;
 use App\Services\DiscountService;
 use App\Services\PricingService;
 use App\Services\SaleService;
@@ -28,14 +29,18 @@ class PosController extends Controller
 
     protected DiscountService $discountService;
 
+    protected AccountBalanceService $accountBalanceService;
+
     public function __construct(
         SaleService $saleService,
         PricingService $pricingService,
-        DiscountService $discountService
+        DiscountService $discountService,
+        AccountBalanceService $accountBalanceService
     ) {
         $this->saleService = $saleService;
         $this->pricingService = $pricingService;
         $this->discountService = $discountService;
+        $this->accountBalanceService = $accountBalanceService;
     }
 
     /**
@@ -65,6 +70,9 @@ class PosController extends Controller
         $serviceStaff = User::orderBy('name')->get();
         $fnbServiceCharge = (float) Setting::get('fnb_service_charge_percent', '0');
 
+        // Accounts & Agent Balances Data
+        $accountsSummary = $this->accountBalanceService->getAccountsSummary();
+
         return view('pos.index', [
             'title' => 'Kasir POS Modern',
             'warehouses' => $warehouses,
@@ -79,6 +87,7 @@ class PosController extends Controller
             'modifierGroups' => $modifierGroups,
             'serviceStaff' => $serviceStaff,
             'fnbServiceCharge' => $fnbServiceCharge,
+            'accountsSummary' => $accountsSummary,
         ]);
     }
 

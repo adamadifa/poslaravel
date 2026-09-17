@@ -20,6 +20,9 @@ class CashierShift extends Model
         'total_sales',
         'total_transactions',
         'total_expenses',
+        'total_agent_cash_in',
+        'total_agent_cash_out',
+        'total_agent_profit',
         'status',
         'notes',
     ];
@@ -34,6 +37,9 @@ class CashierShift extends Model
         'total_sales' => 'decimal:2',
         'total_transactions' => 'integer',
         'total_expenses' => 'decimal:2',
+        'total_agent_cash_in' => 'decimal:2',
+        'total_agent_cash_out' => 'decimal:2',
+        'total_agent_profit' => 'decimal:2',
     ];
 
     public function user(): BelongsTo
@@ -54,5 +60,10 @@ class CashierShift extends Model
     public function expenses(): HasMany
     {
         return $this->hasMany(CashierShiftExpense::class);
+    }
+
+    public function agentTransactions(): HasMany
+    {
+        return $this->hasMany(AgentTransaction::class);
     }
 }

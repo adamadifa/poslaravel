@@ -24,7 +24,7 @@ class CashierShiftController extends Controller
     public function current(Request $request): JsonResponse
     {
         $userId = auth()->id();
-        $shift = CashierShift::with(['warehouse', 'user', 'expenses.user'])
+        $shift = CashierShift::with(['warehouse', 'user', 'expenses.user', 'agentTransactions.account'])
             ->where('user_id', $userId)
             ->where('status', 'open')
             ->first();
@@ -80,7 +80,7 @@ class CashierShiftController extends Controller
             return response()->json([
                 'status' => 'success',
                 'message' => 'Sesi shift kasir berhasil dibuka.',
-                'data' => $shift->load(['warehouse', 'user', 'expenses']),
+                'data' => $shift->load(['warehouse', 'user', 'expenses', 'agentTransactions']),
             ]);
         }
 
@@ -243,7 +243,7 @@ class CashierShiftController extends Controller
             return response()->json([
                 'status' => 'success',
                 'message' => 'Shift kasir berhasil ditutup.',
-                'data' => $shift->fresh(['warehouse', 'user', 'expenses']),
+                'data' => $shift->fresh(['warehouse', 'user', 'expenses', 'agentTransactions']),
             ]);
         }
 

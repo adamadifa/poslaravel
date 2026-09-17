@@ -104,4 +104,63 @@ class CashFlowController extends Controller
             return redirect()->back()->withInput()->with('error', 'Gagal mencatat arus kas: '.$e->getMessage());
         }
     }
+
+    /**
+     * Show Cash Flow details via AJAX.
+     */
+    public function show(CashFlow $cashFlow)
+    {
+        return response()->json([
+            'status' => 'success',
+            'data' => $cashFlow->load(['account', 'creator']),
+        ]);
+    }
+
+    /**
+     * Update Manual Cash Flow.
+     */
+    public function update(Request $request, CashFlow $cashFlow)
+    {
+        // Prevent editing automatic system-generated cash flows (e.g., linked to payments or shift)
+        if ($cashFlow->reference_type !== null) {
+            return redirect()->back()->with('error', 'Transaksi arus kas otomatis sistem tidak dapat diubah langsung.');
+        }
+
+        $validated = $request->validate([
+            'account_id' => 'required|exists:accounts,id',
+            'type' => 'required|in:income,expense',
+            'category' => 'required|string|max:100',
+            'amount' => 'required|numeric|min:1',
+            'transaction_date' => 'required|date',
+            'description' => 'nullable|string',
+        ]);
+
+        try {
+            $this->financeService->updateCashFlow($cashFlow, $validated);
+
+            return redirect()->route('cash-flows.index')->with('success', "Arus kas {$cashFlow->cash_flow_number} berhasil diperbarui.");
+        } catch (\Exception $e) {
+            return redirect()->back()->withInput()->with('error', 'Gagal memperbarui arus kas: '.$e->getMessage());
+        }
+    }
+
+    /**
+     * Delete Manual Cash Flow.
+     */
+    public function destroy(CashFlow $cashFlow)
+    {
+        // Prevent deleting automatic system-generated cash flows directly
+        if ($cashFlow->reference_type !== null) {
+            return redirect()->back()->with('error', 'Transaksi arus kas otomatis sistem tidak dapat dihapus dari sini.');
+        }
+
+        try {
+            $number = $cashFlow->cash_flow_number;
+            $this->financeService->deleteCashFlow($cashFlow);
+
+            return redirect()->route('cash-flows.index')->with('success', "Transaksi arus kas {$number} berhasil dihapus dan saldo akun telah disesuaikan.");
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal menghapus arus kas: '.$e->getMessage());
+        }
+    }
 }

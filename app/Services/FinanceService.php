@@ -231,6 +231,67 @@ class FinanceService
     }
 
     /**
+     * Update Manual Cash Flow (Income or Expense) with safe balance adjustments.
+     */
+    public function updateCashFlow(CashFlow $cashFlow, array $data): CashFlow
+    {
+        return DB::transaction(function () use ($cashFlow, $data) {
+            // Revert original effect from previous account
+            $oldAccount = Account::findOrFail($cashFlow->account_id);
+            $oldAmount = (float) $cashFlow->amount;
+
+            if ($cashFlow->type === 'income') {
+                $oldAccount->decrement('current_balance', $oldAmount);
+            } else {
+                $oldAccount->increment('current_balance', $oldAmount);
+            }
+
+            // Apply new effect to target account
+            $newAccount = Account::findOrFail($data['account_id']);
+            $newAmount = (float) $data['amount'];
+            $newType = $data['type'] ?? $cashFlow->type;
+
+            if ($newType === 'income') {
+                $newAccount->increment('current_balance', $newAmount);
+            } else {
+                $newAccount->decrement('current_balance', $newAmount);
+            }
+
+            $cashFlow->update([
+                'account_id' => $newAccount->id,
+                'type' => $newType,
+                'category' => $data['category'],
+                'amount' => $newAmount,
+                'transaction_date' => $data['transaction_date'] ?? $cashFlow->transaction_date,
+                'description' => $data['description'] ?? null,
+            ]);
+
+            return $cashFlow;
+        });
+    }
+
+    /**
+     * Delete Manual Cash Flow with safe balance reversal.
+     */
+    public function deleteCashFlow(CashFlow $cashFlow): void
+    {
+        DB::transaction(function () use ($cashFlow) {
+            // Only manual cash flows or unlinked cash flows can be deleted directly
+            $account = Account::findOrFail($cashFlow->account_id);
+            $amount = (float) $cashFlow->amount;
+
+            // Revert balance
+            if ($cashFlow->type === 'income') {
+                $account->decrement('current_balance', $amount);
+            } else {
+                $account->increment('current_balance', $amount);
+            }
+
+            $cashFlow->delete();
+        });
+    }
+
+    /**
      * Transfer Balance between Accounts
      */
     public function transferAccount(array $data): AccountTransfer
@@ -245,12 +306,6 @@ class FinanceService
                 throw new \Exception('Akun asal dan akun tujuan transfer tidak boleh sama.');
             }
 
-            // Deduct from source (amount + fee)
-            $fromAccount->decrement('current_balance', ($amount + $fee));
-
-            // Add to destination
-            $toAccount->increment('current_balance', $amount);
-
             $transfer = AccountTransfer::create([
                 'transfer_number' => $this->generateTransferNumber(),
                 'from_account_id' => $fromAccount->id,
@@ -262,6 +317,26 @@ class FinanceService
                 'notes' => $data['notes'] ?? null,
                 'created_by' => auth()->id(),
             ]);
+
+            // Deduct from source and record mutation
+            app(AccountBalanceService::class)->debit(
+                $fromAccount,
+                $amount + $fee,
+                AccountTransfer::class,
+                $transfer->id,
+                "Transfer ke {$toAccount->name}".($fee > 0 ? ' (Biaya Admin: Rp '.number_format($fee, 0, ',', '.').')' : ''),
+                auth()->id()
+            );
+
+            // Add to destination and record mutation
+            app(AccountBalanceService::class)->credit(
+                $toAccount,
+                $amount,
+                AccountTransfer::class,
+                $transfer->id,
+                "Terima transfer dari {$fromAccount->name}",
+                auth()->id()
+            );
 
             // Record Outflow
             CashFlow::create([

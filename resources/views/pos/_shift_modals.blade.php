@@ -92,10 +92,22 @@
                     <span class="font-medium">Total Kas Keluar / Biaya</span>
                     <span class="font-bold" id="close_shift_total_expenses">- Rp 0</span>
                 </div>
+                <div class="flex items-center justify-between text-blue-600">
+                    <span class="font-medium">Mutasi Masuk Agen/PPOB (Cash In)</span>
+                    <span class="font-bold" id="close_shift_total_agent_in">+ Rp 0</span>
+                </div>
+                <div class="flex items-center justify-between text-amber-700">
+                    <span class="font-medium">Tarik Tunai Agen (Cash Out Laci)</span>
+                    <span class="font-bold" id="close_shift_total_agent_out">- Rp 0</span>
+                </div>
+                <div class="flex items-center justify-between text-emerald-600 font-bold bg-emerald-50/50 p-1.5 rounded-lg border border-emerald-100">
+                    <span>Laba Bersih Layanan Agen/PPOB:</span>
+                    <span id="close_shift_total_agent_profit">+ Rp 0</span>
+                </div>
                 <div class="pt-2 border-t border-slate-200 flex items-center justify-between">
                     <div>
                         <span class="font-bold text-slate-700 block">Uang Kas Sistem (Expected)</span>
-                        <span class="text-[10px] text-slate-400 font-normal">Modal + Penjualan - Biaya</span>
+                        <span class="text-[10px] text-slate-400 font-normal">Modal + Penjualan Tunai + Kas Masuk - Kas Keluar</span>
                     </div>
                     <span class="font-black text-brand-600 text-sm" id="close_shift_expected_cash">Rp 0</span>
                 </div>

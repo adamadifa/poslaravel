@@ -189,6 +189,7 @@
 
 <!-- MODALS INCLUDE -->
 @include('pos._shift_modals')
+@include('pos._agent_modals')
 @include('pos._payment_modals')
 @include('pos._item_modal')
 @include('pos._discount_modal')
@@ -307,6 +308,9 @@
                     const hIn = document.getElementById('hold_reference_label');
                     if (hIn) hIn.focus();
                 }, 100);
+            } else if (key === 'F8') {
+                e.preventDefault();
+                openAgentServiceModal();
             } else if (key === 'F9') {
                 e.preventDefault();
                 openModal('discountModal');
@@ -329,6 +333,8 @@
                 closeModal('newCustomerModal');
                 closeModal('shiftExpenseModal');
                 closeModal('closeShiftModal');
+                closeModal('agentServiceModal');
+                closeModal('agentBalancesModal');
             }
         });
 
@@ -682,6 +688,20 @@
         document.getElementById('close_shift_total_trx').innerText = `${activeShift.total_transactions || 0} Struk`;
         document.getElementById('close_shift_total_sales').innerText = `Rp ${parseInt(activeShift.total_sales || 0).toLocaleString('id-ID')}`;
         document.getElementById('close_shift_total_expenses').innerText = `- Rp ${parseInt(activeShift.total_expenses || 0).toLocaleString('id-ID')}`;
+        
+        const agentIn = parseFloat(activeShift.total_agent_cash_in || 0);
+        const agentOut = parseFloat(activeShift.total_agent_cash_out || 0);
+        const agentProfit = parseFloat(activeShift.total_agent_profit || 0);
+        
+        const elAgentIn = document.getElementById('close_shift_total_agent_in');
+        if (elAgentIn) elAgentIn.innerText = `+ Rp ${parseInt(agentIn).toLocaleString('id-ID')}`;
+        
+        const elAgentOut = document.getElementById('close_shift_total_agent_out');
+        if (elAgentOut) elAgentOut.innerText = `- Rp ${parseInt(agentOut).toLocaleString('id-ID')}`;
+        
+        const elAgentProfit = document.getElementById('close_shift_total_agent_profit');
+        if (elAgentProfit) elAgentProfit.innerText = `+ Rp ${parseInt(agentProfit).toLocaleString('id-ID')}`;
+
         document.getElementById('close_shift_expected_cash').innerText = `Rp ${parseInt(activeShift.expected_cash || 0).toLocaleString('id-ID')}`;
         document.getElementById('shift_closing_cash').value = '';
         calculateShiftDifference();
@@ -2018,6 +2038,73 @@
         `;
     }
 
+    function showAgentReceiptModal(tx) {
+        const modal = document.getElementById('receiptModal');
+        const paper = document.getElementById('thermal_receipt_paper');
+
+        let title = 'STRUK TRANSAKSI AGEN';
+        let detailRows = '';
+
+        if (tx.service_type === 'BANK_TRANSFER') {
+            title = 'STRUK TRANSFER BANK';
+            detailRows = `
+                <div class="flex justify-between"><span>Rekening Agen</span><span class="font-bold">${tx.account ? tx.account.name : '-'}</span></div>
+                <div class="flex justify-between"><span>Tujuan / Bank</span><span class="font-bold">${tx.destination_target || '-'}</span></div>
+                ${tx.destination_holder ? `<div class="flex justify-between"><span>Nama Penerima</span><span class="font-bold">${tx.destination_holder}</span></div>` : ''}
+                <div class="flex justify-between"><span>Nominal Transfer</span><span>Rp ${parseInt(tx.principal_amount).toLocaleString('id-ID')}</span></div>
+                <div class="flex justify-between"><span>Biaya Layanan/Admin</span><span>Rp ${parseInt(tx.admin_fee).toLocaleString('id-ID')}</span></div>
+                <div class="flex justify-between text-xs font-black pt-1 border-t border-slate-200"><span>TOTAL DIBAYAR</span><span>Rp ${parseInt(tx.total_customer_paid).toLocaleString('id-ID')}</span></div>
+            `;
+        } else if (tx.service_type === 'CASH_WITHDRAWAL') {
+            title = 'STRUK TARIK TUNAI';
+            detailRows = `
+                <div class="flex justify-between"><span>Rekening Penampung</span><span class="font-bold">${tx.account ? tx.account.name : '-'}</span></div>
+                <div class="flex justify-between"><span>Identitas/Kartu</span><span class="font-bold">${tx.destination_target || '-'}</span></div>
+                ${tx.destination_holder ? `<div class="flex justify-between"><span>Nama Nasabah</span><span class="font-bold">${tx.destination_holder}</span></div>` : ''}
+                <div class="flex justify-between"><span>Nominal Tarik Tunai</span><span>Rp ${parseInt(tx.principal_amount).toLocaleString('id-ID')}</span></div>
+                <div class="flex justify-between"><span>Biaya Admin Tarik</span><span>Rp ${parseInt(tx.admin_fee).toLocaleString('id-ID')}</span></div>
+                <div class="flex justify-between text-xs font-black pt-1 border-t border-slate-200"><span>UANG DITERIMA</span><span>Rp ${parseInt(tx.principal_amount).toLocaleString('id-ID')}</span></div>
+            `;
+        } else {
+            title = 'STRUK PULSA & PPOB';
+            detailRows = `
+                <div class="flex justify-between"><span>Server / Provider</span><span class="font-bold">${tx.account ? tx.account.name : '-'}</span></div>
+                <div class="flex justify-between"><span>Layanan</span><span class="font-bold">${tx.service_type}</span></div>
+                <div class="flex justify-between"><span>Nomor Tujuan</span><span class="font-bold">${tx.destination_target || '-'}</span></div>
+                ${tx.reference_number ? `<div class="flex justify-between"><span>SN / Token</span><span class="font-mono font-bold text-amber-600">${tx.reference_number}</span></div>` : ''}
+                <div class="flex justify-between text-xs font-black pt-1 border-t border-slate-200"><span>TOTAL BAYAR</span><span>Rp ${parseInt(tx.total_customer_paid).toLocaleString('id-ID')}</span></div>
+                <div class="flex justify-between text-[10px]"><span>Metode Bayar</span><span class="uppercase">${tx.payment_method}</span></div>
+            `;
+        }
+
+        paper.innerHTML = `
+            <div class="text-center space-y-0.5 pb-2 border-b border-dashed border-slate-300">
+                <h4 class="font-black text-xs uppercase tracking-wider">${title}</h4>
+                <p class="text-[10px] text-slate-500">LAYANAN DIGITAL & PERBANKAN</p>
+                <p class="text-[9px] text-slate-400">Bukti Transaksi Sah</p>
+            </div>
+            <div class="text-[10px] space-y-0.5 py-1 border-b border-dashed border-slate-300">
+                <div class="flex justify-between"><span>No. Referensi</span><span class="font-bold font-mono">${tx.transaction_number}</span></div>
+                <div class="flex justify-between"><span>Waktu</span><span>${new Date(tx.created_at).toLocaleString('id-ID')}</span></div>
+                <div class="flex justify-between"><span>Status</span><span class="text-emerald-600 font-bold uppercase">${tx.status || 'SUKSES'}</span></div>
+                ${tx.reference_number && tx.service_type !== 'ppob' ? `<div class="flex justify-between"><span>Ref / EDC SN</span><span class="font-mono">${tx.reference_number}</span></div>` : ''}
+            </div>
+            <div class="space-y-1.5 py-2 text-[10px]">
+                ${detailRows}
+            </div>
+            <div class="text-center text-[9px] text-slate-400 pt-3 border-t border-dashed border-slate-300">
+                <p>Simpan struk ini sebagai bukti transaksi yang sah.</p>
+                <p>Terima kasih telah bertransaksi di outlet kami.</p>
+            </div>
+        `;
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        if (window.lucide) {
+            lucide.createIcons();
+        }
+    }
+
     function printReceipt() {
         window.print();
     }
@@ -2095,6 +2182,618 @@
             }
         } catch (err) {
             showPosAlert('error', 'Terjadi Kesalahan', err.message);
+        }
+    }
+
+    // =========================================================================
+    // LAYANAN AGEN BANK & PPOB JS LOGIC
+    // =========================================================================
+    let agentAccountsData = @json($accountsSummary ?? null);
+
+    // Initial render balances on header bar
+    document.addEventListener('DOMContentLoaded', () => {
+        renderAgentHeaderBalances();
+        fetchLatestAgentBalances(false);
+    });
+
+    async function fetchLatestAgentBalances(showToast = false) {
+        const refreshIcon = document.getElementById('refresh_balance_icon');
+        if (refreshIcon) refreshIcon.classList.add('animate-spin');
+
+        try {
+            const res = await fetch('{{ route("agent.balances") }}');
+            const result = await res.json();
+            if (result.status === 'success') {
+                agentAccountsData = result.data;
+                renderAgentHeaderBalances();
+                renderAgentBalancesModalContent();
+                populateAgentServiceDropdowns();
+                if (showToast) {
+                    showPosToast('success', 'Status seluruh saldo berhasil diperbarui.');
+                }
+            }
+        } catch (err) {
+            console.error('Failed to fetch balances:', err);
+        } finally {
+            if (refreshIcon) refreshIcon.classList.remove('animate-spin');
+        }
+    }
+
+    function renderAgentHeaderBalances() {
+        if (!agentAccountsData) return;
+
+        const totalBankAgent = agentAccountsData.total_bank_agent_balance || 0;
+        const totalPpob = agentAccountsData.total_ppob_balance || 0;
+        const totalDigital = totalBankAgent + totalPpob;
+
+        const elCombined = document.getElementById('pos_header_combined_balance');
+        if (elCombined) {
+            elCombined.innerText = `Rp ${parseInt(totalDigital).toLocaleString('id-ID')}`;
+        }
+
+        const elDropdownBank = document.getElementById('pos_dropdown_bank_balance');
+        if (elDropdownBank) {
+            elDropdownBank.innerText = `Rp ${parseInt(totalBankAgent).toLocaleString('id-ID')}`;
+        }
+
+        const elDropdownPpob = document.getElementById('pos_dropdown_ppob_balance');
+        if (elDropdownPpob) {
+            elDropdownPpob.innerText = `Rp ${parseInt(totalPpob).toLocaleString('id-ID')}`;
+        }
+
+        const elBank = document.getElementById('pos_header_bank_balance');
+        if (elBank) {
+            elBank.innerText = `Rp ${parseInt(totalBankAgent).toLocaleString('id-ID')}`;
+        }
+
+        const elPpob = document.getElementById('pos_header_ppob_balance');
+        if (elPpob) {
+            elPpob.innerText = `Rp ${parseInt(totalPpob).toLocaleString('id-ID')}`;
+        }
+    }
+
+    function renderAgentBalancesModalContent() {
+        if (!agentAccountsData) return;
+
+        const modalTotal = document.getElementById('modal_total_liquid_balance');
+        if (modalTotal) {
+            modalTotal.innerText = `Rp ${parseInt(agentAccountsData.total_balance || 0).toLocaleString('id-ID')}`;
+        }
+
+        const badgeBank = document.getElementById('badge_total_bank_agent');
+        if (badgeBank) {
+            badgeBank.innerText = `Total: Rp ${parseInt(agentAccountsData.total_bank_agent_balance || 0).toLocaleString('id-ID')}`;
+        }
+
+        const badgePpob = document.getElementById('badge_total_ppob_provider');
+        if (badgePpob) {
+            badgePpob.innerText = `Total: Rp ${parseInt(agentAccountsData.total_ppob_balance || 0).toLocaleString('id-ID')}`;
+        }
+
+        // Render Bank Agent Accounts
+        const containerBank = document.getElementById('container_bank_agent_accounts');
+        if (containerBank) {
+            const bankList = agentAccountsData.bank_agents || [];
+            if (bankList.length === 0) {
+                containerBank.innerHTML = '<div class="p-3 text-center text-xs text-slate-400 bg-slate-50 rounded-xl">Belum ada akun bank agen terdaftar.</div>';
+            } else {
+                containerBank.innerHTML = bankList.map(acc => {
+                    const isLow = parseFloat(acc.alert_minimum_balance || 0) > 0 && parseFloat(acc.current_balance) <= parseFloat(acc.alert_minimum_balance);
+                    return `
+                        <div class="p-3.5 rounded-xl border ${isLow ? 'border-amber-300 bg-amber-50/60' : 'border-slate-200 bg-white'} flex items-center justify-between shadow-2xs">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-xl ${isLow ? 'bg-amber-500 text-white' : 'bg-blue-50 text-blue-600'} flex items-center justify-center font-bold text-xs">
+                                    <i data-lucide="building-2" class="w-4 h-4"></i>
+                                </div>
+                                <div>
+                                    <div class="font-bold text-xs text-slate-900">${escapeHtml(acc.name)}</div>
+                                    <div class="text-[10px] text-slate-400 font-mono">${escapeHtml(acc.bank_name || '')} ${escapeHtml(acc.account_number || '')} ${acc.account_holder ? `• a.n. ${escapeHtml(acc.account_holder)}` : ''}</div>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <div class="font-black text-sm text-slate-900 font-mono-num">Rp ${parseInt(acc.current_balance).toLocaleString('id-ID')}</div>
+                                ${isLow ? '<span class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-200 text-amber-900">Saldo Menipis</span>' : '<span class="text-[10px] text-emerald-600 font-semibold">Aktif & Siap</span>'}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        // Render PPOB Accounts
+        const containerPpob = document.getElementById('container_ppob_accounts');
+        if (containerPpob) {
+            const ppobList = agentAccountsData.ppob_providers || [];
+            if (ppobList.length === 0) {
+                containerPpob.innerHTML = '<div class="p-3 text-center text-xs text-slate-400 bg-slate-50 rounded-xl">Belum ada akun saldo PPOB terdaftar.</div>';
+            } else {
+                containerPpob.innerHTML = ppobList.map(acc => {
+                    const isLow = parseFloat(acc.alert_minimum_balance || 0) > 0 && parseFloat(acc.current_balance) <= parseFloat(acc.alert_minimum_balance);
+                    return `
+                        <div class="p-3.5 rounded-xl border ${isLow ? 'border-amber-300 bg-amber-50/60' : 'border-slate-200 bg-white'} flex items-center justify-between shadow-2xs">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-xl ${isLow ? 'bg-amber-500 text-white' : 'bg-emerald-50 text-emerald-600'} flex items-center justify-center font-bold text-xs">
+                                    <i data-lucide="smartphone" class="w-4 h-4"></i>
+                                </div>
+                                <div>
+                                    <div class="font-bold text-xs text-slate-900">${escapeHtml(acc.name)}</div>
+                                    <div class="text-[10px] text-slate-400 font-mono">ID: ${escapeHtml(acc.account_number || acc.account_code)}</div>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <div class="font-black text-sm text-slate-900 font-mono-num">Rp ${parseInt(acc.current_balance).toLocaleString('id-ID')}</div>
+                                ${isLow ? '<span class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-200 text-amber-900">Segera Top Up</span>' : '<span class="text-[10px] text-emerald-600 font-semibold">Aktif</span>'}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        // Render Other Accounts (Kas & Bank Toko)
+        const containerOther = document.getElementById('container_other_accounts');
+        if (containerOther) {
+            const otherList = [
+                ...(agentAccountsData.cash_accounts || []),
+                ...(agentAccountsData.bank_accounts || [])
+            ];
+            containerOther.innerHTML = otherList.map(acc => `
+                <div class="p-3 rounded-xl border border-slate-100 bg-slate-50/70 flex items-center justify-between text-xs">
+                    <div>
+                        <span class="font-semibold text-slate-700">${escapeHtml(acc.name)}</span>
+                        <span class="text-[10px] text-slate-400 block">${acc.type === 'cash' ? 'Uang Kas Fisik' : 'Rekening Bank'}</span>
+                    </div>
+                    <span class="font-bold text-slate-900 font-mono-num">Rp ${parseInt(acc.current_balance).toLocaleString('id-ID')}</span>
+                </div>
+            `).join('');
+        }
+
+        lucide.createIcons();
+    }
+
+    function populateAgentServiceDropdowns() {
+        if (!agentAccountsData) return;
+
+        // Populate Transfer Accounts (Bank Agents & Banks)
+        const transferSelect = document.getElementById('transfer_account_id');
+        if (transferSelect) {
+            const list = [
+                ...(agentAccountsData.bank_agents || []),
+                ...(agentAccountsData.bank_accounts || [])
+            ];
+            transferSelect.innerHTML = list.map(a => `
+                <option value="${a.id}" data-balance="${a.current_balance}" data-alert="${a.alert_minimum_balance || 0}">
+                    ${escapeHtml(a.name)} - Sisa Saldo: Rp ${parseInt(a.current_balance).toLocaleString('id-ID')}
+                </option>
+            `).join('');
+            onTransferAccountChanged();
+        }
+
+        // Populate Withdraw Accounts
+        const withdrawSelect = document.getElementById('withdraw_account_id');
+        if (withdrawSelect) {
+            const list = [
+                ...(agentAccountsData.bank_agents || []),
+                ...(agentAccountsData.bank_accounts || [])
+            ];
+            withdrawSelect.innerHTML = list.map(a => `
+                <option value="${a.id}">
+                    ${escapeHtml(a.name)} (Saldo Saat Ini: Rp ${parseInt(a.current_balance).toLocaleString('id-ID')})
+                </option>
+            `).join('');
+        }
+
+        // Populate PPOB Accounts
+        const ppobSelect = document.getElementById('ppob_account_id');
+        if (ppobSelect) {
+            const list = agentAccountsData.ppob_providers || [];
+            ppobSelect.innerHTML = list.map(a => `
+                <option value="${a.id}" data-balance="${a.current_balance}" data-alert="${a.alert_minimum_balance || 0}">
+                    ${escapeHtml(a.name)} - Sisa Deposit: Rp ${parseInt(a.current_balance).toLocaleString('id-ID')}
+                </option>
+            `).join('');
+            onPpobAccountChanged();
+        }
+    }
+
+    function onTransferAccountChanged() {
+        const sel = document.getElementById('transfer_account_id');
+        if (!sel || !sel.selectedOptions[0]) return;
+        const bal = parseFloat(sel.selectedOptions[0].getAttribute('data-balance') || 0);
+        const alertThreshold = parseFloat(sel.selectedOptions[0].getAttribute('data-alert') || 0);
+
+        const elDisp = document.getElementById('transfer_avail_balance_display');
+        if (elDisp) elDisp.innerText = `Rp ${parseInt(bal).toLocaleString('id-ID')}`;
+
+        const alertBadge = document.getElementById('transfer_balance_alert_badge');
+        if (alertBadge) {
+            if (alertThreshold > 0 && bal <= alertThreshold) {
+                alertBadge.classList.remove('hidden');
+            } else {
+                alertBadge.classList.add('hidden');
+            }
+        }
+    }
+
+    function onPpobAccountChanged() {
+        const sel = document.getElementById('ppob_account_id');
+        if (!sel || !sel.selectedOptions[0]) return;
+        const bal = parseFloat(sel.selectedOptions[0].getAttribute('data-balance') || 0);
+        const alertThreshold = parseFloat(sel.selectedOptions[0].getAttribute('data-alert') || 0);
+
+        const elDisp = document.getElementById('ppob_avail_balance_display');
+        if (elDisp) elDisp.innerText = `Rp ${parseInt(bal).toLocaleString('id-ID')}`;
+
+        const alertBadge = document.getElementById('ppob_balance_alert_badge');
+        if (alertBadge) {
+            if (alertThreshold > 0 && bal <= alertThreshold) {
+                alertBadge.classList.remove('hidden');
+            } else {
+                alertBadge.classList.add('hidden');
+            }
+        }
+    }
+
+    function openAgentServiceModal(targetTab = 'transfer') {
+        if (!activeShift) {
+            showPosToast('warning', 'Silakan buka sesi shift kasir terlebih dahulu.');
+            return;
+        }
+        fetchLatestAgentBalances(false);
+        loadPpobCatalogProducts();
+        switchAgentTab(targetTab);
+        openModal('agentServiceModal');
+        lucide.createIcons();
+    }
+
+    function switchAgentTab(tab) {
+        const tabs = ['transfer', 'withdraw', 'ppob', 'history'];
+        tabs.forEach(t => {
+            const btn = document.getElementById(`tabBtn_${t}`);
+            const form = t === 'history' ? document.getElementById('tabAgentHistory') : document.getElementById(`formAgent${t.charAt(0).toUpperCase() + t.slice(1)}`);
+            
+            if (t === tab) {
+                btn.className = 'agent-nav-tab pb-2.5 px-3 text-xs font-bold border-b-2 border-blue-600 text-blue-600 flex items-center gap-1.5 transition';
+                if (form) form.classList.remove('hidden');
+            } else {
+                btn.className = 'agent-nav-tab pb-2.5 px-3 text-xs font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center gap-1.5 transition';
+                if (form) form.classList.add('hidden');
+            }
+        });
+
+        if (tab === 'ppob') {
+            loadPpobCatalogProducts();
+        } else if (tab === 'history') {
+            loadAgentRecentTransactions();
+        }
+        lucide.createIcons();
+    }
+
+    function calculateTransferTotal() {
+        const principal = parseFloat(document.getElementById('transfer_principal_amount').value) || 0;
+        const adminFee = parseFloat(document.getElementById('transfer_admin_fee').value) || 0;
+        const costPrice = parseFloat(document.getElementById('transfer_cost_price').value) || 0;
+
+        const totalPaid = principal + adminFee;
+        const netProfit = Math.max(0, adminFee - costPrice);
+
+        document.getElementById('transfer_total_paid_display').innerText = `Rp ${parseInt(totalPaid).toLocaleString('id-ID')}`;
+        document.getElementById('transfer_net_profit_display').innerText = `+ Rp ${parseInt(netProfit).toLocaleString('id-ID')}`;
+    }
+
+    function calculateWithdrawTotal() {
+        const principal = parseFloat(document.getElementById('withdraw_principal_amount').value) || 0;
+        const adminFee = parseFloat(document.getElementById('withdraw_admin_fee').value) || 0;
+        const method = document.querySelector('input[name="withdraw_payment_method"]:checked')?.value || 'deduct_balance';
+
+        const bankIn = method === 'deduct_balance' ? (principal + adminFee) : principal;
+
+        document.getElementById('withdraw_cash_out_display').innerText = `- Rp ${parseInt(principal).toLocaleString('id-ID')}`;
+        document.getElementById('withdraw_bank_in_display').innerText = `+ Rp ${parseInt(bankIn).toLocaleString('id-ID')}`;
+        document.getElementById('withdraw_net_profit_display').innerText = `+ Rp ${parseInt(adminFee).toLocaleString('id-ID')}`;
+    }
+
+    function calculatePpobTotal() {
+        const cost = parseFloat(document.getElementById('ppob_cost_price').value) || 0;
+        const sell = parseFloat(document.getElementById('ppob_selling_price').value) || 0;
+        const profit = Math.max(0, sell - cost);
+
+        document.getElementById('ppob_net_profit_display').innerText = `+ Rp ${parseInt(profit).toLocaleString('id-ID')}`;
+    }
+
+    let ppobCatalogList = [];
+
+    async function loadPpobCatalogProducts() {
+        try {
+            const res = await fetch('{{ route("api.ppob-products") }}');
+            const data = await res.json();
+            if (data.success && data.products) {
+                ppobCatalogList = data.products;
+                renderPpobCatalogOptions();
+            }
+        } catch (e) {
+            console.error('Failed to load PPOB products:', e);
+        }
+    }
+
+    function renderPpobCatalogOptions() {
+        const select = document.getElementById('ppob_catalog_select');
+        if (!select) return;
+
+        if (ppobCatalogList.length === 0) {
+            select.innerHTML = '<option value="">-- Belum ada produk PPOB (Input Manual) --</option>';
+            return;
+        }
+
+        // Group by category/provider
+        const grouped = {};
+        ppobCatalogList.forEach(item => {
+            const groupName = (item.provider || item.category || 'Lainnya').toUpperCase();
+            if (!grouped[groupName]) grouped[groupName] = [];
+            grouped[groupName].push(item);
+        });
+
+        let html = '<option value="">-- Pilih Produk / Paket PPOB Cepat (Auto-Fill) --</option>';
+        for (const [group, items] of Object.entries(grouped)) {
+            html += `<optgroup label="${escapeHtml(group)}">`;
+            items.forEach(prod => {
+                const margin = prod.selling_price - prod.cost_price;
+                html += `
+                    <option value="${prod.id}">
+                        ${escapeHtml(prod.name)} • Jual: Rp ${parseInt(prod.selling_price).toLocaleString('id-ID')} (Laba: +Rp ${parseInt(margin).toLocaleString('id-ID')})
+                    </option>
+                `;
+            });
+            html += `</optgroup>`;
+        }
+
+        select.innerHTML = html;
+    }
+
+    function onPpobCatalogProductSelected(productId) {
+        if (!productId) return;
+        const product = ppobCatalogList.find(p => p.id == productId);
+        if (!product) return;
+
+        // Auto-fill category
+        const catSelect = document.getElementById('ppob_service_type');
+        if (catSelect && product.category) {
+            catSelect.value = product.category;
+        }
+
+        // Auto-fill cost & selling price
+        const costInput = document.getElementById('ppob_cost_price');
+        const sellInput = document.getElementById('ppob_selling_price');
+        if (costInput) costInput.value = parseInt(product.cost_price);
+        if (sellInput) sellInput.value = parseInt(product.selling_price);
+
+        // Auto-select account if specified
+        if (product.default_account_id) {
+            const accSelect = document.getElementById('ppob_account_id');
+            if (accSelect) {
+                accSelect.value = product.default_account_id;
+                onPpobAccountChanged();
+            }
+        }
+
+        calculatePpobTotal();
+
+        // Focus on destination number
+        const destInput = document.getElementById('ppob_destination_target');
+        if (destInput) {
+            destInput.focus();
+        }
+    }
+
+    function resetPpobToCustom() {
+        const select = document.getElementById('ppob_catalog_select');
+        if (select) select.value = '';
+        document.getElementById('ppob_cost_price').value = '';
+        document.getElementById('ppob_selling_price').value = '';
+        calculatePpobTotal();
+        const destInput = document.getElementById('ppob_destination_target');
+        if (destInput) destInput.focus();
+    }
+
+    async function handleAgentTransferSubmit(e) {
+        e.preventDefault();
+        const btn = document.getElementById('btnSubmitTransfer');
+        const payload = {
+            account_id: document.getElementById('transfer_account_id').value,
+            destination_target: document.getElementById('transfer_destination_target').value.trim(),
+            destination_holder: document.getElementById('transfer_destination_holder').value.trim(),
+            principal_amount: document.getElementById('transfer_principal_amount').value,
+            admin_fee: document.getElementById('transfer_admin_fee').value,
+            cost_price: document.getElementById('transfer_cost_price').value,
+            reference_number: document.getElementById('transfer_reference_number').value.trim(),
+            notes: document.getElementById('transfer_notes').value.trim(),
+        };
+
+        try {
+            btn.disabled = true;
+            btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span>Memproses...</span>';
+
+            const res = await fetch('{{ route("agent.transfer") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (data.status === 'success') {
+                closeModal('agentServiceModal');
+                document.getElementById('formAgentTransfer').reset();
+                fetchLatestAgentBalances(false);
+
+                // Refresh current active shift state
+                refreshCurrentShift();
+
+                // Buka preview & cetak struk agen
+                showAgentReceiptModal(data.data);
+            } else {
+                showPosAlert('error', 'Gagal Memproses Transfer', data.message);
+            }
+        } catch (err) {
+            showPosAlert('error', 'Terjadi Kesalahan', err.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i><span>Proses & Simpan Transaksi Transfer</span>';
+            lucide.createIcons();
+        }
+    }
+
+    async function handleAgentWithdrawSubmit(e) {
+        e.preventDefault();
+        const btn = document.getElementById('btnSubmitWithdraw');
+        const payload = {
+            account_id: document.getElementById('withdraw_account_id').value,
+            principal_amount: document.getElementById('withdraw_principal_amount').value,
+            admin_fee: document.getElementById('withdraw_admin_fee').value,
+            payment_method: document.querySelector('input[name="withdraw_payment_method"]:checked')?.value || 'deduct_balance',
+            destination_holder: document.getElementById('withdraw_destination_holder').value.trim(),
+            reference_number: document.getElementById('withdraw_reference_number').value.trim(),
+        };
+
+        try {
+            btn.disabled = true;
+            btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span>Memproses...</span>';
+
+            const res = await fetch('{{ route("agent.withdraw") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (data.status === 'success') {
+                closeModal('agentServiceModal');
+                document.getElementById('formAgentWithdraw').reset();
+                fetchLatestAgentBalances(false);
+
+                // Refresh current active shift state
+                refreshCurrentShift();
+
+                // Buka preview & cetak struk tarik tunai
+                showAgentReceiptModal(data.data);
+            } else {
+                showPosAlert('error', 'Gagal Tarik Tunai', data.message);
+            }
+        } catch (err) {
+            showPosAlert('error', 'Terjadi Kesalahan', err.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i><span>Proses & Simpan Tarik Tunai</span>';
+            lucide.createIcons();
+        }
+    }
+
+    async function handleAgentPpobSubmit(e) {
+        e.preventDefault();
+        const btn = document.getElementById('btnSubmitPpob');
+        const payload = {
+            account_id: document.getElementById('ppob_account_id').value,
+            service_type: document.getElementById('ppob_service_type').value,
+            destination_target: document.getElementById('ppob_destination_target').value.trim(),
+            cost_price: document.getElementById('ppob_cost_price').value,
+            selling_price: document.getElementById('ppob_selling_price').value,
+            payment_method: document.querySelector('input[name="ppob_payment_method"]:checked')?.value || 'cash',
+            reference_number: document.getElementById('ppob_reference_number').value.trim(),
+        };
+
+        try {
+            btn.disabled = true;
+            btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span>Memproses...</span>';
+
+            const res = await fetch('{{ route("agent.ppob") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (data.status === 'success') {
+                closeModal('agentServiceModal');
+                document.getElementById('formAgentPpob').reset();
+                fetchLatestAgentBalances(false);
+
+                // Refresh current active shift state
+                refreshCurrentShift();
+
+                // Buka preview & cetak struk PPOB
+                showAgentReceiptModal(data.data);
+            } else {
+                showPosAlert('error', 'Gagal Transaksi PPOB', data.message);
+            }
+        } catch (err) {
+            showPosAlert('error', 'Terjadi Kesalahan', err.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i><span>Proses & Simpan Transaksi PPOB</span>';
+            lucide.createIcons();
+        }
+    }
+
+    async function refreshCurrentShift() {
+        try {
+            const res = await fetch('{{ route("shifts.current") }}');
+            const data = await res.json();
+            if (data.status === 'success' && data.data) {
+                activeShift = data.data;
+                updateHeaderShiftExpenseBadge();
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    async function loadAgentRecentTransactions() {
+        const tbody = document.getElementById('agent_history_table_body');
+        if (!tbody) return;
+        tbody.innerHTML = '<tr><td colspan="4" class="py-6 text-center text-xs text-slate-400">Memuat data...</td></tr>';
+
+        try {
+            const res = await fetch('{{ route("agent.recent") }}');
+            const data = await res.json();
+            if (data.status === 'success') {
+                const list = data.data || [];
+                if (list.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="py-6 text-center text-xs text-slate-400">Belum ada transaksi pada shift ini.</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = list.map(tx => {
+                    const typeLabel = tx.service_type.replace('_', ' ').toUpperCase();
+                    const isCashIn = tx.service_type !== 'tarik_tunai';
+                    return `
+                        <tr class="hover:bg-slate-50 transition">
+                            <td class="py-2.5 px-3">
+                                <span class="font-bold text-xs text-slate-900 block">${typeLabel}</span>
+                                <span class="text-[10px] text-slate-400">${new Date(tx.created_at).toLocaleTimeString('id-ID')} • ${tx.transaction_number}</span>
+                            </td>
+                            <td class="py-2.5 px-3">
+                                <span class="font-semibold text-slate-800 text-xs">${escapeHtml(tx.destination_target)}</span>
+                                <span class="text-[10px] text-slate-400 block">${escapeHtml(tx.account ? tx.account.name : '-')}</span>
+                            </td>
+                            <td class="py-2.5 px-3 text-right font-mono-num font-bold text-slate-900">
+                                Rp ${parseInt(tx.principal_amount).toLocaleString('id-ID')}
+                            </td>
+                            <td class="py-2.5 px-3 text-right">
+                                <span class="font-bold text-emerald-600 font-mono-num">+Rp ${parseInt(tx.net_profit).toLocaleString('id-ID')}</span>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+        } catch (err) {
+            tbody.innerHTML = `<tr><td colspan="4" class="py-6 text-center text-xs text-rose-500">${err.message}</td></tr>`;
         }
     }
 </script>

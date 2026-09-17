@@ -74,7 +74,9 @@
                             class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer"
                         >
                             <option value="cash">Kas Fisik / Kasir (Cash)</option>
-                            <option value="bank">Rekening Bank (Bank)</option>
+                            <option value="bank">Rekening Bank Operasional (Bank)</option>
+                            <option value="bank_agent">Rekening Agen Perbankan (BRILink / Mandiri / BNI)</option>
+                            <option value="ppob_provider">Deposit Server PPOB / Pulsa (Digiflazz / Mitra)</option>
                             <option value="other">Lainnya / E-Wallet (Other)</option>
                         </select>
                     </div>
@@ -97,19 +99,19 @@
                     </div>
                 </div>
 
-                <!-- Row 3: Bank Specific Fields (Conditional) -->
-                <div id="bank_fields_container" class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 hidden">
+                <!-- Row 3: Bank Specific Fields & Holder (Conditional) -->
+                <div id="bank_fields_container" class="grid grid-cols-1 sm:grid-cols-3 gap-3.5 hidden">
                     
                     <!-- Bank Name -->
                     <div class="relative rounded-xl border border-slate-200 hover:border-slate-300 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/20 bg-white transition px-3.5 pt-3 pb-2 shadow-2xs">
                         <label class="absolute -top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold text-slate-700">
-                            Nama Bank
+                            Nama Bank / Provider
                         </label>
                         <input 
                             type="text" 
                             name="bank_name" 
                             id="acc_bank_name_input" 
-                            placeholder="Contoh: BCA, Mandiri, BRI, BNI" 
+                            placeholder="Contoh: BCA, BRI, Digiflazz" 
                             class="w-full bg-transparent border-0 p-0 text-xs font-semibold text-slate-800 placeholder-slate-400 focus:ring-0 focus:outline-none"
                         >
                     </div>
@@ -117,7 +119,7 @@
                     <!-- Account Number -->
                     <div class="relative rounded-xl border border-slate-200 hover:border-slate-300 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/20 bg-white transition px-3.5 pt-3 pb-2 shadow-2xs">
                         <label class="absolute -top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold text-slate-700">
-                            Nomor Rekening
+                            No. Rekening / ID Agen
                         </label>
                         <input 
                             type="text" 
@@ -127,6 +129,41 @@
                             class="w-full bg-transparent border-0 p-0 text-xs font-mono font-semibold text-slate-800 placeholder-slate-400 focus:ring-0 focus:outline-none"
                         >
                     </div>
+
+                    <!-- Account Holder -->
+                    <div class="relative rounded-xl border border-slate-200 hover:border-slate-300 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/20 bg-white transition px-3.5 pt-3 pb-2 shadow-2xs">
+                        <label class="absolute -top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold text-slate-700">
+                            Atas Nama (Pemilik)
+                        </label>
+                        <input 
+                            type="text" 
+                            name="account_holder" 
+                            id="acc_holder_input" 
+                            placeholder="Nama pemilik akun" 
+                            class="w-full bg-transparent border-0 p-0 text-xs font-semibold text-slate-800 placeholder-slate-400 focus:ring-0 focus:outline-none"
+                        >
+                    </div>
+                </div>
+
+                <!-- Row: Batas Alert Saldo Menipis (Threshold Alert) -->
+                <div class="relative rounded-xl border border-slate-200 hover:border-slate-300 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/20 bg-white transition px-3.5 pt-3 pb-2 shadow-2xs">
+                    <label class="absolute -top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold text-slate-700">
+                        Batas Minimum Alert Saldo Menipis (Rp)
+                    </label>
+                    <div class="flex items-center gap-1.5">
+                        <span class="text-xs font-bold text-slate-400">Rp</span>
+                        <input 
+                            type="number" 
+                            step="any" 
+                            min="0" 
+                            name="alert_minimum_balance" 
+                            id="acc_alert_min_input" 
+                            value="0" 
+                            placeholder="Contoh: 500000" 
+                            class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-900 font-mono-num placeholder-slate-400 focus:ring-0 focus:outline-none"
+                        >
+                    </div>
+                    <span class="text-[10px] text-slate-400 mt-0.5 block">Kasir akan diberi peringatan jika saldo akun ini turun di bawah batas ini.</span>
                 </div>
 
                 <!-- Row 4: Description -->
@@ -182,7 +219,7 @@
     function toggleAccountTypeFields() {
         const type = document.getElementById('acc_type_select').value;
         const bankContainer = document.getElementById('bank_fields_container');
-        if (type === 'bank') {
+        if (type === 'bank' || type === 'bank_agent' || type === 'ppob_provider') {
             bankContainer.classList.remove('hidden');
         } else {
             bankContainer.classList.add('hidden');
@@ -193,7 +230,7 @@
         document.getElementById('accountForm').reset();
         document.getElementById('accountForm').action = "{{ route('accounts.store') }}";
         document.getElementById('account_method_field').innerHTML = '';
-        document.getElementById('accountModalTitle').innerText = 'Tambah Akun Kas & Bank';
+        document.getElementById('accountModalTitle').innerText = 'Tambah Akun Keuangan Baru';
         document.getElementById('opening_balance_container').style.display = 'block';
         toggleAccountTypeFields();
         openModal('accountModal');
@@ -201,9 +238,9 @@
 
     function openEditAccountModal(accId) {
         openCreateAccountModal();
-        document.getElementById('accountModalTitle').innerText = 'Edit Akun Kas & Bank';
+        document.getElementById('accountModalTitle').innerText = 'Edit Akun Keuangan';
         document.getElementById('accountForm').action = `/accounts/${accId}`;
-        document.getElementById('account_method_field').innerHTML = '@method("PUT")';
+        document.getElementById('account_method_field').innerHTML = '<input type="hidden" name="_method" value="PUT">';
         document.getElementById('opening_balance_container').style.display = 'none';
 
         fetch(`/accounts/${accId}`)
@@ -214,6 +251,8 @@
                 document.getElementById('acc_type_select').value = acc.type || 'cash';
                 document.getElementById('acc_bank_name_input').value = acc.bank_name || '';
                 document.getElementById('acc_number_input').value = acc.account_number || '';
+                document.getElementById('acc_holder_input').value = acc.account_holder || '';
+                document.getElementById('acc_alert_min_input').value = acc.alert_minimum_balance || 0;
                 document.getElementById('acc_desc_input').value = acc.description || '';
                 document.getElementById('acc_is_default_input').checked = !!acc.is_default;
                 toggleAccountTypeFields();

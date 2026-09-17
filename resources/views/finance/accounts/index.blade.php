@@ -6,53 +6,87 @@
 <div class="space-y-6">
 
     <!-- Top Total Financial Balance Cards (Clean, Natural & Elegant Style) -->
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
         
         <!-- Total All Liquid Assets (Primary Solid Orange Accent Card) -->
-        <div class="p-5 rounded-2xl bg-brand-500 text-white shadow-md shadow-brand-500/20 flex items-center justify-between transition-all hover:bg-brand-600">
+        <div class="p-4 rounded-2xl bg-brand-500 text-white shadow-md shadow-brand-500/20 flex items-center justify-between transition-all hover:bg-brand-600">
             <div class="space-y-1">
-                <span class="text-xs font-semibold text-white/90">Total Kas & Bank Likuid</span>
-                <div class="text-2xl font-black text-white font-mono-num tracking-tight">
+                <span class="text-[11px] font-semibold text-white/90 uppercase tracking-wider">Total Kas & Bank</span>
+                <div class="text-xl font-black text-white font-mono-num tracking-tight">
                     Rp {{ number_format($totalBalance, 0, ',', '.') }}
                 </div>
-                <div class="text-[11px] text-white/80 font-medium">Akumulasi seluruh akun aktif</div>
+                <div class="text-[10px] text-white/80 font-medium">Akumulasi seluruh akun</div>
             </div>
-            <div class="w-12 h-12 rounded-2xl bg-white/20 text-white flex items-center justify-center shrink-0">
-                <i data-lucide="wallet-cards" class="w-6 h-6"></i>
+            <div class="w-10 h-10 rounded-xl bg-white/20 text-white flex items-center justify-center shrink-0">
+                <i data-lucide="wallet-cards" class="w-5 h-5"></i>
             </div>
         </div>
 
         <!-- Total Cash -->
-        <div class="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-2xs flex items-center justify-between transition-all hover:border-slate-300">
+        <div class="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-2xs flex items-center justify-between transition-all hover:border-slate-300">
             <div class="space-y-1">
-                <span class="text-xs font-semibold text-slate-500">Saldo Kas Fisik</span>
-                <div class="text-2xl font-black text-slate-900 font-mono-num tracking-tight">
+                <span class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Kas Fisik Laci</span>
+                <div class="text-xl font-black text-slate-900 font-mono-num tracking-tight">
                     Rp {{ number_format($totalCash, 0, ',', '.') }}
                 </div>
-                <div class="text-[11px] text-emerald-600 font-medium flex items-center gap-1">
+                <div class="text-[10px] text-emerald-600 font-medium flex items-center gap-1">
                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                    <span>Kas laci kasir & kas kecil</span>
+                    <span>Kas fisik toko</span>
                 </div>
             </div>
-            <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-100/80">
-                <i data-lucide="banknote" class="w-6 h-6"></i>
+            <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-100/80">
+                <i data-lucide="banknote" class="w-5 h-5"></i>
             </div>
         </div>
 
         <!-- Total Bank Accounts -->
-        <div class="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-2xs flex items-center justify-between transition-all hover:border-slate-300">
+        <div class="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-2xs flex items-center justify-between transition-all hover:border-slate-300">
             <div class="space-y-1">
-                <span class="text-xs font-semibold text-slate-500">Saldo Rekening Bank</span>
-                <div class="text-2xl font-black text-slate-900 font-mono-num tracking-tight">
+                <span class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Bank Operasional</span>
+                <div class="text-xl font-black text-slate-900 font-mono-num tracking-tight">
                     Rp {{ number_format($totalBank, 0, ',', '.') }}
                 </div>
-                <div class="text-[11px] text-blue-600 font-medium flex items-center gap-1">
+                <div class="text-[10px] text-blue-600 font-medium flex items-center gap-1">
                     <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-                    <span>Rekening operasional bisnis</span>
+                    <span>Rekening operasional</span>
                 </div>
             </div>
-            <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100/80">
-                <i data-lucide="building-2" class="w-6 h-6"></i>
+            <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100/80">
+                <i data-lucide="building-2" class="w-5 h-5"></i>
+            </div>
+        </div>
+
+        <!-- Total Bank Agent Accounts (BRILink dsb) -->
+        <div class="p-4 rounded-2xl bg-white border border-blue-200/90 bg-blue-50/20 shadow-2xs flex items-center justify-between transition-all hover:border-blue-300">
+            <div class="space-y-1">
+                <span class="text-[11px] font-bold text-blue-700 uppercase tracking-wider">Saldo Agen Bank</span>
+                <div class="text-xl font-black text-blue-900 font-mono-num tracking-tight">
+                    Rp {{ number_format($totalBankAgent, 0, ',', '.') }}
+                </div>
+                <div class="text-[10px] text-blue-600 font-medium flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+                    <span>EDC BRILink/Mandiri</span>
+                </div>
+            </div>
+            <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center shrink-0 border border-blue-200">
+                <i data-lucide="repeat" class="w-5 h-5"></i>
+            </div>
+        </div>
+
+        <!-- Total PPOB Providers -->
+        <div class="p-4 rounded-2xl bg-white border border-emerald-200/90 bg-emerald-50/20 shadow-2xs flex items-center justify-between transition-all hover:border-emerald-300">
+            <div class="space-y-1">
+                <span class="text-[11px] font-bold text-emerald-700 uppercase tracking-wider">Saldo Deposit PPOB</span>
+                <div class="text-xl font-black text-emerald-900 font-mono-num tracking-tight">
+                    Rp {{ number_format($totalPpob, 0, ',', '.') }}
+                </div>
+                <div class="text-[10px] text-emerald-600 font-medium flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span>Pulsa, Paket, Token</span>
+                </div>
+            </div>
+            <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 border border-emerald-200">
+                <i data-lucide="smartphone" class="w-5 h-5"></i>
             </div>
         </div>
 
@@ -116,7 +150,9 @@
                     <select name="type" onchange="this.form.submit()" class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 focus:ring-0 focus:outline-none cursor-pointer">
                         <option value="">Semua Tipe Akun</option>
                         <option value="cash" {{ request('type') === 'cash' ? 'selected' : '' }}>Kas Fisik (Cash)</option>
-                        <option value="bank" {{ request('type') === 'bank' ? 'selected' : '' }}>Rekening Bank (Bank)</option>
+                        <option value="bank" {{ request('type') === 'bank' ? 'selected' : '' }}>Rekening Bank (Operasional)</option>
+                        <option value="bank_agent" {{ request('type') === 'bank_agent' ? 'selected' : '' }}>Agen Bank (BRILink / Mandiri)</option>
+                        <option value="ppob_provider" {{ request('type') === 'ppob_provider' ? 'selected' : '' }}>Server PPOB / Pulsa</option>
                         <option value="other" {{ request('type') === 'other' ? 'selected' : '' }}>Lainnya / E-Wallet</option>
                     </select>
                 </div>
@@ -178,12 +214,20 @@
                             <!-- Tipe Akun -->
                             <td class="py-3.5 px-4">
                                 @if($acc->type === 'cash')
-                                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
                                         <i data-lucide="banknote" class="w-3 h-3"></i> Kas Fisik
                                     </span>
                                 @elseif($acc->type === 'bank')
                                     <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
-                                        <i data-lucide="building-2" class="w-3 h-3"></i> Bank
+                                        <i data-lucide="building-2" class="w-3 h-3"></i> Bank Ops
+                                    </span>
+                                @elseif($acc->type === 'bank_agent')
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
+                                        <i data-lucide="repeat" class="w-3 h-3"></i> Agen Bank
+                                    </span>
+                                @elseif($acc->type === 'ppob_provider')
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                        <i data-lucide="smartphone" class="w-3 h-3"></i> Server PPOB
                                     </span>
                                 @else
                                     <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
@@ -194,11 +238,14 @@
 
                             <!-- No Rekening / Bank -->
                             <td class="py-3.5 px-4">
-                                @if($acc->type === 'bank')
-                                    <div class="font-bold text-slate-800">{{ $acc->bank_name ?? 'Bank' }}</div>
+                                @if(in_array($acc->type, ['bank', 'bank_agent', 'ppob_provider']))
+                                    <div class="font-bold text-slate-800">{{ $acc->bank_name ?? 'Provider / Bank' }}</div>
                                     <div class="text-[11px] text-slate-500 font-mono">{{ $acc->account_number ?? '-' }}</div>
+                                    @if($acc->account_holder)
+                                        <div class="text-[10px] text-slate-400">a/n {{ $acc->account_holder }}</div>
+                                    @endif
                                 @else
-                                    <span class="text-slate-400 italic">Kas Tunai</span>
+                                    <span class="text-slate-400 italic">Kas Tunai Fisik</span>
                                 @endif
                             </td>
 
@@ -231,6 +278,11 @@
                             <!-- Aksi -->
                             <td class="py-3.5 px-5 text-right">
                                 <div class="flex items-center justify-end gap-1.5">
+                                    <!-- Mutations / Statement Button -->
+                                    <button type="button" onclick="openAccountMutationsModal({{ $acc->id }})" class="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition cursor-pointer" title="Lihat Buku Mutasi Rekening">
+                                        <i data-lucide="history" class="w-4 h-4"></i>
+                                    </button>
+
                                     <!-- Edit Button -->
                                     <button type="button" onclick="openEditAccountModal({{ $acc->id }})" class="p-1.5 rounded-lg text-slate-400 hover:text-brand-600 hover:bg-brand-50 transition cursor-pointer" title="Edit Akun">
                                         <i data-lucide="edit-3" class="w-4 h-4"></i>
@@ -273,6 +325,7 @@
 
 @push('modals')
     @include('finance.accounts._create_modal')
+    @include('finance.accounts._mutations_modal')
 @endpush
 
 @endsection

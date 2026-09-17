@@ -258,98 +258,222 @@
 <body class="h-screen w-screen overflow-hidden text-slate-800 antialiased bg-slate-100 flex flex-col transition-colors duration-200">
 
     <!-- TOP POS HEADER BAR -->
-    <header class="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between shrink-0 select-none shadow-2xs z-20 transition-colors duration-200">
-        <div class="flex items-center gap-5">
+    <header class="h-16 bg-white border-b border-slate-200 px-4 sm:px-6 flex items-center justify-between shrink-0 select-none shadow-2xs z-30 transition-colors duration-200">
+        <!-- Left: Brand Logo & Store Info -->
+        <div class="flex items-center gap-4">
             <!-- Brand & Mode -->
             <div class="flex items-center gap-2.5">
                 @if(!empty($appLogoSetting))
                     <img src="{{ asset('storage/' . $appLogoSetting) }}" alt="{{ $appNameSetting ?? 'Logo' }}" class="w-9 h-9 rounded-xl object-contain bg-white border border-slate-200 p-1 shadow-xs shrink-0">
                 @else
-                    <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-500 to-amber-500 flex items-center justify-center text-white font-black text-sm shadow-sm shadow-brand-500/30">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-500 to-amber-500 flex items-center justify-center text-white font-black text-sm shadow-sm shadow-brand-500/20">
                         <i data-lucide="zap" class="w-4.5 h-4.5 fill-white stroke-white"></i>
                     </div>
                 @endif
                 <div class="flex items-center gap-2">
-                    <span class="font-bold text-lg tracking-tight text-slate-900">{{ $appNameSetting ?? 'WarungPro' }}</span>
-                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center gap-1.5">
+                    <span class="font-bold text-base sm:text-lg tracking-tight text-slate-900">{{ $appNameSetting ?? 'WarungPro' }}</span>
+                    <span class="hidden sm:inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200 items-center gap-1.5">
                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Online
                     </span>
                 </div>
             </div>
 
-            <div class="h-6 w-px bg-slate-200"></div>
+            <div class="h-5 w-px bg-slate-200 hidden sm:block"></div>
 
             <!-- Store / Branch Info -->
-            <div class="flex items-center gap-1.5 text-slate-700 font-semibold bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 text-xs">
-                <i data-lucide="store" class="w-3.5 h-3.5 text-brand-500"></i>
-                <span id="posWarehouseDisplayName">{{ $defaultWarehouse->name ?? 'Cabang Utama' }}</span>
+            <div class="hidden sm:flex items-center gap-1.5 text-slate-600 font-semibold bg-slate-50 px-2.5 py-1.5 rounded-xl border border-slate-200 text-xs">
+                <i data-lucide="store" class="w-3.5 h-3.5 text-slate-400"></i>
+                <span id="posWarehouseDisplayName" class="text-slate-700">{{ $defaultWarehouse->name ?? 'Cabang Utama' }}</span>
             </div>
         </div>
 
-        <!-- Middle Quick Keyboard Badges -->
-        <div class="hidden xl:flex items-center gap-2 text-xs text-slate-500">
-            <span class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200">
-                <kbd class="px-1.5 py-0.5 bg-white border border-slate-200 rounded text-[10px] font-mono-num text-slate-700 shadow-2xs font-bold">F1</kbd> Cari
-            </span>
-            <span class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200">
-                <kbd class="px-1.5 py-0.5 bg-white border border-slate-200 rounded text-[10px] font-mono-num text-slate-700 shadow-2xs font-bold">F2</kbd> Customer
-            </span>
-            <span class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200">
-                <kbd class="px-1.5 py-0.5 bg-white border border-slate-200 rounded text-[10px] font-mono-num text-slate-700 shadow-2xs font-bold">F7</kbd> Hold
-            </span>
-            <span class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200">
-                <kbd class="px-1.5 py-0.5 bg-white border border-slate-200 rounded text-[10px] font-mono-num text-slate-700 shadow-2xs font-bold">F9</kbd> Diskon
-            </span>
-            <span class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-brand-50 border border-brand-200 text-brand-700 font-semibold">
-                <kbd class="px-1.5 py-0.5 bg-brand-500 text-white rounded text-[10px] font-mono-num font-bold shadow-2xs">F12</kbd> Bayar
-            </span>
-        </div>
+        <!-- Right Side: Structured Action Clusters -->
+        <div class="flex items-center gap-2.5">
+            
+            <!-- 1. Agen Bank & PPOB Pill (Sleek & Integrated) -->
+            <div class="relative" id="agentMenuDropdownWrapper">
+                <button 
+                    type="button" 
+                    id="btnAgentCompactDropdown"
+                    onclick="toggleAgentHeaderDropdown()" 
+                    title="Layanan Agen Bank, PPOB & Pantau Saldo (F8)" 
+                    class="h-9 px-3 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 hover:border-slate-300 text-slate-700 text-xs font-semibold transition flex items-center gap-2 whitespace-nowrap shadow-2xs cursor-pointer group"
+                >
+                    <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                    <i data-lucide="wallet-cards" class="w-4 h-4 text-blue-600"></i>
+                    <span class="font-bold text-slate-800 hidden sm:inline">Agen & PPOB</span>
+                    <span class="font-mono-num text-[11px] font-bold text-blue-700 bg-blue-50 border border-blue-200/60 px-2 py-0.5 rounded-lg" id="pos_header_combined_balance">Rp 0</span>
+                    <kbd class="hidden md:inline px-1.5 py-0.5 bg-white border border-slate-200 rounded text-[9px] font-mono font-bold text-slate-400 shadow-2xs">F8</kbd>
+                    <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400 transition-transform group-hover:translate-y-0.5"></i>
+                </button>
 
-        <!-- Right User & Exit Controls -->
-        <div class="flex items-center gap-2">
-            <!-- Kas Keluar / Biaya Operasional Button (F4) -->
-            <button 
-                type="button" 
-                onclick="openShiftExpenseModal()" 
-                title="Catat Kas Keluar / Biaya Operasional Kasir (Tekan F4)" 
-                class="h-9 px-3 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200/90 text-xs font-bold transition flex items-center gap-1.5 whitespace-nowrap shadow-2xs cursor-pointer"
-            >
-                <i data-lucide="wallet-cards" class="w-4 h-4 text-amber-600"></i>
-                <span>Kas Keluar</span>
-                <kbd class="px-1 py-0.5 bg-amber-200/80 border border-amber-300/80 rounded text-[9px] font-mono-num text-amber-900 font-bold leading-none">F4</kbd>
-                <span id="header_shift_expense_badge" class="hidden px-1.5 py-0.5 rounded-md bg-rose-500 text-white text-[10px] font-black font-mono-num shadow-2xs">-Rp 0</span>
-            </button>
+                <!-- Agen Dropdown Popover Menu -->
+                <div id="agentHeaderDropdown" class="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-slate-200/90 py-2 hidden z-50 text-slate-800 transition-all">
+                    <!-- Quick Balance Overview Header -->
+                    <div class="px-4 py-2.5 bg-slate-50/80 border-b border-slate-100">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Status Saldo Digital</span>
+                        <div class="mt-1.5 space-y-1.5">
+                            <div class="flex items-center justify-between text-xs">
+                                <span class="text-slate-600 flex items-center gap-1.5">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-blue-600"></span> Bank Agen:
+                                </span>
+                                <strong class="font-mono-num font-bold text-blue-700" id="pos_dropdown_bank_balance">Rp 0</strong>
+                            </div>
+                            <div class="flex items-center justify-between text-xs">
+                                <span class="text-slate-600 flex items-center gap-1.5">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span> Server PPOB:
+                                </span>
+                                <strong class="font-mono-num font-bold text-emerald-700" id="pos_dropdown_ppob_balance">Rp 0</strong>
+                            </div>
+                        </div>
+                    </div>
 
-            <!-- Tutup Shift Button -->
-            <button 
-                type="button" 
-                onclick="openCloseShiftDialog()" 
-                title="Tutup Sesi Shift Kasir & Rekap Kas Fisik" 
-                class="h-9 px-3 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200/90 text-xs font-bold transition flex items-center gap-1.5 whitespace-nowrap shadow-2xs cursor-pointer"
-            >
-                <i data-lucide="lock" class="w-3.5 h-3.5 text-rose-600"></i>
-                <span>Tutup Shift</span>
-            </button>
+                    <!-- Action Links -->
+                    <div class="p-1.5 space-y-1">
+                        <button 
+                            type="button" 
+                            onclick="openAgentServiceModal('transfer'); closeAgentHeaderDropdown();" 
+                            class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-blue-50 hover:text-blue-700 transition flex items-center justify-between cursor-pointer"
+                        >
+                            <span class="flex items-center gap-2">
+                                <i data-lucide="arrow-up-right" class="w-4 h-4 text-blue-600"></i>
+                                <span>Transfer / Kirim Uang</span>
+                            </span>
+                            <span class="text-[10px] text-slate-400 font-medium">Kas In</span>
+                        </button>
 
-            <!-- Cashier Shift Badge -->
-            <div class="hidden sm:flex h-9 items-center gap-2 bg-slate-50 px-3 rounded-xl border border-slate-200 text-xs whitespace-nowrap">
-                <div class="w-5 h-5 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center font-bold text-[10px]">
+                        <button 
+                            type="button" 
+                            onclick="openAgentServiceModal('withdraw'); closeAgentHeaderDropdown();" 
+                            class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition flex items-center justify-between cursor-pointer"
+                        >
+                            <span class="flex items-center gap-2">
+                                <i data-lucide="arrow-down-left" class="w-4 h-4 text-emerald-600"></i>
+                                <span>Tarik Tunai Nasabah</span>
+                            </span>
+                            <span class="text-[10px] text-slate-400 font-medium">Kas Out</span>
+                        </button>
+
+                        <button 
+                            type="button" 
+                            onclick="openAgentServiceModal('ppob'); closeAgentHeaderDropdown();" 
+                            class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-amber-50 hover:text-amber-700 transition flex items-center justify-between cursor-pointer"
+                        >
+                            <span class="flex items-center gap-2">
+                                <i data-lucide="zap" class="w-4 h-4 text-amber-600"></i>
+                                <span>Pulsa, PLN & E-Wallet</span>
+                            </span>
+                            <span class="text-[10px] text-slate-400 font-medium">Produk</span>
+                        </button>
+                    </div>
+
+                    <div class="h-px bg-slate-100 my-1"></div>
+
+                    <div class="p-1.5">
+                        <button 
+                            type="button" 
+                            onclick="openModal('agentBalancesModal'); closeAgentHeaderDropdown();" 
+                            class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition flex items-center gap-2 cursor-pointer"
+                        >
+                            <i data-lucide="wallet" class="w-4 h-4 text-slate-500"></i>
+                            <span>Rincian Seluruh Rekening & Mutasi</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Menu Operasional Shift (Kas Keluar + Tutup Shift consolidated) -->
+            <div class="relative" id="shiftMenuDropdownWrapper">
+                <button 
+                    type="button" 
+                    id="btnShiftCompactDropdown"
+                    onclick="toggleShiftHeaderDropdown()" 
+                    title="Menu Operasional Kas & Shift Kasir" 
+                    class="h-9 px-3 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 hover:border-slate-300 text-slate-700 text-xs font-semibold transition flex items-center gap-2 whitespace-nowrap shadow-2xs cursor-pointer group"
+                >
+                    <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5 text-slate-500"></i>
+                    <span class="font-bold text-slate-800">Shift</span>
+                    <span id="header_shift_expense_badge" class="hidden px-1.5 py-0.5 rounded-md bg-rose-500 text-white text-[10px] font-black font-mono-num shadow-2xs">-Rp 0</span>
+                    <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400 transition-transform group-hover:translate-y-0.5"></i>
+                </button>
+
+                <!-- Shift Operations Dropdown -->
+                <div id="shiftHeaderDropdown" class="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-200/90 py-1.5 hidden z-50 text-slate-800 transition-all">
+                    <div class="px-3.5 py-2 border-b border-slate-100">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Manajemen Kasir</span>
+                    </div>
+
+                    <div class="p-1 space-y-1">
+                        <button 
+                            type="button" 
+                            onclick="openShiftExpenseModal(); closeShiftHeaderDropdown();" 
+                            class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-amber-50 hover:text-amber-800 transition flex items-center justify-between cursor-pointer"
+                        >
+                            <span class="flex items-center gap-2">
+                                <i data-lucide="receipt" class="w-4 h-4 text-amber-600"></i>
+                                <span>Kas Keluar / Biaya</span>
+                            </span>
+                            <kbd class="px-1.5 py-0.5 bg-amber-100 text-amber-800 rounded text-[9px] font-mono font-bold">F4</kbd>
+                        </button>
+
+                        <button 
+                            type="button" 
+                            onclick="openCloseShiftDialog(); closeShiftHeaderDropdown();" 
+                            class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 hover:text-rose-700 transition flex items-center justify-between cursor-pointer"
+                        >
+                            <span class="flex items-center gap-2">
+                                <i data-lucide="lock" class="w-4 h-4 text-rose-600"></i>
+                                <span>Tutup Shift Kasir</span>
+                            </span>
+                            <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-rose-400"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="h-5 w-px bg-slate-200"></div>
+
+            <!-- 3. Cashier Profile Badge -->
+            <div class="h-9 pl-2 pr-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center gap-2 text-xs">
+                <div class="w-6 h-6 rounded-lg bg-gradient-to-tr from-brand-500 to-amber-500 text-white flex items-center justify-center font-black text-[11px] shadow-2xs">
                     {{ strtoupper(substr(auth()->user()->name ?? 'K', 0, 1)) }}
                 </div>
-                <span class="text-slate-600 font-medium">Kasir: <strong class="text-slate-900 font-bold max-w-[140px] truncate inline-block align-bottom" id="posCashierName">{{ auth()->user()->name ?? 'Kasir' }}</strong></span>
+                <span class="font-bold text-slate-800 max-w-[130px] truncate" id="posCashierName">{{ auth()->user()->name ?? 'Kasir' }}</span>
             </div>
 
-            <!-- Back to Dashboard / Back Office -->
-            <a href="{{ url('/') }}" title="Back to Admin Dashboard" class="h-9 flex items-center gap-1.5 px-3 rounded-xl bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold border border-slate-200 transition shadow-2xs whitespace-nowrap">
-                <i data-lucide="layout-dashboard" class="w-3.5 h-3.5 text-slate-500"></i>
-                <span class="hidden md:inline">Back Office</span>
-            </a>
+            <!-- 4. Quick Action Icons (Shortcuts, Back Office, Dark Mode) -->
+            <div class="flex items-center gap-1.5">
+                <!-- Shortcuts Help Icon Button -->
+                <button 
+                    type="button" 
+                    onclick="openModal('keyboardShortcutsModal')" 
+                    title="Bantuan Shortcut Keyboard (?)" 
+                    class="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-slate-900 border border-slate-200 hover:border-slate-300 transition shadow-2xs cursor-pointer"
+                >
+                    <i data-lucide="keyboard" class="w-4 h-4 text-slate-500"></i>
+                </button>
 
-            <!-- Theme Toggle Button -->
-            <button id="posThemeToggleBtn" title="Ganti Mode (Light / Dark)" class="w-9 h-9 flex items-center justify-center rounded-xl text-slate-500 hover:text-slate-700 hover:bg-slate-100 border border-slate-200 transition shrink-0">
-                <i data-lucide="sun" class="w-4 h-4 hidden text-amber-400"></i>
-                <i data-lucide="moon" class="w-4 h-4 block text-slate-600"></i>
-            </button>
+                <!-- Back Office Link Button -->
+                <a 
+                    href="{{ url('/') }}" 
+                    title="Kembali ke Back Office / Dashboard" 
+                    class="h-9 px-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-slate-900 border border-slate-200 hover:border-slate-300 text-xs font-semibold transition shadow-2xs flex items-center gap-1.5"
+                >
+                    <i data-lucide="layout-dashboard" class="w-4 h-4 text-slate-500"></i>
+                    <span class="hidden xl:inline">Back Office</span>
+                </a>
+
+                <!-- Dark / Light Mode Toggle Button -->
+                <button 
+                    type="button"
+                    id="posThemeToggleBtn" 
+                    title="Ganti Mode (Dark / Light)" 
+                    class="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-slate-900 border border-slate-200 hover:border-slate-300 transition shadow-2xs cursor-pointer shrink-0"
+                >
+                    <i data-lucide="moon" class="w-4 h-4 text-slate-600"></i>
+                </button>
+            </div>
+
         </div>
     </header>
 
@@ -358,17 +482,136 @@
         @yield('content')
     </main>
 
-    <!-- Initialize Lucide Icons & Theme Logic -->
+    <!-- MODAL BANTUAN SHORTCUT KEYBOARD KASIR -->
+    <div id="keyboardShortcutsModal" class="fixed inset-0 z-[110] bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center p-3 sm:p-4 overflow-y-auto">
+        <div class="bg-white border border-slate-200/90 rounded-2xl max-w-lg w-full shadow-2xl transition-all my-auto overflow-hidden flex flex-col">
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-slate-900 text-white flex items-center justify-center shadow-xs">
+                        <i data-lucide="keyboard" class="w-4.5 h-4.5"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-base text-slate-900 tracking-tight">Daftar Shortcut Keyboard POS</h3>
+                        <p class="text-[11px] text-slate-400">Gunakan tombol fungsi untuk transaksi lebih cepat</p>
+                    </div>
+                </div>
+                <button onclick="closeModal('keyboardShortcutsModal')" type="button" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <div class="p-6 space-y-3">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+                    <div class="p-3 rounded-xl border border-slate-200 bg-slate-50/50 flex items-center justify-between">
+                        <span class="text-slate-600 font-medium">Fokus Scan / Cari Produk</span>
+                        <kbd class="px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-mono font-bold text-slate-800 shadow-2xs">F1</kbd>
+                    </div>
+                    <div class="p-3 rounded-xl border border-slate-200 bg-slate-50/50 flex items-center justify-between">
+                        <span class="text-slate-600 font-medium">Pilih Pelanggan / Member</span>
+                        <kbd class="px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-mono font-bold text-slate-800 shadow-2xs">F2</kbd>
+                    </div>
+                    <div class="p-3 rounded-xl border border-slate-200 bg-slate-50/50 flex items-center justify-between">
+                        <span class="text-slate-600 font-medium">Catat Kas Keluar / Biaya</span>
+                        <kbd class="px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-mono font-bold text-amber-800 shadow-2xs">F4</kbd>
+                    </div>
+                    <div class="p-3 rounded-xl border border-slate-200 bg-slate-50/50 flex items-center justify-between">
+                        <span class="text-slate-600 font-medium">Tahan Transaksi (Hold)</span>
+                        <kbd class="px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-mono font-bold text-slate-800 shadow-2xs">F7</kbd>
+                    </div>
+                    <div class="p-3 rounded-xl border border-slate-200 bg-blue-50/60 border-blue-200/80 flex items-center justify-between">
+                        <span class="text-blue-900 font-semibold">Layanan Agen & PPOB</span>
+                        <kbd class="px-2 py-1 bg-blue-600 text-white rounded-lg text-xs font-mono font-bold shadow-2xs">F8</kbd>
+                    </div>
+                    <div class="p-3 rounded-xl border border-slate-200 bg-slate-50/50 flex items-center justify-between">
+                        <span class="text-slate-600 font-medium">Diskon Transaksi Global</span>
+                        <kbd class="px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-mono font-bold text-slate-800 shadow-2xs">F9</kbd>
+                    </div>
+                    <div class="p-3 rounded-xl border border-brand-200 bg-brand-50/60 flex items-center justify-between sm:col-span-2">
+                        <span class="text-brand-900 font-bold">Bayar / Selesaikan Transaksi</span>
+                        <kbd class="px-3 py-1 bg-brand-500 text-white rounded-lg text-xs font-mono font-black shadow-2xs">F12</kbd>
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-6 py-3.5 border-t border-slate-100 bg-slate-50 flex items-center justify-end">
+                <button type="button" onclick="closeModal('keyboardShortcutsModal')" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-200/70 transition cursor-pointer">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Initialize Lucide Icons, Dropdown & Theme Logic -->
+    <!-- Initialize Lucide Icons, Dropdown & Theme Logic -->
     <script>
+        // Agent Dropdown Handlers
+        function toggleAgentHeaderDropdown() {
+            const dd = document.getElementById('agentHeaderDropdown');
+            if (dd) dd.classList.toggle('hidden');
+            closeShiftHeaderDropdown();
+            closeUserHeaderDropdown();
+        }
+
+        function closeAgentHeaderDropdown() {
+            const dd = document.getElementById('agentHeaderDropdown');
+            if (dd) dd.classList.add('hidden');
+        }
+
+        // Shift Operations Dropdown Handlers
+        function toggleShiftHeaderDropdown() {
+            const dd = document.getElementById('shiftHeaderDropdown');
+            if (dd) dd.classList.toggle('hidden');
+            closeAgentHeaderDropdown();
+            closeUserHeaderDropdown();
+        }
+
+        function closeShiftHeaderDropdown() {
+            const dd = document.getElementById('shiftHeaderDropdown');
+            if (dd) dd.classList.add('hidden');
+        }
+
+        // User & Back Office Dropdown Handlers
+        function toggleUserHeaderDropdown() {
+            const dd = document.getElementById('userHeaderDropdown');
+            if (dd) dd.classList.toggle('hidden');
+            closeAgentHeaderDropdown();
+            closeShiftHeaderDropdown();
+        }
+
+        function closeUserHeaderDropdown() {
+            const dd = document.getElementById('userHeaderDropdown');
+            if (dd) dd.classList.add('hidden');
+        }
+
+        // Global Outside Click Listener
+        document.addEventListener('click', function (e) {
+            const agentWrapper = document.getElementById('agentMenuDropdownWrapper');
+            if (agentWrapper && !agentWrapper.contains(e.target)) {
+                closeAgentHeaderDropdown();
+            }
+
+            const shiftWrapper = document.getElementById('shiftMenuDropdownWrapper');
+            if (shiftWrapper && !shiftWrapper.contains(e.target)) {
+                closeShiftHeaderDropdown();
+            }
+
+            const userWrapper = document.getElementById('userMenuDropdownWrapper');
+            if (userWrapper && !userWrapper.contains(e.target)) {
+                closeUserHeaderDropdown();
+            }
+        });
+
         document.addEventListener('DOMContentLoaded', function () {
-            lucide.createIcons();
+            if (window.lucide) {
+                lucide.createIcons();
+            }
 
             const posThemeToggleBtn = document.getElementById('posThemeToggleBtn');
             if (posThemeToggleBtn) {
                 posThemeToggleBtn.addEventListener('click', function () {
                     const isDark = document.documentElement.classList.toggle('dark');
                     localStorage.setItem('theme', isDark ? 'dark' : 'light');
-                    lucide.createIcons();
+                    if (window.lucide) lucide.createIcons();
                 });
             }
         });
