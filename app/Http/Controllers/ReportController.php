@@ -17,6 +17,7 @@ use App\Models\StockOpname;
 use App\Models\Supplier;
 use App\Models\User;
 use App\Models\Warehouse;
+use App\Services\ReportExportService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -24,6 +25,10 @@ use Illuminate\Support\Facades\DB;
 
 class ReportController extends Controller
 {
+    public function __construct(
+        protected ReportExportService $exportService
+    ) {}
+
     /**
      * Report Hub Navigation / Overview Dashboard
      */
@@ -201,6 +206,126 @@ class ReportController extends Controller
     }
 
     /**
+     * Export Sales by Product Report to Excel (.xlsx)
+     */
+    public function exportSalesByProductExcel(Request $request)
+    {
+        $startDate = $request->get('start_date', Carbon::now()->startOfMonth()->toDateString());
+        $endDate = $request->get('end_date', Carbon::now()->toDateString());
+        $categoryId = $request->get('category_id');
+        $warehouseId = $request->get('warehouse_id');
+        $search = $request->get('search');
+
+        $query = SaleItem::query()
+            ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+            ->join('products', 'sale_items.product_id', '=', 'products.id')
+            ->leftJoin('categories', 'products.category_id', '=', 'categories.id')
+            ->whereDate('sales.sale_date', '>=', $startDate)
+            ->whereDate('sales.sale_date', '<=', $endDate)
+            ->where('sales.status', '!=', 'void');
+
+        if ($warehouseId) {
+            $query->where('sales.warehouse_id', $warehouseId);
+        }
+        if ($categoryId) {
+            $query->where('products.category_id', $categoryId);
+        }
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('products.name', 'like', "%{$search}%")
+                    ->orWhere('products.code', 'like', "%{$search}%")
+                    ->orWhere('products.barcode', 'like', "%{$search}%");
+            });
+        }
+
+        $products = $query->select(
+            'products.id as product_id',
+            'products.name as product_name',
+            'products.code as product_code',
+            'categories.name as category_name',
+            DB::raw('SUM(sale_items.quantity) as total_qty'),
+            DB::raw('SUM(sale_items.subtotal) as total_revenue'),
+            DB::raw('SUM(sale_items.quantity * sale_items.unit_cost) as total_cost'),
+            DB::raw('SUM(sale_items.subtotal - (sale_items.quantity * sale_items.unit_cost)) as gross_profit')
+        )
+            ->groupBy('products.id', 'products.name', 'products.code', 'categories.name')
+            ->orderByDesc(DB::raw('SUM(sale_items.subtotal)'))
+            ->get();
+
+        $warehouse = $warehouseId ? Warehouse::find($warehouseId) : null;
+        $category = $categoryId ? Category::find($categoryId) : null;
+
+        $meta = [
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'warehouse' => $warehouse ? $warehouse->name : 'Semua Cabang / Gudang',
+        ];
+
+        return $this->exportService->exportSalesByProduct($products, $meta);
+    }
+
+    /**
+     * Export Sales by Product Report to PDF (Live Preview & Print)
+     */
+    public function exportSalesByProductPdf(Request $request)
+    {
+        $startDate = $request->get('start_date', Carbon::now()->startOfMonth()->toDateString());
+        $endDate = $request->get('end_date', Carbon::now()->toDateString());
+        $categoryId = $request->get('category_id');
+        $warehouseId = $request->get('warehouse_id');
+        $search = $request->get('search');
+
+        $query = SaleItem::query()
+            ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+            ->join('products', 'sale_items.product_id', '=', 'products.id')
+            ->leftJoin('categories', 'products.category_id', '=', 'categories.id')
+            ->whereDate('sales.sale_date', '>=', $startDate)
+            ->whereDate('sales.sale_date', '<=', $endDate)
+            ->where('sales.status', '!=', 'void');
+
+        if ($warehouseId) {
+            $query->where('sales.warehouse_id', $warehouseId);
+        }
+        if ($categoryId) {
+            $query->where('products.category_id', $categoryId);
+        }
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('products.name', 'like', "%{$search}%")
+                    ->orWhere('products.code', 'like', "%{$search}%")
+                    ->orWhere('products.barcode', 'like', "%{$search}%");
+            });
+        }
+
+        $products = $query->select(
+            'products.id as product_id',
+            'products.name as product_name',
+            'products.code as product_code',
+            'categories.name as category_name',
+            DB::raw('SUM(sale_items.quantity) as total_qty'),
+            DB::raw('SUM(sale_items.subtotal) as total_revenue'),
+            DB::raw('SUM(sale_items.quantity * sale_items.unit_cost) as total_cost'),
+            DB::raw('SUM(sale_items.subtotal - (sale_items.quantity * sale_items.unit_cost)) as gross_profit')
+        )
+            ->groupBy('products.id', 'products.name', 'products.code', 'categories.name')
+            ->orderByDesc(DB::raw('SUM(sale_items.subtotal)'))
+            ->get();
+
+        $warehouse = $warehouseId ? Warehouse::find($warehouseId) : null;
+        $category = $categoryId ? Category::find($categoryId) : null;
+
+        $pdf = Pdf::loadView('reports.sales_by_product_pdf', compact(
+            'products',
+            'startDate',
+            'endDate',
+            'warehouse',
+            'category'
+        ))->setPaper('a4', 'landscape');
+
+        return $pdf->stream("Laporan_Penjualan_Produk_Margin_{$startDate}_sampai_{$endDate}.pdf");
+    }
+
+    /**
      * 6.1 Laporan Penjualan per Kategori
      */
     public function salesByCategory(Request $request)
@@ -320,19 +445,22 @@ class ReportController extends Controller
             'startDate',
             'endDate',
             'warehouse'
-        ))->setPaper('a4', 'portrait');
+        ))->setPaper('a4', 'landscape');
 
-        return $pdf->download("Laporan_Penjualan_{$startDate}_sampai_{$endDate}.pdf");
+        return $pdf->stream("Laporan_Penjualan_{$startDate}_sampai_{$endDate}.pdf");
     }
 
     /**
-     * Export Sales Report to Excel / CSV
+     * Export Sales Report to Excel (.xlsx)
      */
     public function exportSalesExcel(Request $request)
     {
         $startDate = $request->get('start_date', Carbon::now()->startOfMonth()->toDateString());
         $endDate = $request->get('end_date', Carbon::now()->toDateString());
         $warehouseId = $request->get('warehouse_id');
+        $userId = $request->get('user_id');
+        $paymentStatus = $request->get('payment_status');
+        $paymentMethod = $request->get('payment_method');
 
         $query = Sale::with(['user', 'customer', 'warehouse'])
             ->whereDate('sale_date', '>=', $startDate)
@@ -342,57 +470,26 @@ class ReportController extends Controller
         if ($warehouseId) {
             $query->where('warehouse_id', $warehouseId);
         }
+        if ($userId) {
+            $query->where('user_id', $userId);
+        }
+        if ($paymentStatus) {
+            $query->where('payment_status', $paymentStatus);
+        }
+        if ($paymentMethod) {
+            $query->where('payment_method', $paymentMethod);
+        }
 
         $sales = $query->latest('sale_date')->get();
+        $warehouse = $warehouseId ? Warehouse::find($warehouseId) : null;
 
-        $filename = "Laporan_Penjualan_{$startDate}_sampai_{$endDate}.csv";
-        $headers = [
-            'Content-Type' => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
-            'Pragma' => 'no-cache',
-            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
-            'Expires' => '0',
+        $meta = [
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'warehouse' => $warehouse ? $warehouse->name : 'Semua Cabang / Gudang',
         ];
 
-        $callback = function () use ($sales) {
-            $file = fopen('php://output', 'w');
-            // Add UTF-8 BOM for Excel compatibility
-            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
-
-            // CSV Header
-            fputcsv($file, [
-                'No. Invoice',
-                'Tanggal',
-                'Kasir',
-                'Pelanggan',
-                'Cabang / Gudang',
-                'Metode Pembayaran',
-                'Status Bayar',
-                'Subtotal (Rp)',
-                'Diskon (Rp)',
-                'Pajak (Rp)',
-                'Total Bersih (Rp)',
-            ]);
-
-            foreach ($sales as $s) {
-                fputcsv($file, [
-                    $s->invoice_number,
-                    $s->sale_date ? Carbon::parse($s->sale_date)->format('d/m/Y H:i') : '-',
-                    $s->user->name ?? 'Kasir',
-                    $s->customer->name ?? 'Umum',
-                    $s->warehouse->name ?? '-',
-                    strtoupper($s->payment_method ?? 'CASH'),
-                    ucfirst($s->payment_status ?? 'paid'),
-                    $s->subtotal,
-                    $s->discount_amount,
-                    $s->tax_amount,
-                    $s->grand_total,
-                ]);
-            }
-            fclose($file);
-        };
-
-        return response()->stream($callback, 200, $headers);
+        return $this->exportService->exportSales($sales, $meta);
     }
 
     /**
@@ -505,13 +602,13 @@ class ReportController extends Controller
             'endDate',
             'supplier',
             'warehouse'
-        ))->setPaper('a4', 'portrait');
+        ))->setPaper('a4', 'landscape');
 
-        return $pdf->download("Laporan_Pembelian_{$startDate}_sampai_{$endDate}.pdf");
+        return $pdf->stream("Laporan_Pembelian_{$startDate}_sampai_{$endDate}.pdf");
     }
 
     /**
-     * Export Purchase Orders Report to Excel / CSV
+     * Export Purchase Orders Report to Excel (.xlsx)
      */
     public function exportPurchasesExcel(Request $request)
     {
@@ -536,53 +633,16 @@ class ReportController extends Controller
         }
 
         $purchases = $query->latest('order_date')->get();
+        $warehouse = $warehouseId ? Warehouse::find($warehouseId) : null;
+        $supplier = $supplierId ? Supplier::find($supplierId) : null;
 
-        $filename = "Laporan_Pembelian_{$startDate}_sampai_{$endDate}.csv";
-        $headers = [
-            'Content-Type' => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
-            'Pragma' => 'no-cache',
-            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
-            'Expires' => '0',
+        $meta = [
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'warehouse' => $warehouse ? $warehouse->name : ($supplier ? 'Supplier: '.$supplier->name : 'Semua Gudang'),
         ];
 
-        $callback = function () use ($purchases) {
-            $file = fopen('php://output', 'w');
-            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
-
-            fputcsv($file, [
-                'No. PO',
-                'Tanggal Pesan',
-                'Estimasi Tiba',
-                'Supplier',
-                'Gudang Tujuan',
-                'Status PO',
-                'Subtotal (Rp)',
-                'Diskon (Rp)',
-                'Pajak (Rp)',
-                'Ongkir (Rp)',
-                'Grand Total (Rp)',
-            ]);
-
-            foreach ($purchases as $p) {
-                fputcsv($file, [
-                    $p->po_number,
-                    $p->order_date ? Carbon::parse($p->order_date)->format('d/m/Y') : '-',
-                    $p->expected_date ? Carbon::parse($p->expected_date)->format('d/m/Y') : '-',
-                    $p->supplier->name ?? '-',
-                    $p->warehouse->name ?? '-',
-                    strtoupper($p->status ?? 'DRAFT'),
-                    $p->subtotal,
-                    $p->discount_amount,
-                    $p->tax_amount,
-                    $p->shipping_cost,
-                    $p->grand_total,
-                ]);
-            }
-            fclose($file);
-        };
-
-        return response()->stream($callback, 200, $headers);
+        return $this->exportService->exportPurchases($purchases, $meta);
     }
 
     /**
@@ -749,13 +809,13 @@ class ReportController extends Controller
             'totalValuation',
             'totalQty',
             'warehouse'
-        ))->setPaper('a4', 'portrait');
+        ))->setPaper('a4', 'landscape');
 
-        return $pdf->download('Laporan_Nilai_Persediaan_Stok_'.now()->format('Ymd').'.pdf');
+        return $pdf->stream('Laporan_Nilai_Persediaan_Stok_'.now()->format('Ymd').'.pdf');
     }
 
     /**
-     * Export Stock Report to Excel / CSV
+     * Export Stock Report to Excel (.xlsx)
      */
     public function exportStocksExcel(Request $request)
     {
@@ -788,60 +848,15 @@ class ReportController extends Controller
         }
 
         $stocks = $query->select('product_stocks.*')->orderBy('products.name')->get();
+        $warehouse = $warehouseId ? Warehouse::find($warehouseId) : null;
 
-        $filename = 'Laporan_Stok_Nilai_Persediaan_'.now()->format('Ymd').'.csv';
-        $headers = [
-            'Content-Type' => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
-            'Pragma' => 'no-cache',
-            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
-            'Expires' => '0',
+        $meta = [
+            'start_date' => now()->toDateString(),
+            'end_date' => now()->toDateString(),
+            'warehouse' => $warehouse ? $warehouse->name : 'Semua Cabang / Gudang',
         ];
 
-        $callback = function () use ($stocks) {
-            $file = fopen('php://output', 'w');
-            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
-
-            fputcsv($file, [
-                'Kode Produk',
-                'Nama Produk',
-                'Kategori',
-                'Gudang',
-                'Sisa Stok',
-                'Satuan',
-                'Stok Min',
-                'HPP Pokok (Rp)',
-                'Harga Jual (Rp)',
-                'Total Nilai Persediaan (Rp)',
-                'Status Stok',
-            ]);
-
-            foreach ($stocks as $s) {
-                $qty = (float) $s->quantity;
-                $min = (float) ($s->product->min_stock ?? 0);
-                $status = $qty <= 0 ? 'HABIS' : ($qty <= $min ? 'KRITIS' : 'AMAN');
-                $cost = (float) ($s->product->purchase_price ?? 0);
-                $price = (float) ($s->product->selling_price ?? 0);
-                $valuation = $qty * $cost;
-
-                fputcsv($file, [
-                    $s->product->code ?? '-',
-                    $s->product->name ?? '-',
-                    $s->product->category->name ?? 'Tanpa Kategori',
-                    $s->warehouse->name ?? '-',
-                    $qty,
-                    $s->product->baseUnit->name ?? 'Pcs',
-                    $min,
-                    $cost,
-                    $price,
-                    $valuation,
-                    $status,
-                ]);
-            }
-            fclose($file);
-        };
-
-        return response()->stream($callback, 200, $headers);
+        return $this->exportService->exportStocks($stocks, $meta);
     }
 
     /**
@@ -1145,7 +1160,7 @@ class ReportController extends Controller
         $userId = $request->get('user_id');
         $warehouseId = $request->get('warehouse_id');
 
-        $query = CashierShift::with(['user', 'warehouse'])
+        $query = CashierShift::with(['user', 'warehouse', 'expenses.user'])
             ->whereDate('opened_at', '>=', $startDate)
             ->whereDate('opened_at', '<=', $endDate);
 
@@ -1159,6 +1174,7 @@ class ReportController extends Controller
         $shifts = (clone $query)->latest('opened_at')->paginate(15)->withQueryString();
 
         $totalShiftSales = (clone $query)->sum('total_sales');
+        $totalShiftExpenses = (clone $query)->sum('total_expenses');
         $totalShiftCount = (clone $query)->count();
         $totalCashDifference = (clone $query)->sum('cash_difference');
 
@@ -1168,6 +1184,7 @@ class ReportController extends Controller
         return view('reports.cashier_shifts', compact(
             'shifts',
             'totalShiftSales',
+            'totalShiftExpenses',
             'totalShiftCount',
             'totalCashDifference',
             'cashiers',
@@ -1177,5 +1194,752 @@ class ReportController extends Controller
             'userId',
             'warehouseId'
         ));
+    }
+
+    /**
+     * Export Sales by Category to Excel (.xlsx)
+     */
+    public function exportSalesByCategoryExcel(Request $request)
+    {
+        $startDate = $request->get('start_date', Carbon::now()->startOfMonth()->toDateString());
+        $endDate = $request->get('end_date', Carbon::now()->toDateString());
+        $warehouseId = $request->get('warehouse_id');
+
+        $query = SaleItem::query()
+            ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+            ->join('products', 'sale_items.product_id', '=', 'products.id')
+            ->leftJoin('categories', 'products.category_id', '=', 'categories.id')
+            ->whereDate('sales.sale_date', '>=', $startDate)
+            ->whereDate('sales.sale_date', '<=', $endDate)
+            ->where('sales.status', '!=', 'void');
+
+        if ($warehouseId) {
+            $query->where('sales.warehouse_id', $warehouseId);
+        }
+
+        $categoriesReport = $query->select(
+            DB::raw('COALESCE(categories.name, "Tanpa Kategori") as category_name'),
+            DB::raw('COUNT(DISTINCT products.id) as unique_products_count'),
+            DB::raw('SUM(sale_items.quantity) as total_qty'),
+            DB::raw('SUM(sale_items.subtotal) as total_revenue'),
+            DB::raw('SUM(sale_items.quantity * sale_items.unit_cost) as total_cost'),
+            DB::raw('SUM(sale_items.subtotal - (sale_items.quantity * sale_items.unit_cost)) as gross_profit')
+        )
+            ->groupBy('categories.name')
+            ->orderByDesc(DB::raw('SUM(sale_items.subtotal)'))
+            ->get();
+
+        $warehouse = $warehouseId ? Warehouse::find($warehouseId) : null;
+
+        $meta = [
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'warehouse' => $warehouse ? $warehouse->name : 'Semua Cabang / Gudang',
+        ];
+
+        return $this->exportService->exportSalesByCategory($categoriesReport, $meta);
+    }
+
+    /**
+     * Export Sales by Category to PDF
+     */
+    public function exportSalesByCategoryPdf(Request $request)
+    {
+        $startDate = $request->get('start_date', Carbon::now()->startOfMonth()->toDateString());
+        $endDate = $request->get('end_date', Carbon::now()->toDateString());
+        $warehouseId = $request->get('warehouse_id');
+
+        $query = SaleItem::query()
+            ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+            ->join('products', 'sale_items.product_id', '=', 'products.id')
+            ->leftJoin('categories', 'products.category_id', '=', 'categories.id')
+            ->whereDate('sales.sale_date', '>=', $startDate)
+            ->whereDate('sales.sale_date', '<=', $endDate)
+            ->where('sales.status', '!=', 'void');
+
+        if ($warehouseId) {
+            $query->where('sales.warehouse_id', $warehouseId);
+        }
+
+        $categoriesReport = $query->select(
+            DB::raw('COALESCE(categories.name, "Tanpa Kategori") as category_name'),
+            DB::raw('COUNT(DISTINCT products.id) as unique_products_count'),
+            DB::raw('SUM(sale_items.quantity) as total_qty'),
+            DB::raw('SUM(sale_items.subtotal) as total_revenue'),
+            DB::raw('SUM(sale_items.quantity * sale_items.unit_cost) as total_cost'),
+            DB::raw('SUM(sale_items.subtotal - (sale_items.quantity * sale_items.unit_cost)) as gross_profit')
+        )
+            ->groupBy('categories.name')
+            ->orderByDesc(DB::raw('SUM(sale_items.subtotal)'))
+            ->get();
+
+        $warehouse = $warehouseId ? Warehouse::find($warehouseId) : null;
+
+        $pdf = Pdf::loadView('reports.sales_by_category_pdf', compact(
+            'categoriesReport',
+            'startDate',
+            'endDate',
+            'warehouse'
+        ))->setPaper('a4', 'landscape');
+
+        return $pdf->stream("Laporan_Penjualan_Kategori_{$startDate}_sampai_{$endDate}.pdf");
+    }
+
+    /**
+     * Export Sales by Customer to Excel (.xlsx)
+     */
+    public function exportSalesByCustomerExcel(Request $request)
+    {
+        $startDate = $request->get('start_date', Carbon::now()->startOfMonth()->toDateString());
+        $endDate = $request->get('end_date', Carbon::now()->toDateString());
+        $search = $request->get('search');
+
+        $query = Sale::query()
+            ->leftJoin('customers', 'sales.customer_id', '=', 'customers.id')
+            ->whereDate('sales.sale_date', '>=', $startDate)
+            ->whereDate('sales.sale_date', '<=', $endDate)
+            ->where('sales.status', '!=', 'void');
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('customers.name', 'like', "%{$search}%")
+                    ->orWhere('customers.phone', 'like', "%{$search}%")
+                    ->orWhere('customers.code', 'like', "%{$search}%");
+            });
+        }
+
+        $customers = $query->select(
+            'customers.id as customer_id',
+            DB::raw('COALESCE(customers.name, "Pelanggan Umum (Walk-in)") as customer_name'),
+            'customers.phone as customer_phone',
+            'customers.code as customer_code',
+            DB::raw('COUNT(sales.id) as total_orders'),
+            DB::raw('SUM(sales.grand_total) as total_spent'),
+            DB::raw('AVG(sales.grand_total) as avg_spent'),
+            DB::raw('MAX(sales.sale_date) as last_order_date')
+        )
+            ->groupBy('customers.id', 'customers.name', 'customers.phone', 'customers.code')
+            ->orderByDesc('total_spent')
+            ->get();
+
+        $meta = [
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+        ];
+
+        return $this->exportService->exportSalesByCustomer($customers, $meta);
+    }
+
+    /**
+     * Export Sales by Customer to PDF
+     */
+    public function exportSalesByCustomerPdf(Request $request)
+    {
+        $startDate = $request->get('start_date', Carbon::now()->startOfMonth()->toDateString());
+        $endDate = $request->get('end_date', Carbon::now()->toDateString());
+        $search = $request->get('search');
+
+        $query = Sale::query()
+            ->leftJoin('customers', 'sales.customer_id', '=', 'customers.id')
+            ->whereDate('sales.sale_date', '>=', $startDate)
+            ->whereDate('sales.sale_date', '<=', $endDate)
+            ->where('sales.status', '!=', 'void');
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('customers.name', 'like', "%{$search}%")
+                    ->orWhere('customers.phone', 'like', "%{$search}%")
+                    ->orWhere('customers.code', 'like', "%{$search}%");
+            });
+        }
+
+        $customers = $query->select(
+            'customers.id as customer_id',
+            DB::raw('COALESCE(customers.name, "Pelanggan Umum (Walk-in)") as customer_name'),
+            'customers.phone as customer_phone',
+            'customers.code as customer_code',
+            DB::raw('COUNT(sales.id) as total_orders'),
+            DB::raw('SUM(sales.grand_total) as total_spent'),
+            DB::raw('AVG(sales.grand_total) as avg_spent'),
+            DB::raw('MAX(sales.sale_date) as last_order_date')
+        )
+            ->groupBy('customers.id', 'customers.name', 'customers.phone', 'customers.code')
+            ->orderByDesc('total_spent')
+            ->get();
+
+        $pdf = Pdf::loadView('reports.sales_by_customer_pdf', compact(
+            'customers',
+            'startDate',
+            'endDate'
+        ))->setPaper('a4', 'landscape');
+
+        return $pdf->stream("Laporan_Penjualan_Pelanggan_{$startDate}_sampai_{$endDate}.pdf");
+    }
+
+    /**
+     * Export Stock Opnames to Excel (.xlsx)
+     */
+    public function exportStockOpnamesExcel(Request $request)
+    {
+        $startDate = $request->get('start_date', Carbon::now()->startOfMonth()->toDateString());
+        $endDate = $request->get('end_date', Carbon::now()->toDateString());
+        $warehouseId = $request->get('warehouse_id');
+        $status = $request->get('status');
+
+        $query = StockOpname::with(['warehouse', 'conductor', 'approver'])
+            ->whereDate('opname_date', '>=', $startDate)
+            ->whereDate('opname_date', '<=', $endDate);
+
+        if ($warehouseId) {
+            $query->where('warehouse_id', $warehouseId);
+        }
+        if ($status) {
+            $query->where('status', $status);
+        }
+
+        $opnames = $query->latest('opname_date')->get();
+        $warehouse = $warehouseId ? Warehouse::find($warehouseId) : null;
+
+        $meta = [
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'warehouse' => $warehouse ? $warehouse->name : 'Semua Gudang',
+        ];
+
+        return $this->exportService->exportStockOpnames($opnames, $meta);
+    }
+
+    /**
+     * Export Stock Opnames to PDF
+     */
+    public function exportStockOpnamesPdf(Request $request)
+    {
+        $startDate = $request->get('start_date', Carbon::now()->startOfMonth()->toDateString());
+        $endDate = $request->get('end_date', Carbon::now()->toDateString());
+        $warehouseId = $request->get('warehouse_id');
+        $status = $request->get('status');
+
+        $query = StockOpname::with(['warehouse', 'conductor', 'approver'])
+            ->whereDate('opname_date', '>=', $startDate)
+            ->whereDate('opname_date', '<=', $endDate);
+
+        if ($warehouseId) {
+            $query->where('warehouse_id', $warehouseId);
+        }
+        if ($status) {
+            $query->where('status', $status);
+        }
+
+        $opnames = $query->latest('opname_date')->get();
+        $warehouse = $warehouseId ? Warehouse::find($warehouseId) : null;
+
+        $pdf = Pdf::loadView('reports.stock_opnames_pdf', compact(
+            'opnames',
+            'startDate',
+            'endDate',
+            'warehouse'
+        ))->setPaper('a4', 'landscape');
+
+        return $pdf->stream("Laporan_Stok_Opname_{$startDate}_sampai_{$endDate}.pdf");
+    }
+
+    /**
+     * Export Payables to Excel (.xlsx)
+     */
+    public function exportPayablesExcel(Request $request)
+    {
+        $supplierId = $request->get('supplier_id');
+
+        $query = PurchaseReceipt::with(['purchaseOrder.supplier', 'warehouse'])
+            ->where('status', 'received');
+
+        if ($supplierId) {
+            $query->whereHas('purchaseOrder', function ($q) use ($supplierId) {
+                $q->where('supplier_id', $supplierId);
+            });
+        }
+
+        $receipts = $query->latest('receipt_date')->get();
+        $receiptIds = $receipts->pluck('id');
+        $payments = Payment::where('payable_type', PurchaseReceipt::class)
+            ->whereIn('payable_id', $receiptIds)
+            ->select('payable_id', DB::raw('SUM(amount) as paid_amount'))
+            ->groupBy('payable_id')
+            ->pluck('paid_amount', 'payable_id');
+
+        $payablesData = collect();
+
+        foreach ($receipts as $r) {
+            $grandTotal = $r->purchaseOrder->grand_total ?? 0;
+            $paid = (float) ($payments[$r->id] ?? 0);
+            $outstanding = max(0, $grandTotal - $paid);
+
+            if ($outstanding > 0) {
+                $days = Carbon::now()->diffInDays($r->receipt_date ? Carbon::parse($r->receipt_date) : Carbon::now());
+                $agingGroup = $days <= 30 ? '0-30 Hari' : ($days <= 60 ? '31-60 Hari' : ($days <= 90 ? '61-90 Hari' : '>90 Hari'));
+
+                $payablesData->push((object) [
+                    'receipt_id' => $r->id,
+                    'receipt_number' => $r->receipt_number,
+                    'po_number' => $r->purchaseOrder->po_number ?? '-',
+                    'supplier_name' => $r->purchaseOrder->supplier->name ?? 'Supplier',
+                    'receipt_date' => $r->receipt_date,
+                    'days_outstanding' => $days,
+                    'aging_group' => $agingGroup,
+                    'total_amount' => $grandTotal,
+                    'paid_amount' => $paid,
+                    'outstanding_amount' => $outstanding,
+                ]);
+            }
+        }
+
+        $supplier = $supplierId ? Supplier::find($supplierId) : null;
+        $meta = [
+            'warehouse' => $supplier ? 'Supplier: '.$supplier->name : 'Semua Supplier',
+        ];
+
+        return $this->exportService->exportPayables($payablesData, $meta);
+    }
+
+    /**
+     * Export Payables to PDF
+     */
+    public function exportPayablesPdf(Request $request)
+    {
+        $supplierId = $request->get('supplier_id');
+
+        $query = PurchaseReceipt::with(['purchaseOrder.supplier', 'warehouse'])
+            ->where('status', 'received');
+
+        if ($supplierId) {
+            $query->whereHas('purchaseOrder', function ($q) use ($supplierId) {
+                $q->where('supplier_id', $supplierId);
+            });
+        }
+
+        $receipts = $query->latest('receipt_date')->get();
+        $receiptIds = $receipts->pluck('id');
+        $payments = Payment::where('payable_type', PurchaseReceipt::class)
+            ->whereIn('payable_id', $receiptIds)
+            ->select('payable_id', DB::raw('SUM(amount) as paid_amount'))
+            ->groupBy('payable_id')
+            ->pluck('paid_amount', 'payable_id');
+
+        $payablesData = collect();
+
+        foreach ($receipts as $r) {
+            $grandTotal = $r->purchaseOrder->grand_total ?? 0;
+            $paid = (float) ($payments[$r->id] ?? 0);
+            $outstanding = max(0, $grandTotal - $paid);
+
+            if ($outstanding > 0) {
+                $days = Carbon::now()->diffInDays($r->receipt_date ? Carbon::parse($r->receipt_date) : Carbon::now());
+
+                $payablesData->push((object) [
+                    'receipt_id' => $r->id,
+                    'receipt_number' => $r->receipt_number,
+                    'po_number' => $r->purchaseOrder->po_number ?? '-',
+                    'supplier_name' => $r->purchaseOrder->supplier->name ?? 'Supplier',
+                    'receipt_date' => $r->receipt_date,
+                    'days_outstanding' => $days,
+                    'total_amount' => $grandTotal,
+                    'paid_amount' => $paid,
+                    'outstanding_amount' => $outstanding,
+                ]);
+            }
+        }
+
+        $supplier = $supplierId ? Supplier::find($supplierId) : null;
+
+        $pdf = Pdf::loadView('reports.payables_pdf', compact(
+            'payablesData',
+            'supplier'
+        ))->setPaper('a4', 'landscape');
+
+        return $pdf->stream('Laporan_Hutang_Supplier_'.now()->format('Ymd').'.pdf');
+    }
+
+    /**
+     * Export Receivables to Excel (.xlsx)
+     */
+    public function exportReceivablesExcel(Request $request)
+    {
+        $customerId = $request->get('customer_id');
+
+        $query = Sale::with(['customer', 'warehouse'])
+            ->where('payment_status', '!=', 'paid')
+            ->where('status', '!=', 'void');
+
+        if ($customerId) {
+            $query->where('customer_id', $customerId);
+        }
+
+        $sales = $query->latest('sale_date')->get();
+        $saleIds = $sales->pluck('id');
+        $payments = Payment::where('payable_type', Sale::class)
+            ->whereIn('payable_id', $saleIds)
+            ->select('payable_id', DB::raw('SUM(amount) as paid_amount'))
+            ->groupBy('payable_id')
+            ->pluck('paid_amount', 'payable_id');
+
+        $receivablesData = collect();
+
+        foreach ($sales as $s) {
+            $grandTotal = (float) $s->grand_total;
+            $directPaid = (float) ($s->paid_amount ?? 0);
+            $extraPaid = (float) ($payments[$s->id] ?? 0);
+            $totalPaidForSale = min($grandTotal, $directPaid + $extraPaid);
+            $outstanding = max(0, $grandTotal - $totalPaidForSale);
+
+            if ($outstanding > 0) {
+                $days = Carbon::now()->diffInDays($s->sale_date ? Carbon::parse($s->sale_date) : Carbon::now());
+                $agingGroup = $days <= 30 ? '0-30 Hari' : ($days <= 60 ? '31-60 Hari' : ($days <= 90 ? '61-90 Hari' : '>90 Hari'));
+
+                $receivablesData->push((object) [
+                    'sale_id' => $s->id,
+                    'invoice_number' => $s->invoice_number,
+                    'customer_name' => $s->customer->name ?? 'Pelanggan Umum',
+                    'customer_phone' => $s->customer->phone ?? '-',
+                    'sale_date' => $s->sale_date,
+                    'days_outstanding' => $days,
+                    'aging_group' => $agingGroup,
+                    'total_amount' => $grandTotal,
+                    'paid_amount' => $totalPaidForSale,
+                    'outstanding_amount' => $outstanding,
+                ]);
+            }
+        }
+
+        $customer = $customerId ? Customer::find($customerId) : null;
+        $meta = [
+            'warehouse' => $customer ? 'Pelanggan: '.$customer->name : 'Semua Pelanggan',
+        ];
+
+        return $this->exportService->exportReceivables($receivablesData, $meta);
+    }
+
+    /**
+     * Export Receivables to PDF
+     */
+    public function exportReceivablesPdf(Request $request)
+    {
+        $customerId = $request->get('customer_id');
+
+        $query = Sale::with(['customer', 'warehouse'])
+            ->where('payment_status', '!=', 'paid')
+            ->where('status', '!=', 'void');
+
+        if ($customerId) {
+            $query->where('customer_id', $customerId);
+        }
+
+        $sales = $query->latest('sale_date')->get();
+        $saleIds = $sales->pluck('id');
+        $payments = Payment::where('payable_type', Sale::class)
+            ->whereIn('payable_id', $saleIds)
+            ->select('payable_id', DB::raw('SUM(amount) as paid_amount'))
+            ->groupBy('payable_id')
+            ->pluck('paid_amount', 'payable_id');
+
+        $receivablesData = collect();
+
+        foreach ($sales as $s) {
+            $grandTotal = (float) $s->grand_total;
+            $directPaid = (float) ($s->paid_amount ?? 0);
+            $extraPaid = (float) ($payments[$s->id] ?? 0);
+            $totalPaidForSale = min($grandTotal, $directPaid + $extraPaid);
+            $outstanding = max(0, $grandTotal - $totalPaidForSale);
+
+            if ($outstanding > 0) {
+                $days = Carbon::now()->diffInDays($s->sale_date ? Carbon::parse($s->sale_date) : Carbon::now());
+
+                $receivablesData->push((object) [
+                    'sale_id' => $s->id,
+                    'invoice_number' => $s->invoice_number,
+                    'customer_name' => $s->customer->name ?? 'Pelanggan Umum',
+                    'customer_phone' => $s->customer->phone ?? '-',
+                    'sale_date' => $s->sale_date,
+                    'days_outstanding' => $days,
+                    'total_amount' => $grandTotal,
+                    'paid_amount' => $totalPaidForSale,
+                    'outstanding_amount' => $outstanding,
+                ]);
+            }
+        }
+
+        $customer = $customerId ? Customer::find($customerId) : null;
+
+        $pdf = Pdf::loadView('reports.receivables_pdf', compact(
+            'receivablesData',
+            'customer'
+        ))->setPaper('a4', 'landscape');
+
+        return $pdf->stream('Laporan_Piutang_Pelanggan_'.now()->format('Ymd').'.pdf');
+    }
+
+    /**
+     * Export Cash Flows to Excel (.xlsx)
+     */
+    public function exportCashFlowsExcel(Request $request)
+    {
+        $startDate = $request->get('start_date', Carbon::now()->startOfMonth()->toDateString());
+        $endDate = $request->get('end_date', Carbon::now()->toDateString());
+        $accountId = $request->get('account_id');
+        $type = $request->get('type');
+
+        $query = CashFlow::with(['account', 'creator'])
+            ->whereDate('transaction_date', '>=', $startDate)
+            ->whereDate('transaction_date', '<=', $endDate);
+
+        if ($accountId) {
+            $query->where('account_id', $accountId);
+        }
+        if ($type) {
+            $query->where('type', $type);
+        }
+
+        $cashFlows = $query->latest('transaction_date')->latest('id')->get();
+        $account = $accountId ? Account::find($accountId) : null;
+
+        $meta = [
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'warehouse' => $account ? 'Rekening: '.$account->name : 'Semua Akun Kas/Bank',
+        ];
+
+        return $this->exportService->exportCashFlows($cashFlows, $meta);
+    }
+
+    /**
+     * Export Cash Flows to PDF
+     */
+    public function exportCashFlowsPdf(Request $request)
+    {
+        $startDate = $request->get('start_date', Carbon::now()->startOfMonth()->toDateString());
+        $endDate = $request->get('end_date', Carbon::now()->toDateString());
+        $accountId = $request->get('account_id');
+        $type = $request->get('type');
+
+        $query = CashFlow::with(['account', 'creator'])
+            ->whereDate('transaction_date', '>=', $startDate)
+            ->whereDate('transaction_date', '<=', $endDate);
+
+        if ($accountId) {
+            $query->where('account_id', $accountId);
+        }
+        if ($type) {
+            $query->where('type', $type);
+        }
+
+        $cashFlows = $query->latest('transaction_date')->latest('id')->get();
+        $account = $accountId ? Account::find($accountId) : null;
+
+        $pdf = Pdf::loadView('reports.cash_flows_pdf', compact(
+            'cashFlows',
+            'startDate',
+            'endDate',
+            'account'
+        ))->setPaper('a4', 'landscape');
+
+        return $pdf->stream("Laporan_Mutasi_Arus_Kas_{$startDate}_sampai_{$endDate}.pdf");
+    }
+
+    /**
+     * Export Profit and Loss to Excel (.xlsx)
+     */
+    public function exportProfitLossExcel(Request $request)
+    {
+        $startDate = $request->get('start_date', Carbon::now()->startOfMonth()->toDateString());
+        $endDate = $request->get('end_date', Carbon::now()->toDateString());
+        $warehouseId = $request->get('warehouse_id');
+
+        // 1. Sales
+        $salesQuery = Sale::whereDate('sale_date', '>=', $startDate)
+            ->whereDate('sale_date', '<=', $endDate)
+            ->where('status', '!=', 'void');
+
+        if ($warehouseId) {
+            $salesQuery->where('warehouse_id', $warehouseId);
+        }
+
+        $grossSales = (clone $salesQuery)->sum('subtotal');
+        $salesDiscounts = (clone $salesQuery)->sum('discount_amount');
+        $netSales = (clone $salesQuery)->sum('grand_total');
+
+        // 2. Total HPP
+        $saleIds = (clone $salesQuery)->pluck('id');
+        $totalHpp = SaleItem::whereIn('sale_id', $saleIds)
+            ->select(DB::raw('SUM(quantity * unit_cost) as total_cogs'))
+            ->value('total_cogs') ?? 0;
+
+        $grossProfit = $netSales - $totalHpp;
+
+        // 3. Biaya Operasional
+        $expenseQuery = CashFlow::whereDate('transaction_date', '>=', $startDate)
+            ->whereDate('transaction_date', '<=', $endDate)
+            ->where('type', 'out');
+
+        $totalExpenses = (clone $expenseQuery)->sum('amount');
+        $expensesByCategory = (clone $expenseQuery)
+            ->select('category', DB::raw('SUM(amount) as total_expense'))
+            ->groupBy('category')
+            ->get();
+
+        // 4. Laba Bersih
+        $netProfit = $grossProfit - $totalExpenses;
+        $netProfitMargin = $netSales > 0 ? (($netProfit / $netSales) * 100) : 0;
+
+        $warehouse = $warehouseId ? Warehouse::find($warehouseId) : null;
+
+        $data = [
+            'grossSales' => $grossSales,
+            'salesDiscounts' => $salesDiscounts,
+            'netSales' => $netSales,
+            'totalHpp' => $totalHpp,
+            'grossProfit' => $grossProfit,
+            'totalExpenses' => $totalExpenses,
+            'expensesByCategory' => $expensesByCategory,
+            'netProfit' => $netProfit,
+            'netProfitMargin' => $netProfitMargin,
+        ];
+
+        $meta = [
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'warehouse' => $warehouse ? $warehouse->name : 'Semua Cabang / Gudang',
+        ];
+
+        return $this->exportService->exportProfitLoss($data, $meta);
+    }
+
+    /**
+     * Export Profit and Loss to PDF
+     */
+    public function exportProfitLossPdf(Request $request)
+    {
+        $startDate = $request->get('start_date', Carbon::now()->startOfMonth()->toDateString());
+        $endDate = $request->get('end_date', Carbon::now()->toDateString());
+        $warehouseId = $request->get('warehouse_id');
+
+        $salesQuery = Sale::whereDate('sale_date', '>=', $startDate)
+            ->whereDate('sale_date', '<=', $endDate)
+            ->where('status', '!=', 'void');
+
+        if ($warehouseId) {
+            $salesQuery->where('warehouse_id', $warehouseId);
+        }
+
+        $grossSales = (clone $salesQuery)->sum('subtotal');
+        $salesDiscounts = (clone $salesQuery)->sum('discount_amount');
+        $netSales = (clone $salesQuery)->sum('grand_total');
+
+        $saleIds = (clone $salesQuery)->pluck('id');
+        $totalHpp = SaleItem::whereIn('sale_id', $saleIds)
+            ->select(DB::raw('SUM(quantity * unit_cost) as total_cogs'))
+            ->value('total_cogs') ?? 0;
+
+        $grossProfit = $netSales - $totalHpp;
+
+        $expenseQuery = CashFlow::whereDate('transaction_date', '>=', $startDate)
+            ->whereDate('transaction_date', '<=', $endDate)
+            ->where('type', 'out');
+
+        $totalExpenses = (clone $expenseQuery)->sum('amount');
+        $expensesByCategory = (clone $expenseQuery)
+            ->select('category', DB::raw('SUM(amount) as total_expense'))
+            ->groupBy('category')
+            ->get();
+
+        $netProfit = $grossProfit - $totalExpenses;
+        $netProfitMargin = $netSales > 0 ? (($netProfit / $netSales) * 100) : 0;
+
+        $warehouse = $warehouseId ? Warehouse::find($warehouseId) : null;
+
+        $pdf = Pdf::loadView('reports.profit_loss_pdf', compact(
+            'grossSales',
+            'salesDiscounts',
+            'netSales',
+            'totalHpp',
+            'grossProfit',
+            'totalExpenses',
+            'expensesByCategory',
+            'netProfit',
+            'netProfitMargin',
+            'startDate',
+            'endDate',
+            'warehouse'
+        ))->setPaper('a4', 'landscape');
+
+        return $pdf->stream("Laporan_Laba_Rugi_{$startDate}_sampai_{$endDate}.pdf");
+    }
+
+    /**
+     * Export Cashier Shifts to Excel (.xlsx)
+     */
+    public function exportCashierShiftsExcel(Request $request)
+    {
+        $startDate = $request->get('start_date', Carbon::now()->startOfMonth()->toDateString());
+        $endDate = $request->get('end_date', Carbon::now()->toDateString());
+        $userId = $request->get('user_id');
+        $warehouseId = $request->get('warehouse_id');
+
+        $query = CashierShift::with(['user', 'warehouse', 'expenses.user'])
+            ->whereDate('opened_at', '>=', $startDate)
+            ->whereDate('opened_at', '<=', $endDate);
+
+        if ($userId) {
+            $query->where('user_id', $userId);
+        }
+        if ($warehouseId) {
+            $query->where('warehouse_id', $warehouseId);
+        }
+
+        $shifts = $query->latest('opened_at')->get();
+        $cashier = $userId ? User::find($userId) : null;
+        $warehouse = $warehouseId ? Warehouse::find($warehouseId) : null;
+
+        $meta = [
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'warehouse' => $warehouse ? $warehouse->name : ($cashier ? 'Kasir: '.$cashier->name : 'Semua Cabang'),
+        ];
+
+        return $this->exportService->exportCashierShifts($shifts, $meta);
+    }
+
+    /**
+     * Export Cashier Shifts to PDF
+     */
+    public function exportCashierShiftsPdf(Request $request)
+    {
+        $startDate = $request->get('start_date', Carbon::now()->startOfMonth()->toDateString());
+        $endDate = $request->get('end_date', Carbon::now()->toDateString());
+        $userId = $request->get('user_id');
+        $warehouseId = $request->get('warehouse_id');
+
+        $query = CashierShift::with(['user', 'warehouse', 'expenses.user'])
+            ->whereDate('opened_at', '>=', $startDate)
+            ->whereDate('opened_at', '<=', $endDate);
+
+        if ($userId) {
+            $query->where('user_id', $userId);
+        }
+        if ($warehouseId) {
+            $query->where('warehouse_id', $warehouseId);
+        }
+
+        $shifts = $query->latest('opened_at')->get();
+        $cashier = $userId ? User::find($userId) : null;
+        $warehouse = $warehouseId ? Warehouse::find($warehouseId) : null;
+
+        $pdf = Pdf::loadView('reports.cashier_shifts_pdf', compact(
+            'shifts',
+            'startDate',
+            'endDate',
+            'cashier',
+            'warehouse'
+        ))->setPaper('a4', 'landscape');
+
+        return $pdf->stream("Laporan_Rekap_Shift_Kasir_{$startDate}_sampai_{$endDate}.pdf");
     }
 }

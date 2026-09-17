@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-    <title>Laporan Transaksi Penjualan</title>
+    <title>Laporan Rekap Shift Kasir</title>
     <style>
         @page {
             margin: 18px 20px 22px 20px;
@@ -69,7 +69,6 @@
         .text-right { text-align: right; }
         .font-bold { font-weight: bold; }
         .text-muted { color: #64748b; }
-        .text-void { color: #94a3b8; text-decoration: line-through; }
         .summary-row td {
             background-color: #f1f5f9 !important;
             font-weight: bold;
@@ -85,11 +84,9 @@
             border-radius: 3px;
             font-size: 7.5px;
             font-weight: bold;
-            text-transform: uppercase;
         }
-        .badge-paid { background-color: #dcfce7; color: #15803d; }
-        .badge-unpaid { background-color: #fee2e2; color: #b91c1c; }
-        .badge-partial { background-color: #fef3c7; color: #b45309; }
+        .badge-closed { background-color: #f1f5f9; color: #475569; }
+        .badge-active { background-color: #dcfce7; color: #15803d; }
         .footer-note {
             margin-top: 8px;
             font-size: 8px;
@@ -106,93 +103,93 @@
         $companyName = \App\Models\Setting::get('company_name', \App\Models\Setting::get('app_name', 'POS Retail Pro'));
     @endphp
 
-    <!-- Kop Laporan -->
     <div class="kop-container">
         <div class="company-name">{{ strtoupper($companyName) }}</div>
-        <div class="report-title">LAPORAN TRANSAKSI PENJUALAN</div>
+        <div class="report-title">LAPORAN REKAPITULASI SESI SHIFT KASIR</div>
         <div class="report-meta">
             Periode: {{ \Carbon\Carbon::parse($startDate)->format('d/m/Y') }} s/d {{ \Carbon\Carbon::parse($endDate)->format('d/m/Y') }}
-            &nbsp;|&nbsp; Cabang/Gudang: {{ $warehouse->name ?? 'Semua Cabang / Gudang' }}
+            &nbsp;|&nbsp; Cabang/Gudang: {{ $warehouse->name ?? 'Semua Cabang' }}
+            @if($cashier)
+                &nbsp;|&nbsp; Kasir: {{ $cashier->name }}
+            @endif
             &nbsp;|&nbsp; Dicetak: {{ now()->format('d/m/Y H:i') }}
             &nbsp;|&nbsp; Operator: {{ auth()->user()->name ?? 'Administrator' }}
         </div>
     </div>
 
-    <!-- Data Table -->
     <table class="data-table">
         <thead>
             <tr>
                 <th width="3%">No</th>
-                <th width="12%">No. Faktur</th>
-                <th width="11%">Tanggal & Waktu</th>
-                <th width="12%">Kasir</th>
-                <th width="15%">Pelanggan</th>
-                <th width="11%">Cabang / Gudang</th>
-                <th width="7%">Metode</th>
-                <th width="7%">Status</th>
-                <th width="7%" class="text-right">Subtotal</th>
-                <th width="5%" class="text-right">Diskon</th>
-                <th width="5%" class="text-right">Pajak</th>
-                <th width="8%" class="text-right">Total Bersih</th>
+                <th width="13%" class="text-left">Kasir</th>
+                <th width="13%" class="text-left">Cabang / Gudang</th>
+                <th width="12%" class="text-center">Waktu Buka</th>
+                <th width="12%" class="text-center">Waktu Tutup</th>
+                <th width="10%" class="text-right">Modal Awal</th>
+                <th width="11%" class="text-right">Penjualan Kas</th>
+                <th width="10%" class="text-right">Biaya Kasir</th>
+                <th width="11%" class="text-right">Fisik Kas Tutup</th>
+                <th width="8%" class="text-right">Selisih</th>
             </tr>
         </thead>
         <tbody>
             @php
-                $sumSubtotal = 0;
-                $sumDiscount = 0;
-                $sumTax = 0;
-                $sumGrandTotal = 0;
+                $sumStart = 0;
+                $sumSales = 0;
+                $sumExpenses = 0;
+                $sumClosing = 0;
+                $sumDiff = 0;
             @endphp
-            @forelse($sales as $index => $s)
+            @forelse($shifts as $index => $sh)
             @php
-                $isVoid = ($s->status === 'void');
-                if (!$isVoid) {
-                    $sumSubtotal += (float) $s->subtotal;
-                    $sumDiscount += (float) $s->discount_amount;
-                    $sumTax += (float) $s->tax_amount;
-                    $sumGrandTotal += (float) $s->grand_total;
+                $sumStart += (float) $sh->starting_cash;
+                $sumSales += (float) $sh->total_sales;
+                $sumExpenses += (float) ($sh->total_expenses ?? 0);
+                if ($sh->closing_cash !== null) {
+                    $sumClosing += (float) $sh->closing_cash;
+                }
+                if ($sh->cash_difference !== null) {
+                    $sumDiff += (float) $sh->cash_difference;
                 }
             @endphp
-            <tr class="{{ $isVoid ? 'text-void' : '' }}">
+            <tr>
                 <td class="text-center">{{ $index + 1 }}</td>
-                <td class="text-center font-bold">{{ $s->invoice_number }}</td>
-                <td class="text-center">{{ $s->sale_date ? \Carbon\Carbon::parse($s->sale_date)->format('d/m/Y H:i') : '-' }}</td>
-                <td class="text-left">{{ $s->user->name ?? '-' }}</td>
-                <td class="text-left">{{ $s->customer->name ?? 'Umum (Walk-in)' }}</td>
-                <td class="text-left">{{ $s->warehouse->name ?? '-' }}</td>
-                <td class="text-center" style="text-transform: uppercase;">{{ $s->payment_method ?? 'CASH' }}</td>
-                <td class="text-center">
-                    @if($isVoid)
-                        <span class="badge badge-unpaid">VOID</span>
-                    @elseif($s->payment_status === 'paid')
-                        <span class="badge badge-paid">Lunas</span>
-                    @elseif($s->payment_status === 'partial')
-                        <span class="badge badge-partial">Sebagian</span>
+                <td class="text-left font-bold">{{ $sh->user->name ?? 'Kasir' }}</td>
+                <td class="text-left text-muted">{{ $sh->warehouse->name ?? '-' }}</td>
+                <td class="text-center">{{ $sh->opened_at ? $sh->opened_at->format('d/m/Y H:i') : '-' }}</td>
+                <td class="text-center text-muted">{{ $sh->closed_at ? $sh->closed_at->format('d/m/Y H:i') : 'Aktif' }}</td>
+                <td class="text-right">Rp {{ number_format($sh->starting_cash, 0, ',', '.') }}</td>
+                <td class="text-right font-bold">Rp {{ number_format($sh->total_sales, 0, ',', '.') }}</td>
+                <td class="text-right" style="color: {{ ($sh->total_expenses ?? 0) > 0 ? '#e11d48' : '#64748b' }};">
+                    Rp {{ number_format($sh->total_expenses ?? 0, 0, ',', '.') }}
+                </td>
+                <td class="text-right text-muted">{{ $sh->closing_cash !== null ? 'Rp ' . number_format($sh->closing_cash, 0, ',', '.') : '-' }}</td>
+                <td class="text-right font-bold" style="color: {{ ($sh->cash_difference ?? 0) < 0 ? '#e11d48' : (($sh->cash_difference ?? 0) > 0 ? '#059669' : '#64748b') }};">
+                    @if($sh->cash_difference !== null)
+                        {{ $sh->cash_difference < 0 ? '-' : ($sh->cash_difference > 0 ? '+' : '') }}Rp {{ number_format(abs($sh->cash_difference), 0, ',', '.') }}
                     @else
-                        <span class="badge badge-unpaid">Belum Bayar</span>
+                        -
                     @endif
                 </td>
-                <td class="text-right">{{ number_format($s->subtotal, 0, ',', '.') }}</td>
-                <td class="text-right">{{ $s->discount_amount > 0 ? number_format($s->discount_amount, 0, ',', '.') : '-' }}</td>
-                <td class="text-right">{{ $s->tax_amount > 0 ? number_format($s->tax_amount, 0, ',', '.') : '-' }}</td>
-                <td class="text-right font-bold">{{ number_format($s->grand_total, 0, ',', '.') }}</td>
             </tr>
             @empty
             <tr>
-                <td colspan="12" class="text-center" style="padding: 16px; color: #94a3b8;">
-                    Tidak ada data transaksi penjualan yang ditemukan pada periode ini.
+                <td colspan="10" class="text-center" style="padding: 16px; color: #94a3b8;">
+                    Tidak ada riwayat sesi shift kasir ditemukan pada periode ini.
                 </td>
             </tr>
             @endforelse
 
-            <!-- Summary Row -->
-            @if($sales->count() > 0)
+            @if(count($shifts) > 0)
             <tr class="summary-row">
-                <td colspan="8" class="text-right">TOTAL KESELURUHAN ({{ number_format($totalTransactions, 0, ',', '.') }} TRANSAKSI):</td>
-                <td class="text-right">Rp {{ number_format($sumSubtotal, 0, ',', '.') }}</td>
-                <td class="text-right">Rp {{ number_format($sumDiscount, 0, ',', '.') }}</td>
-                <td class="text-right">Rp {{ number_format($sumTax, 0, ',', '.') }}</td>
-                <td class="text-right">Rp {{ number_format($sumGrandTotal, 0, ',', '.') }}</td>
+                <td colspan="5" class="text-right">TOTAL KESELURUHAN:</td>
+                <td class="text-right">Rp {{ number_format($sumStart, 0, ',', '.') }}</td>
+                <td class="text-right">Rp {{ number_format($sumSales, 0, ',', '.') }}</td>
+                <td class="text-right text-danger" style="color: #e11d48;">Rp {{ number_format($sumExpenses, 0, ',', '.') }}</td>
+                <td class="text-right">Rp {{ number_format($sumClosing, 0, ',', '.') }}</td>
+                <td class="text-right" style="color: {{ $sumDiff < 0 ? '#e11d48' : ($sumDiff > 0 ? '#059669' : '#0f172a') }};">
+                    {{ $sumDiff < 0 ? '-' : ($sumDiff > 0 ? '+' : '') }}Rp {{ number_format(abs($sumDiff), 0, ',', '.') }}
+                </td>
             </tr>
             @endif
         </tbody>

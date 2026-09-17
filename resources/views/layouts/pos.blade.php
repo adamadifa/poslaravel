@@ -279,15 +279,10 @@
 
             <div class="h-6 w-px bg-slate-200"></div>
 
-            <!-- Store / Branch Selector & Register Info -->
-            <div class="flex items-center gap-3 text-xs">
-                <div class="flex items-center gap-1.5 text-slate-700 font-semibold bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200">
-                    <i data-lucide="store" class="w-3.5 h-3.5 text-brand-500"></i>
-                    <span>Cabang Utama (Jakarta)</span>
-                </div>
-                <div class="text-slate-500 font-medium">
-                    Register: <strong class="text-slate-800 font-bold">#POS-01</strong>
-                </div>
+            <!-- Store / Branch Info -->
+            <div class="flex items-center gap-1.5 text-slate-700 font-semibold bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 text-xs">
+                <i data-lucide="store" class="w-3.5 h-3.5 text-brand-500"></i>
+                <span id="posWarehouseDisplayName">{{ $defaultWarehouse->name ?? 'Cabang Utama' }}</span>
             </div>
         </div>
 
@@ -311,26 +306,50 @@
         </div>
 
         <!-- Right User & Exit Controls -->
-        <div class="flex items-center gap-3">
-            <!-- Theme Toggle Button -->
-            <button id="posThemeToggleBtn" title="Ganti Mode (Light / Dark)" class="p-2 rounded-xl text-slate-500 hover:text-slate-700 hover:bg-slate-100 border border-slate-200 transition">
-                <i data-lucide="sun" class="w-4 h-4 hidden text-amber-400"></i>
-                <i data-lucide="moon" class="w-4 h-4 block text-slate-600"></i>
+        <div class="flex items-center gap-2">
+            <!-- Kas Keluar / Biaya Operasional Button (F4) -->
+            <button 
+                type="button" 
+                onclick="openShiftExpenseModal()" 
+                title="Catat Kas Keluar / Biaya Operasional Kasir (Tekan F4)" 
+                class="h-9 px-3 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200/90 text-xs font-bold transition flex items-center gap-1.5 whitespace-nowrap shadow-2xs cursor-pointer"
+            >
+                <i data-lucide="wallet-cards" class="w-4 h-4 text-amber-600"></i>
+                <span>Kas Keluar</span>
+                <kbd class="px-1 py-0.5 bg-amber-200/80 border border-amber-300/80 rounded text-[9px] font-mono-num text-amber-900 font-bold leading-none">F4</kbd>
+                <span id="header_shift_expense_badge" class="hidden px-1.5 py-0.5 rounded-md bg-rose-500 text-white text-[10px] font-black font-mono-num shadow-2xs">-Rp 0</span>
+            </button>
+
+            <!-- Tutup Shift Button -->
+            <button 
+                type="button" 
+                onclick="openCloseShiftDialog()" 
+                title="Tutup Sesi Shift Kasir & Rekap Kas Fisik" 
+                class="h-9 px-3 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200/90 text-xs font-bold transition flex items-center gap-1.5 whitespace-nowrap shadow-2xs cursor-pointer"
+            >
+                <i data-lucide="lock" class="w-3.5 h-3.5 text-rose-600"></i>
+                <span>Tutup Shift</span>
             </button>
 
             <!-- Cashier Shift Badge -->
-            <div class="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 text-xs">
-                <div class="w-6 h-6 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-[10px]">
-                    N
+            <div class="hidden sm:flex h-9 items-center gap-2 bg-slate-50 px-3 rounded-xl border border-slate-200 text-xs whitespace-nowrap">
+                <div class="w-5 h-5 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center font-bold text-[10px]">
+                    {{ strtoupper(substr(auth()->user()->name ?? 'K', 0, 1)) }}
                 </div>
-                <span class="text-slate-600 font-medium">Kasir: <strong class="text-slate-900 font-bold">Nanda (Shift 1)</strong></span>
+                <span class="text-slate-600 font-medium">Kasir: <strong class="text-slate-900 font-bold max-w-[140px] truncate inline-block align-bottom" id="posCashierName">{{ auth()->user()->name ?? 'Kasir' }}</strong></span>
             </div>
 
             <!-- Back to Dashboard / Back Office -->
-            <a href="{{ url('/') }}" title="Back to Admin Dashboard" class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold border border-slate-200 transition shadow-2xs">
+            <a href="{{ url('/') }}" title="Back to Admin Dashboard" class="h-9 flex items-center gap-1.5 px-3 rounded-xl bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold border border-slate-200 transition shadow-2xs whitespace-nowrap">
                 <i data-lucide="layout-dashboard" class="w-3.5 h-3.5 text-slate-500"></i>
-                <span>Back Office</span>
+                <span class="hidden md:inline">Back Office</span>
             </a>
+
+            <!-- Theme Toggle Button -->
+            <button id="posThemeToggleBtn" title="Ganti Mode (Light / Dark)" class="w-9 h-9 flex items-center justify-center rounded-xl text-slate-500 hover:text-slate-700 hover:bg-slate-100 border border-slate-200 transition shrink-0">
+                <i data-lucide="sun" class="w-4 h-4 hidden text-amber-400"></i>
+                <i data-lucide="moon" class="w-4 h-4 block text-slate-600"></i>
+            </button>
         </div>
     </header>
 

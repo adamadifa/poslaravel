@@ -700,6 +700,17 @@
                 </div>
             </div>
         </aside>
+        <script>
+            (function() {
+                try {
+                    var sb = document.getElementById('sidebar');
+                    var s = sessionStorage.getItem('sidebar_scroll_top');
+                    if (sb && s !== null) {
+                        sb.scrollTop = parseInt(s, 10);
+                    }
+                } catch(e) {}
+            })();
+        </script>
 
         <!-- MAIN CONTENT AREA -->
         <main class="flex-1 flex flex-col min-w-0 bg-[#f8fafc] dark:bg-slate-950 h-full overflow-y-auto transition-colors duration-200">
@@ -838,7 +849,56 @@
                 sidebarBackdrop.classList.add('hidden');
             }
 
-            if (closeMobileSidebarBtn) closeMobileSidebarBtn.addEventListener('click', closeMobileNav);
+            // 4. Sidebar Scroll Position Persistence
+            if (sidebar) {
+                const savedScroll = sessionStorage.getItem('sidebar_scroll_top');
+                if (savedScroll !== null) {
+                    sidebar.scrollTop = parseInt(savedScroll, 10);
+                } else {
+                    const activeItem = sidebar.querySelector('.nav-item.bg-brand-50, .nav-item.bg-amber-50, .nav-item.bg-emerald-50, .nav-item.font-bold');
+                    if (activeItem) {
+                        activeItem.scrollIntoView({ block: 'nearest', behavior: 'instant' });
+                    }
+                }
+
+                sidebar.addEventListener('scroll', function () {
+                    sessionStorage.setItem('sidebar_scroll_top', sidebar.scrollTop);
+                }, { passive: true });
+
+                sidebar.querySelectorAll('a').forEach(function (link) {
+                    link.addEventListener('click', function () {
+                        sessionStorage.setItem('sidebar_scroll_top', sidebar.scrollTop);
+                    });
+                });
+
+                window.addEventListener('beforeunload', function () {
+                    sessionStorage.setItem('sidebar_scroll_top', sidebar.scrollTop);
+                });
+            }
+
+            // 5. Horizontal Tab Menu Scroll Persistence (Reports, POS Categories, Floor Plan)
+            const tabSubNav = document.getElementById('tab_sub_nav') || document.querySelector('.overflow-x-auto[class*="border-b"]');
+            if (tabSubNav) {
+                const savedTabScroll = sessionStorage.getItem('tab_sub_nav_scroll_left');
+                if (savedTabScroll !== null) {
+                    tabSubNav.scrollLeft = parseInt(savedTabScroll, 10);
+                } else {
+                    const activeTab = tabSubNav.querySelector('.bg-brand-500, .bg-brand-600, .text-brand-600, [class*="bg-brand-500"]');
+                    if (activeTab) {
+                        activeTab.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'instant' });
+                    }
+                }
+
+                tabSubNav.addEventListener('scroll', function () {
+                    sessionStorage.setItem('tab_sub_nav_scroll_left', tabSubNav.scrollLeft);
+                }, { passive: true });
+
+                tabSubNav.querySelectorAll('a').forEach(function (link) {
+                    link.addEventListener('click', function () {
+                        sessionStorage.setItem('tab_sub_nav_scroll_left', tabSubNav.scrollLeft);
+                    });
+                });
+            }
         });
     </script>
 

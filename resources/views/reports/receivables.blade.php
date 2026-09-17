@@ -8,6 +8,8 @@
     @include('reports._header', [
         'title' => 'Laporan Piutang Pelanggan (AR)',
         'subtitle' => 'Pemantauan sisa saldo piutang penjualan belum lunas, batas tempo, dan analisa umur piutang (Aging Schedule).',
+        'exportExcelUrl' => route('reports.receivables.export-excel', request()->all()),
+        'exportPdfUrl' => route('reports.receivables.export-pdf', request()->all()),
     ])
 
     <!-- KPI Metric Cards -->

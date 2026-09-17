@@ -8,6 +8,8 @@
     @include('reports._header', [
         'title' => 'Laporan Hutang Usaha Supplier (AP)',
         'subtitle' => 'Pemantauan sisa saldo hutang dagang, penerimaan barang belum lunas, dan analisa umur hutang (Aging Schedule).',
+        'exportExcelUrl' => route('reports.payables.export-excel', request()->all()),
+        'exportPdfUrl' => route('reports.payables.export-pdf', request()->all()),
     ])
 
     <!-- KPI Metric Cards -->

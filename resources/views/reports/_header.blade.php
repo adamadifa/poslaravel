@@ -21,14 +21,14 @@
         @if(isset($exportExcelUrl))
         <a href="{{ $exportExcelUrl }}" target="_blank" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 font-semibold text-xs transition border border-emerald-200/60 dark:border-emerald-500/20 shadow-xs">
             <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
-            <span>Export Excel (CSV)</span>
+            <span>Export Excel (.xlsx)</span>
         </a>
         @endif
 
         @if(isset($exportPdfUrl))
-        <a href="{{ $exportPdfUrl }}" target="_blank" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 dark:bg-rose-500/10 dark:text-rose-400 font-semibold text-xs transition border border-rose-200/60 dark:border-rose-500/20 shadow-xs">
-            <i data-lucide="file-text" class="w-4 h-4"></i>
-            <span>Export PDF</span>
+        <a href="{{ $exportPdfUrl }}" target="_blank" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 dark:bg-rose-500/10 dark:text-rose-400 font-semibold text-xs transition border border-rose-200/60 dark:border-rose-500/20 shadow-xs" title="Buka Preview & Cetak PDF di Tab Baru">
+            <i data-lucide="printer" class="w-4 h-4"></i>
+            <span>Preview & Cetak PDF</span>
         </a>
         @endif
     </div>
@@ -36,7 +36,7 @@
 </div>
 
 <!-- Tabs Sub-Navigation -->
-<div class="flex items-center gap-2 overflow-x-auto pb-2 mb-6 border-b border-slate-200 dark:border-slate-800 scrollbar-none">
+<div id="tab_sub_nav" class="flex items-center gap-2 overflow-x-auto pb-2 mb-6 border-b border-slate-200 dark:border-slate-800 scrollbar-none">
     <a href="{{ route('reports.sales') }}" class="px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition flex items-center gap-2 {{ $currentRoute === 'reports.sales' ? 'bg-brand-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800' }}">
         <i data-lucide="receipt" class="w-4 h-4"></i>
         <span>Penjualan Harian & Kasir</span>
@@ -103,3 +103,14 @@
         <span>Rekap Shift Kasir</span>
     </a>
 </div>
+<script>
+    (function() {
+        try {
+            var tn = document.getElementById('tab_sub_nav');
+            var s = sessionStorage.getItem('tab_sub_nav_scroll_left');
+            if (tn && s !== null) {
+                tn.scrollLeft = parseInt(s, 10);
+            }
+        } catch(e) {}
+    })();
+</script>

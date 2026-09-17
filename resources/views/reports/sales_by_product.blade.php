@@ -8,7 +8,8 @@
     @include('reports._header', [
         'title' => 'Laporan Penjualan per Produk & Margin Laba',
         'subtitle' => 'Analisis performa produk terlaris, pendapatan kotor, total HPP persediaan, dan estimasi margin keuntungan per produk.',
-        'exportExcelUrl' => route('reports.sales.export-excel', request()->query())
+        'exportPdfUrl' => route('reports.sales.products.export-pdf', request()->query()),
+        'exportExcelUrl' => route('reports.sales.products.export-excel', request()->query())
     ])
 
     <!-- KPI Metric Summary -->

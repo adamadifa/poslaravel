@@ -8,6 +8,8 @@
     @include('reports._header', [
         'title' => 'Laporan Penjualan per Pelanggan (Customer)',
         'subtitle' => 'Pantau kontribusi belanja pelanggan, frekuensi order, dan nilai rata-rata transaksi tiap customer.',
+        'exportExcelUrl' => route('reports.sales.customers.export-excel', request()->all()),
+        'exportPdfUrl' => route('reports.sales.customers.export-pdf', request()->all()),
     ])
 
     <!-- FILTER SECTION (Outset Floating Label Standard) -->

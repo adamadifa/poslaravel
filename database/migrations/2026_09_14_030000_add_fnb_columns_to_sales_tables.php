@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('sales', function (Blueprint $table) {
-            $table->enum('service_type', ['dine_in', 'take_away'])->nullable()->after('payment_status');
+            $table->string('service_type', 50)->nullable()->after('payment_status');
             $table->foreignId('dining_table_id')->nullable()->after('service_type')->constrained('dining_tables')->nullOnDelete();
             $table->string('queue_number')->nullable()->after('dining_table_id'); // e.g. "A-001"
             $table->enum('order_status', ['new_order', 'preparing', 'ready', 'served', 'completed'])->default('completed')->after('queue_number');

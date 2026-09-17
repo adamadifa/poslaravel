@@ -8,14 +8,22 @@
     @include('reports._header', [
         'title' => 'Laporan Rekap Shift Kasir (POS)',
         'subtitle' => 'Audit pembukaan/penutupan shift kasir, saldo awal kas kecil, akumulasi penjualan, dan verifikasi selisih fisik uang kas.',
+        'exportExcelUrl' => route('reports.cashier-shifts.export-excel', request()->all()),
+        'exportPdfUrl' => route('reports.cashier-shifts.export-pdf', request()->all()),
     ])
 
     <!-- KPI Metric Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs">
             <p class="text-xs font-bold text-slate-500">Total Penjualan Shift</p>
             <h3 class="text-xl font-black text-slate-900 mt-1.5">Rp {{ number_format($totalShiftSales, 0, ',', '.') }}</h3>
-            <p class="text-[11px] text-slate-500 mt-2">Dari seluruh sesi kasir aktif</p>
+            <p class="text-[11px] text-slate-500 mt-2">Dari seluruh sesi kasir</p>
+        </div>
+
+        <div class="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs">
+            <p class="text-xs font-bold text-slate-500">Total Biaya / Kas Keluar</p>
+            <h3 class="text-xl font-black text-rose-600 mt-1.5">Rp {{ number_format($totalShiftExpenses, 0, ',', '.') }}</h3>
+            <p class="text-[11px] text-slate-500 mt-2">Pengeluaran operasional kasir</p>
         </div>
 
         <div class="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs">
@@ -25,11 +33,11 @@
         </div>
 
         <div class="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs">
-            <p class="text-xs font-bold text-slate-500">Total Selisih Fisik Kas (Difference)</p>
+            <p class="text-xs font-bold text-slate-500">Total Selisih Fisik Kas</p>
             <h3 class="text-xl font-black {{ $totalCashDifference < 0 ? 'text-rose-600' : ($totalCashDifference > 0 ? 'text-emerald-600' : 'text-slate-900') }} mt-1.5">
                 {{ $totalCashDifference < 0 ? '-Rp ' : ($totalCashDifference > 0 ? '+Rp ' : 'Rp ') }}{{ number_format(abs($totalCashDifference), 0, ',', '.') }}
             </h3>
-            <p class="text-[11px] text-slate-500 mt-2">{{ $totalCashDifference != 0 ? 'Terdapat perbedaan kas saat penutupan' : 'Fisik kas 100% seimbang' }}</p>
+            <p class="text-[11px] text-slate-500 mt-2">{{ $totalCashDifference != 0 ? 'Terdapat selisih kas fisik' : 'Fisik kas 100% seimbang' }}</p>
         </div>
     </div>
 
@@ -122,6 +130,7 @@
                         <th class="py-3 px-4 border-b border-white/10">Waktu Buka / Tutup</th>
                         <th class="py-3 px-4 border-b border-white/10 text-right">Modal Awal</th>
                         <th class="py-3 px-4 border-b border-white/10 text-right">Penjualan Kas</th>
+                        <th class="py-3 px-4 border-b border-white/10 text-right">Biaya / Kas Keluar</th>
                         <th class="py-3 px-4 border-b border-white/10 text-right">Fisik Kas Tutup</th>
                         <th class="py-3 px-4 border-b border-white/10 text-right">Selisih Fisik</th>
                         <th class="py-3 px-5 border-b border-white/10 text-center">Status</th>
@@ -145,6 +154,17 @@
                             Rp {{ number_format($sh->total_sales, 0, ',', '.') }}
                             <div class="text-[10px] font-normal text-slate-400">{{ $sh->total_transactions }} Struk</div>
                         </td>
+                        <td class="py-3 px-4 text-right">
+                            <div class="font-bold {{ ($sh->total_expenses ?? 0) > 0 ? 'text-rose-600' : 'text-slate-400' }}">
+                                Rp {{ number_format($sh->total_expenses ?? 0, 0, ',', '.') }}
+                            </div>
+                            @if($sh->expenses->isNotEmpty())
+                                <button type="button" onclick="showShiftExpensesModal({{ json_encode($sh->expenses) }}, '{{ $sh->user->name ?? 'Kasir' }}', '{{ $sh->opened_at ? $sh->opened_at->format('d/m/Y H:i') : '-' }}')" class="mt-0.5 inline-flex items-center gap-1 text-[10px] font-bold text-brand-600 hover:text-brand-700 hover:underline cursor-pointer">
+                                    <span>{{ $sh->expenses->count() }} Pengeluaran</span>
+                                    <i data-lucide="info" class="w-3 h-3"></i>
+                                </button>
+                            @endif
+                        </td>
                         <td class="py-3 px-4 text-right text-slate-800 font-medium">
                             {{ $sh->closing_cash !== null ? 'Rp ' . number_format($sh->closing_cash, 0, ',', '.') : '-' }}
                         </td>
@@ -165,7 +185,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="7" class="py-12 text-center text-slate-400">
+                        <td colspan="8" class="py-12 text-center text-slate-400">
                             <i data-lucide="user-check" class="w-10 h-10 text-slate-300 mb-2 mx-auto"></i>
                             <p class="font-bold text-sm text-slate-600">Tidak ada sesi shift kasir pada periode ini.</p>
                         </td>
@@ -182,4 +202,114 @@
         @endif
     </div>
 </div>
+
+<!-- MODAL RINCIAN BIAYA / PENGELUARAN SHIFT KASIR -->
+<div id="shiftExpensesDetailModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center p-3 sm:p-4 overflow-y-auto">
+    <div class="bg-white border border-slate-200/90 rounded-2xl max-w-lg w-full shadow-2xl transition-all my-auto overflow-hidden flex flex-col max-h-[85vh]">
+        <!-- Header -->
+        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50 shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center border border-rose-100">
+                    <i data-lucide="receipt" class="w-4 h-4"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-base text-slate-900 tracking-tight" id="detailModalTitle">Rincian Biaya Kasir</h3>
+                    <p class="text-[11px] text-slate-500" id="detailModalSubtitle">Daftar pengeluaran selama shift</p>
+                </div>
+            </div>
+            <button onclick="closeShiftExpensesModal()" type="button" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-200/50 transition">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+        </div>
+
+        <!-- Body Table -->
+        <div class="p-6 overflow-y-auto">
+            <div class="rounded-xl border border-slate-200 overflow-hidden bg-white">
+                <table class="w-full text-left text-xs border-collapse">
+                    <thead class="bg-slate-50 text-slate-600 font-bold text-[11px] border-b border-slate-200">
+                        <tr>
+                            <th class="py-2.5 px-3">No</th>
+                            <th class="py-2.5 px-3">Kategori & Keterangan</th>
+                            <th class="py-2.5 px-3">Waktu</th>
+                            <th class="py-2.5 px-3 text-right">Nominal</th>
+                        </tr>
+                    </thead>
+                    <tbody id="detailModalTableBody" class="divide-y divide-slate-100">
+                    </tbody>
+                    <tfoot class="bg-slate-50 font-bold border-t border-slate-200">
+                        <tr>
+                            <td colspan="3" class="py-2.5 px-3 text-right text-slate-700">Total Pengeluaran:</td>
+                            <td class="py-2.5 px-3 text-right font-black text-rose-600" id="detailModalTotalAmount">Rp 0</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="px-6 py-3 border-t border-slate-100 bg-slate-50 flex items-center justify-end shrink-0">
+            <button type="button" onclick="closeShiftExpensesModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-200/70 transition">
+                Tutup
+            </button>
+        </div>
+    </div>
+</div>
+
+@push('scripts')
+<script>
+    function showShiftExpensesModal(expenses, cashierName, openedAt) {
+        const modal = document.getElementById('shiftExpensesDetailModal');
+        const title = document.getElementById('detailModalTitle');
+        const subtitle = document.getElementById('detailModalSubtitle');
+        const tbody = document.getElementById('detailModalTableBody');
+        const totalElem = document.getElementById('detailModalTotalAmount');
+
+        title.innerText = `Rincian Biaya Kasir: ${cashierName}`;
+        subtitle.innerText = `Sesi Shift: ${openedAt}`;
+
+        let total = 0;
+        let html = '';
+
+        if (!expenses || expenses.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="py-6 text-center text-slate-400">Tidak ada rincian pengeluaran.</td></tr>';
+            totalElem.innerText = 'Rp 0';
+        } else {
+            expenses.forEach((exp, idx) => {
+                const amount = parseFloat(exp.amount) || 0;
+                total += amount;
+                const timeStr = exp.expense_date ? new Date(exp.expense_date).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '-';
+
+                html += `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="py-2.5 px-3 text-slate-500">${idx + 1}</td>
+                        <td class="py-2.5 px-3">
+                            <div class="font-bold text-slate-900">${exp.category || 'Operasional'}</div>
+                            <div class="text-[11px] text-slate-500">${exp.notes || '-'}</div>
+                        </td>
+                        <td class="py-2.5 px-3 text-slate-500 whitespace-nowrap">${timeStr}</td>
+                        <td class="py-2.5 px-3 text-right font-black text-rose-600 font-mono-num whitespace-nowrap">
+                            Rp ${parseInt(amount).toLocaleString('id-ID')}
+                        </td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = html;
+            totalElem.innerText = `Rp ${parseInt(total).toLocaleString('id-ID')}`;
+        }
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        if (window.lucide) {
+            lucide.createIcons();
+        }
+    }
+
+    function closeShiftExpensesModal() {
+        const modal = document.getElementById('shiftExpensesDetailModal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+</script>
+@endpush
 @endsection

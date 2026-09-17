@@ -142,9 +142,19 @@
                     {{ $sales->total() }} Transaksi
                 </span>
             </div>
-            @if(request('start_date') || request('end_date'))
-                <span class="text-xs text-white/80 font-medium">Periode: {{ request('start_date') ? \Carbon\Carbon::parse(request('start_date'))->format('d/m/Y') : '-' }} s/d {{ request('end_date') ? \Carbon\Carbon::parse(request('end_date'))->format('d/m/Y') : '-' }}</span>
-            @endif
+            <div class="flex items-center gap-2">
+                @if(request('start_date') || request('end_date'))
+                    <span class="text-xs text-white/80 font-medium hidden md:inline mr-1">Periode: {{ request('start_date') ? \Carbon\Carbon::parse(request('start_date'))->format('d/m/Y') : '-' }} s/d {{ request('end_date') ? \Carbon\Carbon::parse(request('end_date'))->format('d/m/Y') : '-' }}</span>
+                @endif
+                <a href="{{ route('reports.sales.export-pdf', request()->query()) }}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white font-bold text-xs border border-white/20 shadow-xs transition" title="Preview & Cetak Laporan Penjualan (PDF)">
+                    <i data-lucide="printer" class="w-3.5 h-3.5 text-white"></i>
+                    <span>Cetak PDF</span>
+                </a>
+                <a href="{{ route('reports.sales.export-excel', request()->query()) }}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white text-brand-600 hover:bg-brand-50 font-bold text-xs shadow-xs transition" title="Export Laporan Penjualan ke Excel (.xlsx)">
+                    <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5 text-emerald-600"></i>
+                    <span>Export Excel</span>
+                </a>
+            </div>
         </div>
 
         <div class="overflow-x-auto">

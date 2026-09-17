@@ -71,7 +71,7 @@
     <!-- Action & Filter Bar (2-Row Spacious Responsive Grid) -->
     <div class="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-4">
         
-        <!-- Row 1: Header Info & Active Stock Summary -->
+        <!-- Row 1: Header Info & Action / Export Buttons -->
         <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-xl {{ $tab === 'raw_materials' ? 'bg-amber-50 text-amber-500 border-amber-100/60' : 'bg-brand-50 text-brand-500 border-brand-100/60' }} flex items-center justify-center border shadow-2xs">
@@ -85,47 +85,76 @@
                 </div>
             </div>
 
-            <!-- Current Stock Summary Card (If product selected) -->
-            @if(!is_null($currentStock))
-                <div class="px-4 py-2 rounded-xl {{ $tab === 'raw_materials' ? 'bg-amber-50/70 border-amber-200/80' : 'bg-brand-50/70 border-brand-200/80' }} border flex items-center gap-3 shrink-0">
-                    <i data-lucide="package-check" class="w-5 h-5 {{ $tab === 'raw_materials' ? 'text-amber-600' : 'text-brand-600' }}"></i>
-                    <div>
-                        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Stok Fisik Saat Ini</div>
-                        <div class="text-sm font-black {{ $tab === 'raw_materials' ? 'text-amber-600' : 'text-brand-600' }} font-mono-num">{{ number_format($currentStock, 2) }} Unit Dasar</div>
+            <!-- Action / Export Buttons & Stock Summary -->
+            <div class="flex flex-wrap items-center gap-2.5">
+                @if(!is_null($currentStock))
+                    <div class="px-3.5 py-1.5 rounded-xl {{ $tab === 'raw_materials' ? 'bg-amber-50/70 border-amber-200/80' : 'bg-brand-50/70 border-brand-200/80' }} border flex items-center gap-2 shrink-0">
+                        <i data-lucide="package-check" class="w-4 h-4 {{ $tab === 'raw_materials' ? 'text-amber-600' : 'text-brand-600' }}"></i>
+                        <div>
+                            <div class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Stok Fisik</div>
+                            <div class="text-xs font-black {{ $tab === 'raw_materials' ? 'text-amber-600' : 'text-brand-600' }} font-mono-num">{{ number_format($currentStock, 2) }} Unit</div>
+                        </div>
                     </div>
-                </div>
-            @endif
+                @endif
+
+                <a href="{{ route('stocks.movements.export-excel', request()->all()) }}" target="_blank" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 font-semibold text-xs transition border border-emerald-200/60 dark:border-emerald-500/20 shadow-xs" title="Export Kartu Stok ke Excel">
+                    <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+                    <span>Export Excel (.xlsx)</span>
+                </a>
+
+                <a href="{{ route('stocks.movements.export-pdf', request()->all()) }}" target="_blank" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 dark:bg-rose-500/10 dark:text-rose-400 font-semibold text-xs transition border border-rose-200/60 dark:border-rose-500/20 shadow-xs" title="Preview & Cetak Kartu Stok di Tab Baru">
+                    <i data-lucide="printer" class="w-4 h-4"></i>
+                    <span>Preview & Cetak PDF</span>
+                </a>
+            </div>
         </div>
 
         <div class="h-px bg-slate-100 w-full"></div>
 
-        <!-- Row 2: Comprehensive Multi-Filter Bar with Icons & Select2 -->
+        <!-- Row 2: Comprehensive Multi-Filter Bar with Icons, Date Pickers & Select2 -->
         <form action="{{ route('stocks.index') }}" method="GET" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 items-center">
             <input type="hidden" name="tab" value="{{ $tab }}">
             
-            <!-- Outset Floating-label Search Input (Col 3) -->
-            <div class="lg:col-span-3 relative rounded-xl border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/20 bg-white dark:bg-slate-900 transition px-4 pt-3 pb-2">
-                <label class="absolute -top-2.5 left-3.5 bg-white dark:bg-slate-900 px-1.5 text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                    Cari {{ $tab === 'raw_materials' ? 'Bahan Baku' : 'Produk' }} / Ref
+            <!-- Outset Floating-label Dari Tanggal (Col 2) -->
+            <div class="lg:col-span-2 relative rounded-xl border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/20 bg-white dark:bg-slate-900 transition px-3 pt-3 pb-2">
+                <label class="absolute -top-2.5 left-3 bg-white dark:bg-slate-900 px-1.5 text-[11px] font-bold text-slate-700 dark:text-slate-300 z-10">
+                    Dari Tanggal
                 </label>
-                <div class="flex items-center gap-2.5">
-                    <i data-lucide="search" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                <div class="flex items-center gap-2">
+                    <i data-lucide="calendar" class="w-4 h-4 text-slate-400 shrink-0"></i>
                     <input 
-                        type="text" 
-                        name="search" 
-                        value="{{ request('search') }}" 
-                        placeholder="Ketik nama, kode, atau keterangan..." 
-                        class="w-full bg-transparent border-0 p-0 text-xs font-semibold text-slate-800 dark:text-white placeholder-slate-400 focus:ring-0 focus:outline-none"
+                        type="date" 
+                        name="start_date" 
+                        id="filter_start_date"
+                        value="{{ request('start_date', $startDate) }}" 
+                        class="w-full bg-transparent border-0 p-0 text-xs font-semibold text-slate-800 dark:text-white focus:ring-0 focus:outline-none cursor-pointer"
+                    >
+                </div>
+            </div>
+
+            <!-- Outset Floating-label Sampai Tanggal (Col 2) -->
+            <div class="lg:col-span-2 relative rounded-xl border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/20 bg-white dark:bg-slate-900 transition px-3 pt-3 pb-2">
+                <label class="absolute -top-2.5 left-3 bg-white dark:bg-slate-900 px-1.5 text-[11px] font-bold text-slate-700 dark:text-slate-300 z-10">
+                    Sampai Tanggal
+                </label>
+                <div class="flex items-center gap-2">
+                    <i data-lucide="calendar" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                    <input 
+                        type="date" 
+                        name="end_date" 
+                        id="filter_end_date"
+                        value="{{ request('end_date', $endDate) }}" 
+                        class="w-full bg-transparent border-0 p-0 text-xs font-semibold text-slate-800 dark:text-white focus:ring-0 focus:outline-none cursor-pointer"
                     >
                 </div>
             </div>
 
             <!-- Outset Floating-label Product Select with Select2 (Col 3) -->
-            <div class="lg:col-span-3 relative rounded-xl border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/20 bg-white dark:bg-slate-900 transition px-3.5 pt-3 pb-2">
-                <label class="absolute -top-2.5 left-3.5 bg-white dark:bg-slate-900 px-1.5 text-[11px] font-bold text-slate-700 dark:text-slate-300 z-10">
+            <div class="lg:col-span-3 relative rounded-xl border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/20 bg-white dark:bg-slate-900 transition px-3 pt-3 pb-2">
+                <label class="absolute -top-2.5 left-3 bg-white dark:bg-slate-900 px-1.5 text-[11px] font-bold text-slate-700 dark:text-slate-300 z-10">
                     {{ $tab === 'raw_materials' ? 'Filter Bahan Baku' : 'Filter Produk Jual' }}
                 </label>
-                <div class="flex items-center gap-2.5">
+                <div class="flex items-center gap-2">
                     <i data-lucide="{{ $tab === 'raw_materials' ? 'layers' : 'package' }}" class="w-4 h-4 text-slate-400 shrink-0"></i>
                     <select name="product_id" id="filter_product_id" class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 dark:text-white focus:ring-0 focus:outline-none cursor-pointer">
                         <option value="">{{ $tab === 'raw_materials' ? 'Semua Bahan Baku' : 'Semua Produk Jual' }}</option>
@@ -138,12 +167,12 @@
                 </div>
             </div>
 
-            <!-- Outset Floating-label Warehouse Filter with Select2 (Col 3) -->
-            <div class="lg:col-span-3 relative rounded-xl border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/20 bg-white dark:bg-slate-900 transition px-3.5 pt-3 pb-2">
-                <label class="absolute -top-2.5 left-3.5 bg-white dark:bg-slate-900 px-1.5 text-[11px] font-bold text-slate-700 dark:text-slate-300 z-10">
+            <!-- Outset Floating-label Warehouse Filter with Select2 (Col 2) -->
+            <div class="lg:col-span-2 relative rounded-xl border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/20 bg-white dark:bg-slate-900 transition px-3 pt-3 pb-2">
+                <label class="absolute -top-2.5 left-3 bg-white dark:bg-slate-900 px-1.5 text-[11px] font-bold text-slate-700 dark:text-slate-300 z-10">
                     Gudang
                 </label>
-                <div class="flex items-center gap-2.5">
+                <div class="flex items-center gap-2">
                     <i data-lucide="warehouse" class="w-4 h-4 text-slate-400 shrink-0"></i>
                     <select name="warehouse_id" id="filter_warehouse_id" class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 dark:text-white focus:ring-0 focus:outline-none cursor-pointer">
                         <option value="">Semua Gudang</option>
@@ -158,11 +187,11 @@
 
             <!-- Outset Floating-label Type Filter + Reset (Col 3) -->
             <div class="lg:col-span-3 flex items-center gap-2">
-                <div class="relative flex-1 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/20 bg-white dark:bg-slate-900 transition px-3.5 pt-3 pb-2">
-                    <label class="absolute -top-2.5 left-3.5 bg-white dark:bg-slate-900 px-1.5 text-[11px] font-bold text-slate-700 dark:text-slate-300 z-10">
+                <div class="relative flex-1 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/20 bg-white dark:bg-slate-900 transition px-3 pt-3 pb-2">
+                    <label class="absolute -top-2.5 left-3 bg-white dark:bg-slate-900 px-1.5 text-[11px] font-bold text-slate-700 dark:text-slate-300 z-10">
                         Mutasi
                     </label>
-                    <div class="flex items-center gap-2.5">
+                    <div class="flex items-center gap-2">
                         <i data-lucide="arrow-left-right" class="w-4 h-4 text-slate-400 shrink-0"></i>
                         <select name="type" id="filter_type" class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 dark:text-white focus:ring-0 focus:outline-none cursor-pointer">
                             <option value="">Semua Mutasi</option>
@@ -373,6 +402,11 @@
             minimumResultsForSearch: Infinity,
             width: '100%'
         }).on('change', function() {
+            $(this).closest('form').submit();
+        });
+
+        // Auto submit on date filter change
+        $('#filter_start_date, #filter_end_date').on('change', function() {
             $(this).closest('form').submit();
         });
     });

@@ -19,6 +19,7 @@ class CashierShift extends Model
         'cash_difference',
         'total_sales',
         'total_transactions',
+        'total_expenses',
         'status',
         'notes',
     ];
@@ -32,6 +33,7 @@ class CashierShift extends Model
         'cash_difference' => 'decimal:2',
         'total_sales' => 'decimal:2',
         'total_transactions' => 'integer',
+        'total_expenses' => 'decimal:2',
     ];
 
     public function user(): BelongsTo
@@ -47,5 +49,10 @@ class CashierShift extends Model
     public function sales(): HasMany
     {
         return $this->hasMany(Sale::class);
+    }
+
+    public function expenses(): HasMany
+    {
+        return $this->hasMany(CashierShiftExpense::class);
     }
 }

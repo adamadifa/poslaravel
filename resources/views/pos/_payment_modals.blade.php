@@ -31,6 +31,48 @@
                 </div>
             </div>
 
+            <!-- Tipe Layanan / Pesanan Selector -->
+            <div>
+                <div class="flex items-center justify-between mb-2">
+                    <label class="text-xs font-bold text-slate-700">Tipe Layanan / Pesanan</label>
+                    <span class="text-[10px] text-slate-400 font-medium">Default: Take Away</span>
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <label id="pay_service_card_takeaway" class="pay-service-card flex items-center justify-center gap-2 p-2.5 rounded-xl border-2 border-brand-500 bg-brand-50/70 text-brand-700 font-bold text-xs cursor-pointer transition shadow-2xs">
+                        <input type="radio" name="pay_service_type" value="takeaway" checked onchange="onPaymentServiceTypeChange('takeaway')" class="sr-only">
+                        <i data-lucide="shopping-bag" class="w-4 h-4 text-brand-600"></i>
+                        <span>Take Away</span>
+                    </label>
+                    <label id="pay_service_card_dine_in" class="pay-service-card flex items-center justify-center gap-2 p-2.5 rounded-xl border border-slate-200 hover:border-slate-300 bg-white text-slate-700 font-bold text-xs cursor-pointer transition shadow-2xs">
+                        <input type="radio" name="pay_service_type" value="dine_in" onchange="onPaymentServiceTypeChange('dine_in')" class="sr-only">
+                        <i data-lucide="utensils" class="w-4 h-4 text-slate-500"></i>
+                        <span>Makan di Tempat</span>
+                    </label>
+                    <label id="pay_service_card_delivery" class="pay-service-card flex items-center justify-center gap-2 p-2.5 rounded-xl border border-slate-200 hover:border-slate-300 bg-white text-slate-700 font-bold text-xs cursor-pointer transition shadow-2xs">
+                        <input type="radio" name="pay_service_type" value="delivery" onchange="onPaymentServiceTypeChange('delivery')" class="sr-only">
+                        <i data-lucide="truck" class="w-4 h-4 text-slate-500"></i>
+                        <span>Delivery</span>
+                    </label>
+                </div>
+
+                <!-- Opsi Meja jika Makan di Tempat dipilih -->
+                <div id="pay_dine_in_table_section" class="hidden mt-2 p-2.5 rounded-xl bg-amber-50/80 border border-amber-200/80 flex items-center justify-between">
+                    <div class="flex items-center gap-2 text-xs">
+                        <div class="w-6 h-6 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-[11px]">
+                            <i data-lucide="utensils-crossed" class="w-3.5 h-3.5"></i>
+                        </div>
+                        <div>
+                            <span class="text-[10px] text-slate-500 block">Meja Terpilih:</span>
+                            <strong class="text-slate-900 font-bold" id="pay_table_selected_text">Tanpa Meja (Bebas)</strong>
+                        </div>
+                    </div>
+                    <button type="button" onclick="openTableModal()" class="px-3 py-1.5 rounded-lg bg-white hover:bg-amber-100 text-amber-800 text-xs font-bold border border-amber-300 transition shadow-2xs cursor-pointer flex items-center gap-1">
+                        <i data-lucide="layout-grid" class="w-3 h-3"></i>
+                        <span>Pilih Meja (F3)</span>
+                    </button>
+                </div>
+            </div>
+
             <!-- Metode Pembayaran Selector -->
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-2">Pilih Metode Pembayaran</label>

@@ -66,6 +66,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('shifts/current', [CashierShiftController::class, 'current'])->name('shifts.current');
     Route::post('shifts/open', [CashierShiftController::class, 'open'])->name('shifts.open');
     Route::post('shifts/{shift}/close', [CashierShiftController::class, 'close'])->name('shifts.close');
+    Route::post('shifts/{shift}/expenses', [CashierShiftController::class, 'addExpense'])->name('shifts.expenses.add');
+    Route::delete('shifts/{shift}/expenses/{expense}', [CashierShiftController::class, 'deleteExpense'])->name('shifts.expenses.delete');
 
     // 3. Master Data Routes
     Route::get('products/barcode-search', [ProductController::class, 'searchForBarcode'])->name('products.barcode-search');
@@ -125,6 +127,8 @@ Route::middleware(['auth'])->group(function () {
 
     // 5. Inventory, Kartu Stok, Opname, Transfer, Adjustment & Alerts (Phase 4)
     Route::get('stocks', [StockMovementController::class, 'index'])->name('stocks.index');
+    Route::get('stocks/export-pdf', [StockMovementController::class, 'exportPdf'])->name('stocks.movements.export-pdf');
+    Route::get('stocks/export-excel', [StockMovementController::class, 'exportExcel'])->name('stocks.movements.export-excel');
     Route::get('stock-alerts', [StockAlertController::class, 'index'])->name('stocks.alerts');
     Route::post('stock-opnames/{stockOpname}/approve', [StockOpnameController::class, 'approve'])->name('stock-opnames.approve');
     Route::resource('stock-opnames', StockOpnameController::class)->except(['create', 'edit']);
@@ -159,8 +163,16 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/', [ReportController::class, 'index'])->name('index');
         Route::get('/sales', [ReportController::class, 'sales'])->name('sales');
         Route::get('/sales/products', [ReportController::class, 'salesByProduct'])->name('sales.products');
+        Route::get('/sales/products/export-pdf', [ReportController::class, 'exportSalesByProductPdf'])->name('sales.products.export-pdf');
+        Route::get('/sales/products/export-excel', [ReportController::class, 'exportSalesByProductExcel'])->name('sales.products.export-excel');
         Route::get('/sales/categories', [ReportController::class, 'salesByCategory'])->name('sales.categories');
+        Route::get('/sales/categories/export-pdf', [ReportController::class, 'exportSalesByCategoryPdf'])->name('sales.categories.export-pdf');
+        Route::get('/sales/categories/export-excel', [ReportController::class, 'exportSalesByCategoryExcel'])->name('sales.categories.export-excel');
+
         Route::get('/sales/customers', [ReportController::class, 'salesByCustomer'])->name('sales.customers');
+        Route::get('/sales/customers/export-pdf', [ReportController::class, 'exportSalesByCustomerPdf'])->name('sales.customers.export-pdf');
+        Route::get('/sales/customers/export-excel', [ReportController::class, 'exportSalesByCustomerExcel'])->name('sales.customers.export-excel');
+
         Route::get('/sales/export-pdf', [ReportController::class, 'exportSalesPdf'])->name('sales.export-pdf');
         Route::get('/sales/export-excel', [ReportController::class, 'exportSalesExcel'])->name('sales.export-excel');
 
@@ -171,16 +183,33 @@ Route::middleware(['auth'])->group(function () {
 
         // 6.3 Laporan Stok & Inventori
         Route::get('/stocks', [ReportController::class, 'stocks'])->name('stocks');
-        Route::get('/stock-opnames', [ReportController::class, 'stockOpnames'])->name('stock-opnames');
         Route::get('/stocks/export-pdf', [ReportController::class, 'exportStocksPdf'])->name('stocks.export-pdf');
         Route::get('/stocks/export-excel', [ReportController::class, 'exportStocksExcel'])->name('stocks.export-excel');
 
+        Route::get('/stock-opnames', [ReportController::class, 'stockOpnames'])->name('stock-opnames');
+        Route::get('/stock-opnames/export-pdf', [ReportController::class, 'exportStockOpnamesPdf'])->name('stock-opnames.export-pdf');
+        Route::get('/stock-opnames/export-excel', [ReportController::class, 'exportStockOpnamesExcel'])->name('stock-opnames.export-excel');
+
         // 6.4 Laporan Keuangan (Finance)
         Route::get('/payables', [ReportController::class, 'payables'])->name('payables');
+        Route::get('/payables/export-pdf', [ReportController::class, 'exportPayablesPdf'])->name('payables.export-pdf');
+        Route::get('/payables/export-excel', [ReportController::class, 'exportPayablesExcel'])->name('payables.export-excel');
+
         Route::get('/receivables', [ReportController::class, 'receivables'])->name('receivables');
+        Route::get('/receivables/export-pdf', [ReportController::class, 'exportReceivablesPdf'])->name('receivables.export-pdf');
+        Route::get('/receivables/export-excel', [ReportController::class, 'exportReceivablesExcel'])->name('receivables.export-excel');
+
         Route::get('/cash-flows', [ReportController::class, 'cashFlows'])->name('cash-flows');
+        Route::get('/cash-flows/export-pdf', [ReportController::class, 'exportCashFlowsPdf'])->name('cash-flows.export-pdf');
+        Route::get('/cash-flows/export-excel', [ReportController::class, 'exportCashFlowsExcel'])->name('cash-flows.export-excel');
+
         Route::get('/profit-loss', [ReportController::class, 'profitLoss'])->name('profit-loss');
+        Route::get('/profit-loss/export-pdf', [ReportController::class, 'exportProfitLossPdf'])->name('profit-loss.export-pdf');
+        Route::get('/profit-loss/export-excel', [ReportController::class, 'exportProfitLossExcel'])->name('profit-loss.export-excel');
+
         Route::get('/cashier-shifts', [ReportController::class, 'cashierShifts'])->name('cashier-shifts');
+        Route::get('/cashier-shifts/export-pdf', [ReportController::class, 'exportCashierShiftsPdf'])->name('cashier-shifts.export-pdf');
+        Route::get('/cashier-shifts/export-excel', [ReportController::class, 'exportCashierShiftsExcel'])->name('cashier-shifts.export-excel');
     });
 
     // 10. Pengaturan Toko & Konfigurasi (Phase 6.6)

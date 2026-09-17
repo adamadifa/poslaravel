@@ -54,7 +54,7 @@
                         <div>
                             <div class="flex items-center gap-2">
                                 <span class="text-base font-black tracking-tight">
-                                    {{ $order->service_type === 'take_away' ? 'Antrian: ' . ($order->queue_number ?? 'TA') : 'Meja: ' . ($order->diningTable->table_number ?? 'Dine-In') }}
+                                    {{ in_array($order->service_type, ['take_away', 'takeaway', 'delivery']) ? 'Antrian: ' . ($order->queue_number ?? 'TA') : 'Meja: ' . ($order->diningTable->table_number ?? 'Dine-In') }}
                                 </span>
                             </div>
                             <div class="text-[11px] font-medium opacity-90">

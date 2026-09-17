@@ -8,6 +8,8 @@
     @include('reports._header', [
         'title' => 'Laporan Penjualan per Kategori',
         'subtitle' => 'Ringkasan kontribusi pendapatan, volume produk, dan perolehan laba kotor berdasarkan kategori barang.',
+        'exportExcelUrl' => route('reports.sales.categories.export-excel', request()->all()),
+        'exportPdfUrl' => route('reports.sales.categories.export-pdf', request()->all()),
     ])
 
     <!-- FILTER SECTION (Outset Floating Label Standard) -->

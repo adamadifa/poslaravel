@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-    <title>Laporan Stok & Nilai Persediaan</title>
+    <title>Laporan Penjualan per Kategori</title>
     <style>
         @page {
             margin: 18px 20px 22px 20px;
@@ -84,11 +84,10 @@
             border-radius: 3px;
             font-size: 7.5px;
             font-weight: bold;
-            text-transform: uppercase;
         }
-        .badge-aman { background-color: #dcfce7; color: #15803d; }
-        .badge-kritis { background-color: #fef3c7; color: #b45309; }
-        .badge-habis { background-color: #fee2e2; color: #b91c1c; }
+        .badge-high { background-color: #dcfce7; color: #15803d; }
+        .badge-mid { background-color: #fef3c7; color: #b45309; }
+        .badge-low { background-color: #fee2e2; color: #b91c1c; }
         .footer-note {
             margin-top: 8px;
             font-size: 8px;
@@ -107,9 +106,9 @@
 
     <div class="kop-container">
         <div class="company-name">{{ strtoupper($companyName) }}</div>
-        <div class="report-title">LAPORAN STOK & NILAI PERSEDIAAN (INVENTORY VALUATION)</div>
+        <div class="report-title">LAPORAN PENJUALAN PER KATEGORI PRODUK</div>
         <div class="report-meta">
-            Tanggal Data: {{ now()->format('d/m/Y H:i') }}
+            Periode: {{ \Carbon\Carbon::parse($startDate)->format('d/m/Y') }} s/d {{ \Carbon\Carbon::parse($endDate)->format('d/m/Y') }}
             &nbsp;|&nbsp; Cabang/Gudang: {{ $warehouse->name ?? 'Semua Cabang / Gudang' }}
             &nbsp;|&nbsp; Dicetak: {{ now()->format('d/m/Y H:i') }}
             &nbsp;|&nbsp; Operator: {{ auth()->user()->name ?? 'Administrator' }}
@@ -119,74 +118,58 @@
     <table class="data-table">
         <thead>
             <tr>
-                <th width="3%">No</th>
-                <th width="10%">Kode Produk</th>
-                <th width="12%">Barcode</th>
-                <th width="20%">Nama Produk</th>
-                <th width="12%">Kategori</th>
-                <th width="11%">Cabang / Gudang</th>
-                <th width="6%" class="text-right">Sisa Stok</th>
-                <th width="5%">Satuan</th>
-                <th width="7%" class="text-right">HPP Pokok</th>
-                <th width="7%" class="text-right">Harga Jual</th>
-                <th width="9%" class="text-right">Total Nilai HPP</th>
-                <th width="6%">Status</th>
+                <th width="4%">No</th>
+                <th width="30%" class="text-left">Nama Kategori</th>
+                <th width="12%" class="text-center">Variasi Produk</th>
+                <th width="12%" class="text-center">Total Qty Terjual</th>
+                <th width="14%" class="text-right">Total Pendapatan</th>
+                <th width="14%" class="text-right">Total HPP Modal</th>
+                <th width="14%" class="text-right">Laba Kotor</th>
             </tr>
         </thead>
         <tbody>
             @php
                 $sumQty = 0;
-                $sumValuation = 0;
+                $sumRevenue = 0;
+                $sumCost = 0;
+                $sumProfit = 0;
             @endphp
-            @forelse($stocks as $index => $s)
+            @forelse($categoriesReport as $index => $cat)
             @php
-                $qty = (float) $s->quantity;
-                $min = (float) ($s->product->min_stock ?? 0);
-                $status = $qty <= 0 ? 'HABIS' : ($qty <= $min ? 'KRITIS' : 'AMAN');
-                $cost = (float) ($s->product->purchase_price ?? 0);
-                $price = (float) ($s->product->selling_price ?? 0);
-                $valuation = $qty * $cost;
+                $qty = (float) $cat->total_qty;
+                $revenue = (float) $cat->total_revenue;
+                $cost = (float) $cat->total_cost;
+                $profit = (float) $cat->gross_profit;
 
                 $sumQty += $qty;
-                $sumValuation += $valuation;
+                $sumRevenue += $revenue;
+                $sumCost += $cost;
+                $sumProfit += $profit;
             @endphp
             <tr>
                 <td class="text-center">{{ $index + 1 }}</td>
-                <td class="text-center font-bold">{{ $s->product->code ?? '-' }}</td>
-                <td class="text-center">{{ $s->product->barcode ?? '-' }}</td>
-                <td class="text-left">{{ $s->product->name ?? '-' }}</td>
-                <td class="text-left">{{ $s->product->category->name ?? 'Tanpa Kategori' }}</td>
-                <td class="text-left">{{ $s->warehouse->name ?? '-' }}</td>
-                <td class="text-right font-bold">{{ number_format($qty, 0, ',', '.') }}</td>
-                <td class="text-center">{{ $s->product->baseUnit->name ?? 'Pcs' }}</td>
-                <td class="text-right">{{ number_format($cost, 0, ',', '.') }}</td>
-                <td class="text-right">{{ number_format($price, 0, ',', '.') }}</td>
-                <td class="text-right font-bold">{{ number_format($valuation, 0, ',', '.') }}</td>
-                <td class="text-center">
-                    @if($status === 'HABIS')
-                        <span class="badge badge-habis">Habis</span>
-                    @elseif($status === 'KRITIS')
-                        <span class="badge badge-kritis">Kritis</span>
-                    @else
-                        <span class="badge badge-aman">Aman</span>
-                    @endif
-                </td>
+                <td class="text-left font-bold">{{ $cat->category_name }}</td>
+                <td class="text-center text-muted">{{ $cat->unique_products_count }} Produk</td>
+                <td class="text-center font-bold">{{ number_format($qty, 0, ',', '.') }}</td>
+                <td class="text-right font-bold">Rp {{ number_format($revenue, 0, ',', '.') }}</td>
+                <td class="text-right text-muted">Rp {{ number_format($cost, 0, ',', '.') }}</td>
+                <td class="text-right font-bold" style="color: #059669;">Rp {{ number_format($profit, 0, ',', '.') }}</td>
             </tr>
             @empty
             <tr>
-                <td colspan="12" class="text-center" style="padding: 16px; color: #94a3b8;">
-                    Tidak ada data stok produk ditemukan.
+                <td colspan="7" class="text-center" style="padding: 16px; color: #94a3b8;">
+                    Tidak ada transaksi kategori ditemukan pada periode ini.
                 </td>
             </tr>
             @endforelse
 
-            @if($stocks->count() > 0)
+            @if(count($categoriesReport) > 0)
             <tr class="summary-row">
-                <td colspan="6" class="text-right">TOTAL PERSEDIAAN ({{ number_format($stocks->count(), 0, ',', '.') }} SKU PRODUK):</td>
-                <td class="text-right">{{ number_format($sumQty, 0, ',', '.') }}</td>
-                <td colspan="3" class="text-right">TOTAL NILAI ASET HPP:</td>
-                <td class="text-right">Rp {{ number_format($sumValuation, 0, ',', '.') }}</td>
-                <td></td>
+                <td colspan="3" class="text-right">TOTAL KESELURUHAN:</td>
+                <td class="text-center">{{ number_format($sumQty, 0, ',', '.') }}</td>
+                <td class="text-right">Rp {{ number_format($sumRevenue, 0, ',', '.') }}</td>
+                <td class="text-right">Rp {{ number_format($sumCost, 0, ',', '.') }}</td>
+                <td class="text-right" style="color: #059669;">Rp {{ number_format($sumProfit, 0, ',', '.') }}</td>
             </tr>
             @endif
         </tbody>

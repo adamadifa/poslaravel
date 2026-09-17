@@ -8,6 +8,8 @@
     @include('reports._header', [
         'title' => 'Laporan Mutasi Arus Kas & Bank',
         'subtitle' => 'Pencatatan mutasi kas masuk, pengeluaran kas operasional, dan arus kas bersih pada tiap rekening kas/bank.',
+        'exportExcelUrl' => route('reports.cash-flows.export-excel', request()->all()),
+        'exportPdfUrl' => route('reports.cash-flows.export-pdf', request()->all()),
     ])
 
     <!-- KPI Metric Cards -->

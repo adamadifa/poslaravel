@@ -46,24 +46,6 @@
                 </button>
                 <input type="hidden" id="posCustomerSelect" value="">
 
-                <!-- Service Type & Table Picker Button (F3) -->
-                <button 
-                    type="button" 
-                    id="posTableBtn" 
-                    onclick="openTableModal()" 
-                    title="Pilih Meja / Tipe Pesanan (F3)" 
-                    class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 hover:border-brand-500/60 text-xs font-semibold text-slate-700 transition shadow-2xs cursor-pointer group"
-                >
-                    <div class="w-6 h-6 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-xs shrink-0">
-                        <i data-lucide="utensils" class="w-3.5 h-3.5"></i>
-                    </div>
-                    <div class="text-left">
-                        <span class="text-[9px] font-bold text-slate-400 block uppercase tracking-wider leading-none">Layanan (F3)</span>
-                        <span id="posTableDisplay" class="font-bold text-slate-900 text-xs truncate max-w-[140px] inline-block mt-0.5">Dine In - Tanpa Meja</span>
-                    </div>
-                    <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400 group-hover:text-brand-500 transition ml-1"></i>
-                </button>
-
                 <!-- Toggle Setting: Input Qty & Harga Manual Modal -->
                 <button 
                     type="button" 
@@ -224,7 +206,7 @@
     let allCustomers = @json($customers);
     let allDiningTables = @json($diningTables);
     let selectedCustomer = null;
-    let selectedServiceType = 'dine_in';
+    let selectedServiceType = 'takeaway';
     let selectedTable = null;
     let guestCount = 1;
     let selectedTableArea = 'all';
@@ -251,9 +233,24 @@
         }
     }
 
+    function escapeHtml(str) {
+        if (str === null || str === undefined) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
     // Initialize POS
     document.addEventListener('DOMContentLoaded', () => {
         initManualPriceSettingUI();
+
+        if (activeShift && activeShift.warehouse && activeShift.warehouse.name) {
+            const whEl = document.getElementById('posWarehouseDisplayName');
+            if (whEl) whEl.innerText = activeShift.warehouse.name;
+        }
 
         if (!activeShift) {
             openModal('openShiftModal');
@@ -283,7 +280,7 @@
             }
         });
 
-        // Global Shortcuts (F1, F2, F3, F7, F9, F12, Escape)
+        // Global Shortcuts (F1, F2, F3, F4, F7, F9, F12, Escape)
         window.addEventListener('keydown', (e) => {
             const key = e.key;
 
@@ -300,6 +297,9 @@
             } else if (key === 'F3') {
                 e.preventDefault();
                 openTableModal();
+            } else if (key === 'F4') {
+                e.preventDefault();
+                openShiftExpenseModal();
             } else if (key === 'F7') {
                 e.preventDefault();
                 openModal('holdModal');
@@ -327,8 +327,12 @@
                 closeModal('discountModal');
                 closeModal('customerModal');
                 closeModal('newCustomerModal');
+                closeModal('shiftExpenseModal');
+                closeModal('closeShiftModal');
             }
         });
+
+        updateHeaderShiftExpenseBadge();
     });
 
     // Customer Modal Handlers
@@ -557,21 +561,9 @@
     function confirmTableSelection() {
         const gIn = document.getElementById('modal_guest_count');
         guestCount = gIn ? (parseInt(gIn.value) || 1) : 1;
-        const display = document.getElementById('posTableDisplay');
-
-        if (display) {
-            if (selectedServiceType === 'takeaway') {
-                display.innerText = 'Take Away (Bungkus)';
-            } else if (selectedServiceType === 'delivery') {
-                display.innerText = 'Delivery (Kirim)';
-            } else {
-                if (selectedTable) {
-                    display.innerText = `${selectedTable.table_number} (${guestCount} Tamu)`;
-                } else {
-                    display.innerText = `Dine In (${guestCount} Tamu)`;
-                }
-            }
-        }
+        selectedServiceType = 'dine_in';
+        updatePaymentTableDisplay();
+        onPaymentServiceTypeChange('dine_in');
         closeModal('tableModal');
     }
 
@@ -666,6 +658,11 @@
             if (data.status === 'success') {
                 activeShift = data.data;
                 currentWarehouseId = warehouseId;
+                if (activeShift && activeShift.warehouse && activeShift.warehouse.name) {
+                    const whEl = document.getElementById('posWarehouseDisplayName');
+                    if (whEl) whEl.innerText = activeShift.warehouse.name;
+                }
+                updateHeaderShiftExpenseBadge();
                 closeModal('openShiftModal');
                 showPosAlert('success', 'Shift Kasir Dimulai!', `Modal awal kas: Rp ${parseInt(startingCash).toLocaleString('id-ID')}`, 2000);
             } else {
@@ -677,11 +674,15 @@
     }
 
     function openCloseShiftDialog() {
-        if (!activeShift) return;
-        document.getElementById('close_shift_starting_cash').innerText = `Rp ${parseInt(activeShift.starting_cash).toLocaleString('id-ID')}`;
-        document.getElementById('close_shift_total_trx').innerText = `${activeShift.total_transactions} Struk`;
-        document.getElementById('close_shift_total_sales').innerText = `Rp ${parseInt(activeShift.total_sales).toLocaleString('id-ID')}`;
-        document.getElementById('close_shift_expected_cash').innerText = `Rp ${parseInt(activeShift.expected_cash).toLocaleString('id-ID')}`;
+        if (!activeShift) {
+            showPosToast('warning', 'Tidak ada sesi shift aktif.');
+            return;
+        }
+        document.getElementById('close_shift_starting_cash').innerText = `Rp ${parseInt(activeShift.starting_cash || 0).toLocaleString('id-ID')}`;
+        document.getElementById('close_shift_total_trx').innerText = `${activeShift.total_transactions || 0} Struk`;
+        document.getElementById('close_shift_total_sales').innerText = `Rp ${parseInt(activeShift.total_sales || 0).toLocaleString('id-ID')}`;
+        document.getElementById('close_shift_total_expenses').innerText = `- Rp ${parseInt(activeShift.total_expenses || 0).toLocaleString('id-ID')}`;
+        document.getElementById('close_shift_expected_cash').innerText = `Rp ${parseInt(activeShift.expected_cash || 0).toLocaleString('id-ID')}`;
         document.getElementById('shift_closing_cash').value = '';
         calculateShiftDifference();
         openModal('closeShiftModal');
@@ -703,6 +704,178 @@
         } else {
             badge.className = 'font-bold text-rose-600';
             badge.innerText = `- Rp ${parseInt(Math.abs(diff)).toLocaleString('id-ID')} (Kurang/Selisih)`;
+        }
+    }
+
+    // ==========================================
+    // SHIFT EXPENSE (KAS KELUAR) HANDLERS
+    // ==========================================
+    function openShiftExpenseModal() {
+        if (!activeShift) {
+            showPosToast('warning', 'Silakan buka sesi shift kasir terlebih dahulu.');
+            return;
+        }
+        document.getElementById('shift_expense_amount').value = '';
+        document.getElementById('shift_expense_notes').value = '';
+        renderShiftExpensesTable();
+        openModal('shiftExpenseModal');
+        if (window.lucide) {
+            lucide.createIcons();
+        }
+    }
+
+    function updateHeaderShiftExpenseBadge() {
+        const badge = document.getElementById('header_shift_expense_badge');
+        if (!badge) return;
+        const totalExp = activeShift ? parseFloat(activeShift.total_expenses || 0) : 0;
+        if (totalExp > 0) {
+            badge.innerText = `-Rp ${parseInt(totalExp).toLocaleString('id-ID')}`;
+            badge.classList.remove('hidden');
+        } else {
+            badge.classList.add('hidden');
+        }
+    }
+
+    function renderShiftExpensesTable() {
+        const tbody = document.getElementById('shift_expenses_table_body');
+        const badge = document.getElementById('shift_expenses_total_badge');
+        updateHeaderShiftExpenseBadge();
+        if (!tbody || !activeShift) return;
+
+        const expenses = activeShift.expenses || [];
+        const totalExp = parseFloat(activeShift.total_expenses || 0);
+
+        if (badge) {
+            badge.innerText = `Total: Rp ${parseInt(totalExp).toLocaleString('id-ID')}`;
+        }
+
+        if (expenses.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="3" class="py-6 text-center text-slate-400 text-xs">
+                        Belum ada pengeluaran yang dicatat pada shift ini.
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        let html = '';
+        expenses.forEach(exp => {
+            const timeStr = exp.expense_date ? new Date(exp.expense_date).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '';
+            html += `
+                <tr class="hover:bg-slate-50/80 transition">
+                    <td class="py-2 px-3">
+                        <div class="font-bold text-slate-900">${escapeHtml(exp.category)}</div>
+                        <div class="text-[11px] text-slate-500">${escapeHtml(exp.notes || '-')}</div>
+                        ${timeStr ? `<div class="text-[9px] text-slate-400 mt-0.5">${timeStr}</div>` : ''}
+                    </td>
+                    <td class="py-2 px-3 text-right font-black text-rose-600 font-mono-num whitespace-nowrap">
+                        - Rp ${parseInt(exp.amount).toLocaleString('id-ID')}
+                    </td>
+                    <td class="py-2 px-2 text-center">
+                        <button type="button" onclick="handleDeleteShiftExpense(${exp.id})" title="Hapus Pengeluaran" class="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+        tbody.innerHTML = html;
+        if (window.lucide) {
+            lucide.createIcons();
+        }
+    }
+
+    async function handleStoreShiftExpense(e) {
+        e.preventDefault();
+        if (!activeShift) return;
+
+        const amount = document.getElementById('shift_expense_amount').value;
+        const category = document.getElementById('shift_expense_category').value;
+        const notes = document.getElementById('shift_expense_notes').value;
+        const btn = document.getElementById('submitShiftExpenseBtn');
+
+        if (!amount || parseFloat(amount) <= 0) {
+            showPosToast('warning', 'Masukkan nominal pengeluaran yang valid.');
+            return;
+        }
+
+        try {
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = `<span class="animate-spin inline-block mr-1">⏳</span> Menyimpan...`;
+            }
+
+            const res = await fetch(`/shifts/${activeShift.id}/expenses`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ amount, category, notes })
+            });
+
+            const data = await res.json();
+            if (data.status === 'success') {
+                activeShift = data.data;
+                document.getElementById('shift_expense_amount').value = '';
+                document.getElementById('shift_expense_notes').value = '';
+                renderShiftExpensesTable();
+                showPosToast('success', data.message || 'Pengeluaran berhasil dicatat.');
+            } else {
+                showPosAlert('error', 'Gagal Mencatat Pengeluaran', data.message);
+            }
+        } catch (err) {
+            showPosAlert('error', 'Terjadi Kesalahan', err.message);
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i> <span>Simpan Pengeluaran Kasir</span>`;
+                if (window.lucide) lucide.createIcons();
+            }
+        }
+    }
+
+    async function handleDeleteShiftExpense(expenseId) {
+        if (!activeShift) return;
+
+        const result = await Swal.fire({
+            title: 'Hapus Pengeluaran?',
+            text: 'Pengeluaran ini akan dibatalkan dan kas sistem akan disesuaikan kembali.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Ya, Hapus',
+            cancelButtonText: 'Batal',
+            scrollbarPadding: false,
+            heightAuto: false
+        });
+
+        if (!result.isConfirmed) return;
+
+        try {
+            const res = await fetch(`/shifts/${activeShift.id}/expenses/${expenseId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                }
+            });
+
+            const data = await res.json();
+            if (data.status === 'success') {
+                activeShift = data.data;
+                renderShiftExpensesTable();
+                showPosToast('success', 'Pengeluaran kasir berhasil dihapus.');
+            } else {
+                showPosAlert('error', 'Gagal Menghapus Pengeluaran', data.message);
+            }
+        } catch (err) {
+            showPosAlert('error', 'Terjadi Kesalahan', err.message);
         }
     }
 
@@ -1246,6 +1419,8 @@
         cart = [];
         appliedPromoCode = '';
         appliedManualDiscount = 0;
+        selectedServiceType = 'takeaway';
+        selectedTable = null;
         const dCode = document.getElementById('discount_promo_code');
         const dAmt = document.getElementById('discount_manual_amount');
         if (dCode) dCode.value = '';
@@ -1535,7 +1710,99 @@
         window.currentCartGrandTotal = grandTotal;
     }
 
+    // Service Type Handlers in Payment Modal
+    function onPaymentServiceTypeChange(type) {
+        selectedServiceType = type;
+        const types = ['takeaway', 'dine_in', 'delivery'];
+        types.forEach(t => {
+            const card = document.getElementById(`pay_service_card_${t}`);
+            const radio = card ? card.querySelector('input') : null;
+            const icon = card ? card.querySelector('i') : null;
+            if (card && radio) {
+                if (t === type) {
+                    radio.checked = true;
+                    card.className = 'pay-service-card flex items-center justify-center gap-2 p-2.5 rounded-xl border-2 border-brand-500 bg-brand-50/70 text-brand-700 font-bold text-xs cursor-pointer transition shadow-2xs';
+                    if (icon) icon.className = 'w-4 h-4 text-brand-600';
+                } else {
+                    card.className = 'pay-service-card flex items-center justify-center gap-2 p-2.5 rounded-xl border border-slate-200 hover:border-slate-300 bg-white text-slate-700 font-bold text-xs cursor-pointer transition shadow-2xs';
+                    if (icon) icon.className = 'w-4 h-4 text-slate-500';
+                }
+            }
+        });
+
+        const tableSec = document.getElementById('pay_dine_in_table_section');
+        if (tableSec) {
+            if (type === 'dine_in') {
+                tableSec.classList.remove('hidden');
+                updatePaymentTableDisplay();
+            } else {
+                tableSec.classList.add('hidden');
+            }
+        }
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    function updatePaymentTableDisplay() {
+        const textEl = document.getElementById('pay_table_selected_text');
+        if (!textEl) return;
+        if (selectedTable) {
+            textEl.innerText = `Meja ${selectedTable.table_number} (${guestCount} Tamu)`;
+        } else {
+            textEl.innerText = `Tanpa Meja (${guestCount} Tamu)`;
+        }
+    }
+
     // Payment Dialog & Checkout Execution
+    function renderSmartCashPresets(total) {
+        const container = document.getElementById('quick_cash_pills_container');
+        if (!container) return;
+
+        const numTotal = Math.max(0, parseFloat(total) || 0);
+        const presets = new Set();
+
+        // 1. Uang pas selalu ada sebagai tombol pertama
+        let html = `<button type="button" onclick="setCashAmount('exact')" class="px-2.5 py-1 rounded-lg bg-emerald-100 hover:bg-emerald-200 text-emerald-800 text-xs font-bold transition">Uang Pas</button>`;
+
+        if (numTotal > 0) {
+            // Pembulatan ke 5.000 terdekat jika bukan kelipatan 5.000
+            const ceil5k = Math.ceil(numTotal / 5000) * 5000;
+            if (ceil5k > numTotal) presets.add(ceil5k);
+
+            // Pembulatan ke 10.000 terdekat
+            const ceil10k = Math.ceil(numTotal / 10000) * 10000;
+            if (ceil10k > numTotal) presets.add(ceil10k);
+
+            // Pembulatan ke 20.000 terdekat
+            const ceil20k = Math.ceil(numTotal / 20000) * 20000;
+            if (ceil20k > numTotal) presets.add(ceil20k);
+
+            // Pembulatan ke 50.000 terdekat
+            const ceil50k = Math.ceil(numTotal / 50000) * 50000;
+            if (ceil50k > numTotal) presets.add(ceil50k);
+
+            // Pembulatan ke 100.000 terdekat
+            const ceil100k = Math.ceil(numTotal / 100000) * 100000;
+            if (ceil100k > numTotal) presets.add(ceil100k);
+
+            // Pecahan uang standar di atas total
+            [20000, 50000, 100000].forEach(denom => {
+                if (denom > numTotal) presets.add(denom);
+            });
+
+            // Urutkan nominal rekomendasi
+            const sortedPresets = Array.from(presets).sort((a, b) => a - b).slice(0, 5);
+            sortedPresets.forEach(amount => {
+                html += `<button type="button" onclick="setCashAmount(${amount})" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition font-mono-num">${parseInt(amount).toLocaleString('id-ID')}</button>`;
+            });
+        } else {
+            [10000, 20000, 50000, 100000].forEach(amount => {
+                html += `<button type="button" onclick="setCashAmount(${amount})" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition font-mono-num">${parseInt(amount).toLocaleString('id-ID')}</button>`;
+            });
+        }
+
+        container.innerHTML = html;
+    }
+
     function openPaymentModal() {
         if (cart.length === 0) {
             Swal.fire({ icon: 'warning', title: 'Keranjang Kosong', text: 'Tambahkan produk terlebih dahulu sebelum checkout.', scrollbarPadding: false, heightAuto: false });
@@ -1551,7 +1818,9 @@
         document.getElementById('pay_item_summary_text').innerText = `${cart.length} Item`;
         document.getElementById('pay_grand_total_display').innerText = `Rp ${parseInt(window.currentCartGrandTotal).toLocaleString('id-ID')}`;
         document.getElementById('pay_cash_received_input').value = window.currentCartGrandTotal;
+        renderSmartCashPresets(window.currentCartGrandTotal);
         calculateChangeAmount();
+        onPaymentServiceTypeChange(selectedServiceType || 'takeaway');
         openModal('paymentModal');
 
         // Focus cash input

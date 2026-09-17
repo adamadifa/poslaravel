@@ -8,6 +8,8 @@
     @include('reports._header', [
         'title' => 'Laporan Laba Rugi Sederhana (P&L)',
         'subtitle' => 'Ringkasan performa finansial: Pendapatan Penjualan Bersih dikurangi Beban HPP FIFO dan Biaya Operasional Kas Keluar.',
+        'exportExcelUrl' => route('reports.profit-loss.export-excel', request()->all()),
+        'exportPdfUrl' => route('reports.profit-loss.export-pdf', request()->all()),
     ])
 
     <!-- KPI Metric Cards -->

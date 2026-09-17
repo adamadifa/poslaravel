@@ -8,6 +8,8 @@
     @include('reports._header', [
         'title' => 'Laporan Hasil Stok Opname',
         'subtitle' => 'Rekapitulasi pelaksanaan penyesuaian fisik stok, selisih kuantitas fisik vs sistem, serta nilai penyesuaian aset.',
+        'exportExcelUrl' => route('reports.stock-opnames.export-excel', request()->all()),
+        'exportPdfUrl' => route('reports.stock-opnames.export-pdf', request()->all()),
     ])
 
     <!-- FILTER SECTION (Outset Floating Label Standard) -->
