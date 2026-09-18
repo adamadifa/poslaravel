@@ -187,13 +187,14 @@
                         </div>
                     </div>
 
-                    <div class="relative rounded-xl border border-slate-200 hover:border-slate-300 focus-within:border-blue-600 focus-within:ring-2 focus-within:ring-blue-600/20 bg-white transition px-4 pt-3 pb-2">
-                        <label class="absolute -top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold text-slate-700">
-                            Biaya Admin Toko (Fee Kasir)
+                    <div class="relative rounded-xl border border-slate-200 bg-slate-100/70 transition px-4 pt-3 pb-2 shadow-2xs cursor-not-allowed">
+                        <label class="absolute -top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold text-slate-500 flex items-center gap-1">
+                            <i data-lucide="lock" class="w-3 h-3 text-slate-400"></i>
+                            <span>Biaya Admin Toko (Terkunci)</span>
                         </label>
                         <div class="flex items-center gap-1.5">
-                            <span class="text-xs font-bold text-emerald-600">Rp</span>
-                            <input type="number" step="any" min="0" id="transfer_admin_fee" value="5000" oninput="calculateTransferTotal()" class="w-full bg-transparent border-0 p-0 text-sm font-black text-slate-900 focus:ring-0 focus:outline-none font-mono-num">
+                            <span class="text-xs font-bold text-slate-400">Rp</span>
+                            <input type="number" step="any" min="0" id="transfer_admin_fee" value="{{ $agentTransferAdminFee ?? 5000 }}" readonly tabindex="-1" class="w-full bg-transparent border-0 p-0 text-sm font-black text-slate-700 focus:ring-0 focus:outline-none font-mono-num cursor-not-allowed select-none">
                         </div>
                     </div>
 
@@ -273,13 +274,14 @@
                         </div>
                     </div>
 
-                    <div class="relative rounded-xl border border-slate-200 hover:border-slate-300 focus-within:border-emerald-600 focus-within:ring-2 focus-within:ring-emerald-600/20 bg-white transition px-4 pt-3 pb-2">
-                        <label class="absolute -top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold text-slate-700">
-                            Biaya Admin Toko (Fee Kasir)
+                    <div class="relative rounded-xl border border-slate-200 bg-slate-100/70 transition px-4 pt-3 pb-2 shadow-2xs cursor-not-allowed">
+                        <label class="absolute -top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold text-slate-500 flex items-center gap-1">
+                            <i data-lucide="lock" class="w-3 h-3 text-slate-400"></i>
+                            <span>Biaya Admin Toko (Terkunci)</span>
                         </label>
                         <div class="flex items-center gap-1.5">
-                            <span class="text-xs font-bold text-emerald-600">Rp</span>
-                            <input type="number" step="any" min="0" id="withdraw_admin_fee" value="5000" oninput="calculateWithdrawTotal()" class="w-full bg-transparent border-0 p-0 text-sm font-black text-slate-900 focus:ring-0 focus:outline-none font-mono-num">
+                            <span class="text-xs font-bold text-slate-400">Rp</span>
+                            <input type="number" step="any" min="0" id="withdraw_admin_fee" value="{{ $agentWithdrawAdminFee ?? 5000 }}" readonly tabindex="-1" class="w-full bg-transparent border-0 p-0 text-sm font-black text-slate-700 focus:ring-0 focus:outline-none font-mono-num cursor-not-allowed select-none">
                         </div>
                     </div>
                 </div>

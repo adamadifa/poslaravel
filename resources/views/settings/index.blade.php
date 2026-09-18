@@ -72,6 +72,12 @@
                     <i data-lucide="receipt" class="w-4 h-4 shrink-0"></i>
                     <span>Template Struk Kasir</span>
                 </a>
+
+                <a href="{{ route('settings.index', ['tab' => 'agent']) }}"
+                   class="flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold transition-all {{ $tab === 'agent' ? 'bg-brand-500 text-white shadow-md shadow-brand-500/25' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800' }}">
+                    <i data-lucide="landmark" class="w-4 h-4 shrink-0"></i>
+                    <span>Biaya Admin Agen & Bank</span>
+                </a>
             </div>
 
             <!-- Info Box -->
@@ -543,6 +549,291 @@
                         </div>
                     </form>
                 </div>
+            @elseif($tab === 'agent')
+                <!-- TAB 5: BIAYA ADMIN AGEN & BANK -->
+                <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xs">
+                    <div class="flex items-center justify-between pb-6 border-b border-slate-100 dark:border-slate-800 mb-6">
+                        <div>
+                            <h2 class="text-lg font-black text-slate-800 dark:text-white">Biaya Admin Agen & Perbankan</h2>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Tentukan standar biaya jasa transfer dan tarik tunai. Nilai ini akan otomatis terkunci di kasir POS.</p>
+                        </div>
+                    </div>
+
+                    <form action="{{ route('settings.agent') }}" method="POST" class="space-y-8">
+                        @csrf
+
+                        <!-- 1. Biaya Standar / Default (Fallback jika tidak masuk range) -->
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-800 dark:text-white mb-1 flex items-center gap-2">
+                                <span class="w-6 h-6 rounded-lg bg-brand-50 dark:bg-brand-950/50 text-brand-600 flex items-center justify-center text-xs font-black">1</span>
+                                Biaya Admin Default (Fallback)
+                            </h3>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Biaya admin yang digunakan jika nominal transaksi di kasir tidak masuk ke dalam salah satu range nominal di bawah.</p>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <!-- Biaya Admin Transfer Uang -->
+                                <div class="relative rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 pt-3 pb-2 focus-within:border-brand-500 focus-within:ring-1 focus-within:ring-brand-500">
+                                    <label class="absolute -top-2.5 left-3.5 bg-white dark:bg-slate-900 px-1.5 text-[11px] font-bold text-slate-700 dark:text-slate-300">Default Biaya Admin - Transfer Bank (Rp) *</label>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-xs font-bold text-emerald-600">Rp</span>
+                                        <input type="number" step="any" min="0" name="agent_transfer_admin_fee" value="{{ old('agent_transfer_admin_fee', $agentTransferAdminFee) }}" required class="w-full border-0 p-0 text-sm font-bold text-slate-800 dark:text-white bg-transparent focus:ring-0 focus:outline-none font-mono-num" placeholder="5000">
+                                    </div>
+                                    <span class="text-[10px] text-slate-400 mt-1 block">Contoh: Rp 5.000 jika transaksi tidak ada kecocokan di tabel range.</span>
+                                </div>
+
+                                <!-- Biaya Admin Tarik Tunai -->
+                                <div class="relative rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 pt-3 pb-2 focus-within:border-brand-500 focus-within:ring-1 focus-within:ring-brand-500">
+                                    <label class="absolute -top-2.5 left-3.5 bg-white dark:bg-slate-900 px-1.5 text-[11px] font-bold text-slate-700 dark:text-slate-300">Default Biaya Admin - Tarik Tunai (Rp) *</label>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-xs font-bold text-emerald-600">Rp</span>
+                                        <input type="number" step="any" min="0" name="agent_withdraw_admin_fee" value="{{ old('agent_withdraw_admin_fee', $agentWithdrawAdminFee) }}" required class="w-full border-0 p-0 text-sm font-bold text-slate-800 dark:text-white bg-transparent focus:ring-0 focus:outline-none font-mono-num" placeholder="5000">
+                                    </div>
+                                    <span class="text-[10px] text-slate-400 mt-1 block">Contoh: Rp 5.000 jika transaksi tidak ada kecocokan di tabel range.</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 2. Skema Bertingkat Transfer Uang -->
+                        <div class="pt-6 border-t border-slate-100 dark:border-slate-800">
+                            <div class="flex items-center justify-between mb-3">
+                                <div>
+                                    <h3 class="text-sm font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                                        <span class="w-6 h-6 rounded-lg bg-blue-50 dark:bg-blue-950/50 text-blue-600 flex items-center justify-center text-xs font-black">2</span>
+                                        Range Biaya Admin - Transfer Uang
+                                    </h3>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Atur biaya admin transfer bank bertingkat sesuai nominal transfer nasabah.</p>
+                                </div>
+                                <button type="button" onclick="addTransferTierRow()" class="px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">
+                                    <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                                    <span>Tambah Baris Range</span>
+                                </button>
+                            </div>
+
+                            <div class="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-700">
+                                <table class="w-full text-left text-xs text-slate-600 dark:text-slate-400">
+                                    <thead class="bg-slate-50 dark:bg-slate-800/60 text-[11px] font-bold text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700">
+                                        <tr>
+                                            <th class="py-3 px-4">Dari Nominal (Min Rp)</th>
+                                            <th class="py-3 px-4">Sampai Nominal (Maks Rp)</th>
+                                            <th class="py-3 px-4">Biaya Admin Kasir (Rp)</th>
+                                            <th class="py-3 px-4 w-12 text-center">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="transferTierTableBody" class="divide-y divide-slate-100 dark:divide-slate-800 bg-white dark:bg-slate-900">
+                                        @forelse($agentTransferTiers as $idx => $tier)
+                                            <tr class="tier-row hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition">
+                                                <td class="p-2.5 px-4">
+                                                    <div class="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/80 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
+                                                        <span class="text-[11px] font-bold text-slate-400">Rp</span>
+                                                        <input type="number" step="any" min="0" name="transfer_tiers[{{ $idx }}][min]" value="{{ $tier['min'] ?? 0 }}" required class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 dark:text-white focus:ring-0 focus:outline-none font-mono-num">
+                                                    </div>
+                                                </td>
+                                                <td class="p-2.5 px-4">
+                                                    <div class="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/80 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
+                                                        <span class="text-[11px] font-bold text-slate-400">Rp</span>
+                                                        <input type="number" step="any" min="0" name="transfer_tiers[{{ $idx }}][max]" value="{{ $tier['max'] ?? 0 }}" required class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 dark:text-white focus:ring-0 focus:outline-none font-mono-num">
+                                                    </div>
+                                                </td>
+                                                <td class="p-2.5 px-4">
+                                                    <div class="flex items-center gap-1.5 bg-emerald-50/60 dark:bg-emerald-950/40 px-2.5 py-1.5 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                                                        <span class="text-[11px] font-bold text-emerald-600">Rp</span>
+                                                        <input type="number" step="any" min="0" name="transfer_tiers[{{ $idx }}][fee]" value="{{ $tier['fee'] ?? 0 }}" required class="w-full bg-transparent border-0 p-0 text-xs font-bold text-emerald-700 dark:text-emerald-400 focus:ring-0 focus:outline-none font-mono-num">
+                                                    </div>
+                                                </td>
+                                                <td class="p-2.5 px-4 text-center">
+                                                    <button type="button" onclick="removeTierRow(this)" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition cursor-pointer">
+                                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        @empty
+                                            <!-- Baris default contoh jika belum ada -->
+                                            <tr class="tier-row hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition">
+                                                <td class="p-2.5 px-4">
+                                                    <div class="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/80 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
+                                                        <span class="text-[11px] font-bold text-slate-400">Rp</span>
+                                                        <input type="number" step="any" min="0" name="transfer_tiers[0][min]" value="0" required class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 dark:text-white focus:ring-0 focus:outline-none font-mono-num">
+                                                    </div>
+                                                </td>
+                                                <td class="p-2.5 px-4">
+                                                    <div class="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/80 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
+                                                        <span class="text-[11px] font-bold text-slate-400">Rp</span>
+                                                        <input type="number" step="any" min="0" name="transfer_tiers[0][max]" value="1000000" required class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 dark:text-white focus:ring-0 focus:outline-none font-mono-num">
+                                                    </div>
+                                                </td>
+                                                <td class="p-2.5 px-4">
+                                                    <div class="flex items-center gap-1.5 bg-emerald-50/60 dark:bg-emerald-950/40 px-2.5 py-1.5 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                                                        <span class="text-[11px] font-bold text-emerald-600">Rp</span>
+                                                        <input type="number" step="any" min="0" name="transfer_tiers[0][fee]" value="5000" required class="w-full bg-transparent border-0 p-0 text-xs font-bold text-emerald-700 dark:text-emerald-400 focus:ring-0 focus:outline-none font-mono-num">
+                                                    </div>
+                                                </td>
+                                                <td class="p-2.5 px-4 text-center">
+                                                    <button type="button" onclick="removeTierRow(this)" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition cursor-pointer">
+                                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            <tr class="tier-row hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition">
+                                                <td class="p-2.5 px-4">
+                                                    <div class="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/80 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
+                                                        <span class="text-[11px] font-bold text-slate-400">Rp</span>
+                                                        <input type="number" step="any" min="0" name="transfer_tiers[1][min]" value="1000001" required class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 dark:text-white focus:ring-0 focus:outline-none font-mono-num">
+                                                    </div>
+                                                </td>
+                                                <td class="p-2.5 px-4">
+                                                    <div class="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/80 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
+                                                        <span class="text-[11px] font-bold text-slate-400">Rp</span>
+                                                        <input type="number" step="any" min="0" name="transfer_tiers[1][max]" value="5000000" required class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 dark:text-white focus:ring-0 focus:outline-none font-mono-num">
+                                                    </div>
+                                                </td>
+                                                <td class="p-2.5 px-4">
+                                                    <div class="flex items-center gap-1.5 bg-emerald-50/60 dark:bg-emerald-950/40 px-2.5 py-1.5 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                                                        <span class="text-[11px] font-bold text-emerald-600">Rp</span>
+                                                        <input type="number" step="any" min="0" name="transfer_tiers[1][fee]" value="7500" required class="w-full bg-transparent border-0 p-0 text-xs font-bold text-emerald-700 dark:text-emerald-400 focus:ring-0 focus:outline-none font-mono-num">
+                                                    </div>
+                                                </td>
+                                                <td class="p-2.5 px-4 text-center">
+                                                    <button type="button" onclick="removeTierRow(this)" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition cursor-pointer">
+                                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- 3. Skema Bertingkat Tarik Tunai -->
+                        <div class="pt-6 border-t border-slate-100 dark:border-slate-800">
+                            <div class="flex items-center justify-between mb-3">
+                                <div>
+                                    <h3 class="text-sm font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                                        <span class="w-6 h-6 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 flex items-center justify-center text-xs font-black">3</span>
+                                        Range Biaya Admin - Tarik Tunai
+                                    </h3>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Atur biaya admin tarik tunai (gesek EDC / transfer masuk) bertingkat sesuai nominal yang diambil.</p>
+                                </div>
+                                <button type="button" onclick="addWithdrawTierRow()" class="px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">
+                                    <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                                    <span>Tambah Baris Range</span>
+                                </button>
+                            </div>
+
+                            <div class="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-700">
+                                <table class="w-full text-left text-xs text-slate-600 dark:text-slate-400">
+                                    <thead class="bg-slate-50 dark:bg-slate-800/60 text-[11px] font-bold text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700">
+                                        <tr>
+                                            <th class="py-3 px-4">Dari Nominal (Min Rp)</th>
+                                            <th class="py-3 px-4">Sampai Nominal (Maks Rp)</th>
+                                            <th class="py-3 px-4">Biaya Admin Kasir (Rp)</th>
+                                            <th class="py-3 px-4 w-12 text-center">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="withdrawTierTableBody" class="divide-y divide-slate-100 dark:divide-slate-800 bg-white dark:bg-slate-900">
+                                        @forelse($agentWithdrawTiers as $idx => $tier)
+                                            <tr class="tier-row hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition">
+                                                <td class="p-2.5 px-4">
+                                                    <div class="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/80 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
+                                                        <span class="text-[11px] font-bold text-slate-400">Rp</span>
+                                                        <input type="number" step="any" min="0" name="withdraw_tiers[{{ $idx }}][min]" value="{{ $tier['min'] ?? 0 }}" required class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 dark:white focus:ring-0 focus:outline-none font-mono-num">
+                                                    </div>
+                                                </td>
+                                                <td class="p-2.5 px-4">
+                                                    <div class="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/80 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
+                                                        <span class="text-[11px] font-bold text-slate-400">Rp</span>
+                                                        <input type="number" step="any" min="0" name="withdraw_tiers[{{ $idx }}][max]" value="{{ $tier['max'] ?? 0 }}" required class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 dark:text-white focus:ring-0 focus:outline-none font-mono-num">
+                                                    </div>
+                                                </td>
+                                                <td class="p-2.5 px-4">
+                                                    <div class="flex items-center gap-1.5 bg-emerald-50/60 dark:bg-emerald-950/40 px-2.5 py-1.5 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                                                        <span class="text-[11px] font-bold text-emerald-600">Rp</span>
+                                                        <input type="number" step="any" min="0" name="withdraw_tiers[{{ $idx }}][fee]" value="{{ $tier['fee'] ?? 0 }}" required class="w-full bg-transparent border-0 p-0 text-xs font-bold text-emerald-700 dark:text-emerald-400 focus:ring-0 focus:outline-none font-mono-num">
+                                                    </div>
+                                                </td>
+                                                <td class="p-2.5 px-4 text-center">
+                                                    <button type="button" onclick="removeTierRow(this)" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition cursor-pointer">
+                                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        @empty
+                                            <!-- Baris default contoh jika belum ada -->
+                                            <tr class="tier-row hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition">
+                                                <td class="p-2.5 px-4">
+                                                    <div class="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/80 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
+                                                        <span class="text-[11px] font-bold text-slate-400">Rp</span>
+                                                        <input type="number" step="any" min="0" name="withdraw_tiers[0][min]" value="0" required class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 dark:text-white focus:ring-0 focus:outline-none font-mono-num">
+                                                    </div>
+                                                </td>
+                                                <td class="p-2.5 px-4">
+                                                    <div class="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/80 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
+                                                        <span class="text-[11px] font-bold text-slate-400">Rp</span>
+                                                        <input type="number" step="any" min="0" name="withdraw_tiers[0][max]" value="1000000" required class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 dark:text-white focus:ring-0 focus:outline-none font-mono-num">
+                                                    </div>
+                                                </td>
+                                                <td class="p-2.5 px-4">
+                                                    <div class="flex items-center gap-1.5 bg-emerald-50/60 dark:bg-emerald-950/40 px-2.5 py-1.5 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                                                        <span class="text-[11px] font-bold text-emerald-600">Rp</span>
+                                                        <input type="number" step="any" min="0" name="withdraw_tiers[0][fee]" value="5000" required class="w-full bg-transparent border-0 p-0 text-xs font-bold text-emerald-700 dark:text-emerald-400 focus:ring-0 focus:outline-none font-mono-num">
+                                                    </div>
+                                                </td>
+                                                <td class="p-2.5 px-4 text-center">
+                                                    <button type="button" onclick="removeTierRow(this)" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition cursor-pointer">
+                                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            <tr class="tier-row hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition">
+                                                <td class="p-2.5 px-4">
+                                                    <div class="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/80 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
+                                                        <span class="text-[11px] font-bold text-slate-400">Rp</span>
+                                                        <input type="number" step="any" min="0" name="withdraw_tiers[1][min]" value="1000001" required class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 dark:text-white focus:ring-0 focus:outline-none font-mono-num">
+                                                    </div>
+                                                </td>
+                                                <td class="p-2.5 px-4">
+                                                    <div class="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/80 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
+                                                        <span class="text-[11px] font-bold text-slate-400">Rp</span>
+                                                        <input type="number" step="any" min="0" name="withdraw_tiers[1][max]" value="5000000" required class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 dark:text-white focus:ring-0 focus:outline-none font-mono-num">
+                                                    </div>
+                                                </td>
+                                                <td class="p-2.5 px-4">
+                                                    <div class="flex items-center gap-1.5 bg-emerald-50/60 dark:bg-emerald-950/40 px-2.5 py-1.5 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                                                        <span class="text-[11px] font-bold text-emerald-600">Rp</span>
+                                                        <input type="number" step="any" min="0" name="withdraw_tiers[1][fee]" value="7500" required class="w-full bg-transparent border-0 p-0 text-xs font-bold text-emerald-700 dark:text-emerald-400 focus:ring-0 focus:outline-none font-mono-num">
+                                                    </div>
+                                                </td>
+                                                <td class="p-2.5 px-4 text-center">
+                                                    <button type="button" onclick="removeTierRow(this)" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition cursor-pointer">
+                                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Keamanan & Informasi -->
+                        <div class="p-4 rounded-2xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 flex items-start gap-3">
+                            <i data-lucide="shield-check" class="w-5 h-5 text-amber-600 shrink-0 mt-0.5"></i>
+                            <div class="text-xs text-amber-900 dark:text-amber-300 space-y-1">
+                                <p class="font-bold">Otomasi Perhitungan & Proteksi di POS Kasir:</p>
+                                <p class="leading-relaxed text-amber-800/90 dark:text-amber-400/90">
+                                    Saat kasir memasukkan nominal pokok di layar POS, biaya admin akan <strong>terkalkulasi otomatis</strong> mengikuti tabel range nominal di atas dan posisinya <strong>terkunci (readonly)</strong> sehingga kasir tidak bisa memanipulasi biaya admin.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end pt-4 border-t border-slate-100 dark:border-slate-800">
+                            <button type="submit" class="px-6 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-xs font-bold shadow-md shadow-brand-500/25 transition-all flex items-center gap-2 cursor-pointer">
+                                <i data-lucide="save" class="w-4 h-4"></i>
+                                Simpan Seluruh Pengaturan Admin Agen
+                            </button>
+                        </div>
+                    </form>
+                </div>
             @endif
         </div>
     </div>
@@ -568,6 +859,85 @@
                 servicePanel.classList.add('hidden');
             }
         }
+    }
+
+    function removeTierRow(button) {
+        const row = button.closest('tr');
+        if (row) {
+            row.remove();
+        }
+    }
+
+    function addTransferTierRow() {
+        const tbody = document.getElementById('transferTierTableBody');
+        const count = tbody.querySelectorAll('tr').length;
+        const index = Date.now(); // unique index
+
+        const tr = document.createElement('tr');
+        tr.className = 'tier-row hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition';
+        tr.innerHTML = `
+            <td class="p-2.5 px-4">
+                <div class="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/80 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
+                    <span class="text-[11px] font-bold text-slate-400">Rp</span>
+                    <input type="number" step="any" min="0" name="transfer_tiers[${index}][min]" value="0" required class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 dark:text-white focus:ring-0 focus:outline-none font-mono-num">
+                </div>
+            </td>
+            <td class="p-2.5 px-4">
+                <div class="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/80 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
+                    <span class="text-[11px] font-bold text-slate-400">Rp</span>
+                    <input type="number" step="any" min="0" name="transfer_tiers[${index}][max]" value="0" required class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 dark:text-white focus:ring-0 focus:outline-none font-mono-num">
+                </div>
+            </td>
+            <td class="p-2.5 px-4">
+                <div class="flex items-center gap-1.5 bg-emerald-50/60 dark:bg-emerald-950/40 px-2.5 py-1.5 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                    <span class="text-[11px] font-bold text-emerald-600">Rp</span>
+                    <input type="number" step="any" min="0" name="transfer_tiers[${index}][fee]" value="5000" required class="w-full bg-transparent border-0 p-0 text-xs font-bold text-emerald-700 dark:text-emerald-400 focus:ring-0 focus:outline-none font-mono-num">
+                </div>
+            </td>
+            <td class="p-2.5 px-4 text-center">
+                <button type="button" onclick="removeTierRow(this)" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition cursor-pointer">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+        lucide.createIcons();
+    }
+
+    function addWithdrawTierRow() {
+        const tbody = document.getElementById('withdrawTierTableBody');
+        const count = tbody.querySelectorAll('tr').length;
+        const index = Date.now(); // unique index
+
+        const tr = document.createElement('tr');
+        tr.className = 'tier-row hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition';
+        tr.innerHTML = `
+            <td class="p-2.5 px-4">
+                <div class="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/80 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
+                    <span class="text-[11px] font-bold text-slate-400">Rp</span>
+                    <input type="number" step="any" min="0" name="withdraw_tiers[${index}][min]" value="0" required class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 dark:text-white focus:ring-0 focus:outline-none font-mono-num">
+                </div>
+            </td>
+            <td class="p-2.5 px-4">
+                <div class="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/80 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
+                    <span class="text-[11px] font-bold text-slate-400">Rp</span>
+                    <input type="number" step="any" min="0" name="withdraw_tiers[${index}][max]" value="0" required class="w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 dark:text-white focus:ring-0 focus:outline-none font-mono-num">
+                </div>
+            </td>
+            <td class="p-2.5 px-4">
+                <div class="flex items-center gap-1.5 bg-emerald-50/60 dark:bg-emerald-950/40 px-2.5 py-1.5 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                    <span class="text-[11px] font-bold text-emerald-600">Rp</span>
+                    <input type="number" step="any" min="0" name="withdraw_tiers[${index}][fee]" value="5000" required class="w-full bg-transparent border-0 p-0 text-xs font-bold text-emerald-700 dark:text-emerald-400 focus:ring-0 focus:outline-none font-mono-num">
+                </div>
+            </td>
+            <td class="p-2.5 px-4 text-center">
+                <button type="button" onclick="removeTierRow(this)" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition cursor-pointer">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+        lucide.createIcons();
     }
 
     document.addEventListener('DOMContentLoaded', () => {

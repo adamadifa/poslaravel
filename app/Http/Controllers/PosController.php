@@ -73,6 +73,23 @@ class PosController extends Controller
         // Accounts & Agent Balances Data
         $accountsSummary = $this->accountBalanceService->getAccountsSummary();
 
+        // Agent Admin Fee Settings
+        $agentTransferAdminFee = (float) Setting::get('agent_transfer_admin_fee', '5000');
+        $agentWithdrawAdminFee = (float) Setting::get('agent_withdraw_admin_fee', '5000');
+        $agentTransferTiers = json_decode(Setting::get('agent_transfer_fee_tiers', '[]'), true) ?: [];
+        $agentWithdrawTiers = json_decode(Setting::get('agent_withdraw_fee_tiers', '[]'), true) ?: [];
+
+        // Receipt & Logo Settings
+        $companyName = Setting::get('company_name', 'WarungPro POS');
+        $companyTagline = Setting::get('company_tagline', '');
+        $companyAddress = Setting::get('company_address', '');
+        $companyPhone = Setting::get('company_phone', '');
+        $companyLogo = Setting::get('company_logo', '');
+        $receiptHeader = Setting::get('receipt_header', '');
+        $receiptFooter = Setting::get('receipt_footer', '');
+        $receiptPaperSize = Setting::get('receipt_paper_size', '58mm');
+        $receiptShowLogo = Setting::get('receipt_show_logo', '0') === '1';
+
         return view('pos.index', [
             'title' => 'Kasir POS Modern',
             'warehouses' => $warehouses,
@@ -88,6 +105,19 @@ class PosController extends Controller
             'serviceStaff' => $serviceStaff,
             'fnbServiceCharge' => $fnbServiceCharge,
             'accountsSummary' => $accountsSummary,
+            'agentTransferAdminFee' => $agentTransferAdminFee,
+            'agentWithdrawAdminFee' => $agentWithdrawAdminFee,
+            'agentTransferTiers' => $agentTransferTiers,
+            'agentWithdrawTiers' => $agentWithdrawTiers,
+            'companyName' => $companyName,
+            'companyTagline' => $companyTagline,
+            'companyAddress' => $companyAddress,
+            'companyPhone' => $companyPhone,
+            'companyLogo' => $companyLogo,
+            'receiptHeader' => $receiptHeader,
+            'receiptFooter' => $receiptFooter,
+            'receiptPaperSize' => $receiptPaperSize,
+            'receiptShowLogo' => $receiptShowLogo,
         ]);
     }
 

@@ -216,6 +216,17 @@
     let appliedPromoCode = '';
     let appliedManualDiscount = 0;
 
+    // Receipt & Branding Settings
+    const receiptShowLogo = @json((bool) $receiptShowLogo);
+    const companyLogoUrl = @json(!empty($companyLogo) ? asset('storage/' . $companyLogo) : null);
+    const companyName = @json($companyName ?? 'POS RETAIL & RESTO');
+    const companyTagline = @json($companyTagline ?? '');
+    const companyAddress = @json($companyAddress ?? '');
+    const companyPhone = @json($companyPhone ?? '');
+    const receiptHeaderMsg = @json($receiptHeader ?? '');
+    const receiptFooterMsg = @json($receiptFooter ?? '');
+    const receiptPaperSize = @json($receiptPaperSize ?? '58mm');
+
     // Helper Modals
     function openModal(modalId) {
         const el = document.getElementById(modalId);
@@ -247,6 +258,7 @@
     // Initialize POS
     document.addEventListener('DOMContentLoaded', () => {
         initManualPriceSettingUI();
+        updateBluetoothUiState();
 
         if (activeShift && activeShift.warehouse && activeShift.warehouse.name) {
             const whEl = document.getElementById('posWarehouseDisplayName');
@@ -335,6 +347,7 @@
                 closeModal('closeShiftModal');
                 closeModal('agentServiceModal');
                 closeModal('agentBalancesModal');
+                closeModal('bluetoothPrinterModal');
             }
         });
 
@@ -1968,6 +1981,11 @@
                 openModal('receiptModal');
                 clearCart();
                 loadProducts(); // refresh stock numbers
+
+                // Direct Auto-Print jika fitur aktif & printer terhubung
+                if (window.posBtPrinter && window.posBtPrinter.isConnected && window.posBtPrinter.autoPrint) {
+                    printViaBluetooth(true);
+                }
             } else {
                 showPosAlert('error', 'Gagal Checkout', data.message);
             }
@@ -1976,8 +1994,17 @@
         }
     }
 
+    // Active receipt references for Bluetooth printing
+    let currentReceiptType = null; // 'sale' | 'agent'
+    let currentSaleData = null;
+    let currentAgentData = null;
+
     // Thermal Receipt Renderer (58mm / 80mm ESC/POS layout)
     function renderThermalReceipt(sale) {
+        currentReceiptType = 'sale';
+        currentSaleData = sale;
+        currentAgentData = null;
+
         const paper = document.getElementById('thermal_receipt_paper');
         let itemsHtml = '';
         (sale.items || []).forEach(it => {
@@ -2008,11 +2035,23 @@
         const serviceTypeLabel = sale.service_type ? sale.service_type.toUpperCase().replace('_', ' ') : 'DINE IN';
         const tableLabel = sale.dining_table ? `Meja ${sale.dining_table.table_number}` : '';
 
+        // Dynamic Logo Header
+        const logoHtml = (receiptShowLogo && companyLogoUrl)
+            ? `<div class="flex justify-center mb-1.5"><img src="${companyLogoUrl}" alt="Logo" class="max-h-12 max-w-[140px] object-contain filter grayscale contrast-125"></div>`
+            : '';
+
+        const storeNameDisplay = (sale.warehouse && sale.warehouse.name) ? sale.warehouse.name : companyName;
+        const storePhoneDisplay = (sale.warehouse && sale.warehouse.phone) ? sale.warehouse.phone : companyPhone;
+        const storeAddressDisplay = (sale.warehouse && sale.warehouse.address) ? sale.warehouse.address : companyAddress;
+
         paper.innerHTML = `
             <div class="text-center space-y-0.5 pb-2 border-b border-dashed border-slate-300">
-                <h4 class="font-black text-xs uppercase tracking-wider">POS RETAIL & RESTO</h4>
-                <p class="text-[10px] text-slate-500">${sale.warehouse ? sale.warehouse.name : 'Cabang Utama'}</p>
-                <p class="text-[9px] text-slate-400">Telp: ${sale.warehouse ? (sale.warehouse.phone || '-') : '-'}</p>
+                ${logoHtml}
+                <h4 class="font-black text-xs uppercase tracking-wider">${storeNameDisplay}</h4>
+                ${companyTagline ? `<p class="text-[10px] text-slate-600 font-medium">${companyTagline}</p>` : ''}
+                ${storeAddressDisplay ? `<p class="text-[9px] text-slate-500">${storeAddressDisplay}</p>` : ''}
+                ${storePhoneDisplay ? `<p class="text-[9px] text-slate-400">Telp: ${storePhoneDisplay}</p>` : ''}
+                ${receiptHeaderMsg ? `<p class="text-[9px] text-slate-500 italic pt-0.5">${receiptHeaderMsg}</p>` : ''}
             </div>
             <div class="text-[10px] space-y-0.5 py-1 border-b border-dashed border-slate-300">
                 <div class="flex justify-between"><span>No. Faktur</span><span class="font-bold">${sale.invoice_number}</span></div>
@@ -2031,14 +2070,20 @@
                 <div class="flex justify-between"><span>Bayar (${sale.payment_method.toUpperCase()})</span><span>Rp ${parseInt(sale.paid_amount).toLocaleString('id-ID')}</span></div>
                 <div class="flex justify-between"><span>Kembalian</span><span>Rp ${parseInt(sale.change_amount).toLocaleString('id-ID')}</span></div>
             </div>
-            <div class="text-center text-[9px] text-slate-400 pt-3 border-t border-dashed border-slate-300">
-                <p>Terima kasih atas kunjungan Anda!</p>
-                <p>Barang yang dibeli tidak dapat ditukar.</p>
+            <div class="text-center text-[9px] text-slate-400 pt-3 border-t border-dashed border-slate-300 space-y-0.5">
+                ${receiptFooterMsg ? `<p class="font-medium text-slate-600">${receiptFooterMsg.replace(/\n/g, '<br>')}</p>` : `
+                    <p>Terima kasih atas kunjungan Anda!</p>
+                    <p>Barang yang dibeli tidak dapat ditukar.</p>
+                `}
             </div>
         `;
     }
 
     function showAgentReceiptModal(tx) {
+        currentReceiptType = 'agent';
+        currentAgentData = tx;
+        currentSaleData = null;
+
         const modal = document.getElementById('receiptModal');
         const paper = document.getElementById('thermal_receipt_paper');
 
@@ -2077,11 +2122,17 @@
             `;
         }
 
+        const logoHtml = (receiptShowLogo && companyLogoUrl)
+            ? `<div class="flex justify-center mb-1.5"><img src="${companyLogoUrl}" alt="Logo" class="max-h-12 max-w-[140px] object-contain filter grayscale contrast-125"></div>`
+            : '';
+
         paper.innerHTML = `
             <div class="text-center space-y-0.5 pb-2 border-b border-dashed border-slate-300">
+                ${logoHtml}
                 <h4 class="font-black text-xs uppercase tracking-wider">${title}</h4>
-                <p class="text-[10px] text-slate-500">LAYANAN DIGITAL & PERBANKAN</p>
-                <p class="text-[9px] text-slate-400">Bukti Transaksi Sah</p>
+                <p class="text-[10px] text-slate-500">${companyName}</p>
+                <p class="text-[9px] text-slate-400">LAYANAN DIGITAL & PERBANKAN • BUKTI TRANSAKSI SAH</p>
+                ${companyPhone ? `<p class="text-[9px] text-slate-400">Telp: ${companyPhone}</p>` : ''}
             </div>
             <div class="text-[10px] space-y-0.5 py-1 border-b border-dashed border-slate-300">
                 <div class="flex justify-between"><span>No. Referensi</span><span class="font-bold font-mono">${tx.transaction_number}</span></div>
@@ -2092,7 +2143,7 @@
             <div class="space-y-1.5 py-2 text-[10px]">
                 ${detailRows}
             </div>
-            <div class="text-center text-[9px] text-slate-400 pt-3 border-t border-dashed border-slate-300">
+            <div class="text-center text-[9px] text-slate-400 pt-3 border-t border-dashed border-slate-300 space-y-0.5">
                 <p>Simpan struk ini sebagai bukti transaksi yang sah.</p>
                 <p>Terima kasih telah bertransaksi di outlet kami.</p>
             </div>
@@ -2107,6 +2158,225 @@
 
     function printReceipt() {
         window.print();
+    }
+
+    // =========================================================================
+    // BLUETOOTH THERMAL PRINTER INTEGRATION
+    // =========================================================================
+    function openBluetoothPrinterModal() {
+        openModal('bluetoothPrinterModal');
+        updateBluetoothUiState();
+        if (window.lucide) lucide.createIcons();
+    }
+
+    function updateBluetoothUiState() {
+        const isConn = window.posBtPrinter && window.posBtPrinter.isConnected;
+        const name = (window.posBtPrinter && window.posBtPrinter.deviceName) || 'Belum Terhubung';
+        const width = (window.posBtPrinter && window.posBtPrinter.paperWidth) || '58';
+        const autoPrint = window.posBtPrinter && window.posBtPrinter.autoPrint;
+
+        const dot = document.getElementById('bt_indicator_dot');
+        const ping = document.getElementById('bt_indicator_ping');
+        const label = document.getElementById('bt_printer_status_label');
+        const icon = document.getElementById('bt_printer_icon');
+
+        const card = document.getElementById('bt_printer_status_card');
+        const circle = document.getElementById('bt_status_circle');
+        const devName = document.getElementById('bt_status_device_name');
+        const badge = document.getElementById('bt_status_badge');
+
+        const btnConnect = document.getElementById('btnBtConnect');
+        const btnDisconnect = document.getElementById('btnBtDisconnect');
+        const btnTest = document.getElementById('btnBtTestPrint');
+        const autoPrintToggle = document.getElementById('bt_auto_print_toggle');
+
+        // Radios
+        const radios = document.querySelectorAll('input[name="bt_paper_width"]');
+        radios.forEach(r => { r.checked = (r.value === width); });
+
+        if (autoPrintToggle) {
+            autoPrintToggle.checked = !!autoPrint;
+        }
+
+        if (isConn) {
+            if (dot) dot.className = 'relative inline-flex rounded-full h-2 w-2 bg-emerald-500';
+            if (ping) ping.classList.remove('hidden');
+            if (label) { label.innerText = name.length > 12 ? name.substring(0, 10) + '..' : name; label.className = 'hidden sm:inline text-[11px] font-bold text-emerald-700'; }
+            if (icon) icon.className = 'w-4 h-4 text-emerald-600';
+
+            if (card) { card.style.backgroundColor = '#ecfdf5'; card.style.borderColor = '#a7f3d0'; }
+            if (circle) circle.className = 'w-3 h-3 rounded-full bg-emerald-500';
+            if (devName) { devName.innerText = name; devName.className = 'text-sm font-black text-emerald-900 block'; }
+            if (badge) { badge.innerText = 'Online / Tersimpan'; badge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700'; }
+
+            if (btnConnect) btnConnect.classList.add('hidden');
+            if (btnDisconnect) btnDisconnect.classList.remove('hidden');
+            if (btnTest) btnTest.classList.remove('hidden');
+        } else {
+            if (dot) dot.className = 'relative inline-flex rounded-full h-2 w-2 bg-slate-400';
+            if (ping) ping.classList.add('hidden');
+            if (label) { label.innerText = 'Printer BT'; label.className = 'hidden sm:inline text-[11px] font-bold text-slate-600'; }
+            if (icon) icon.className = 'w-4 h-4 text-slate-500';
+
+            if (card) { card.style.backgroundColor = '#f8fafc'; card.style.borderColor = '#e2e8f0'; }
+            if (circle) circle.className = 'w-3 h-3 rounded-full bg-slate-400';
+            if (devName) { devName.innerText = 'Belum Terhubung'; devName.className = 'text-sm font-black text-slate-800 block'; }
+            if (badge) { badge.innerText = 'Offline'; badge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-200/70 text-slate-600'; }
+
+            if (btnConnect) btnConnect.classList.remove('hidden');
+            if (btnDisconnect) btnDisconnect.classList.add('hidden');
+            if (btnTest) btnTest.classList.add('hidden');
+        }
+    }
+
+    function toggleBtAutoPrint(checked) {
+        if (window.posBtPrinter) {
+            window.posBtPrinter.setAutoPrint(checked);
+            showPosToast('info', checked ? 'Direct Auto-Print Aktif: Struk akan langsung dicetak otomatis.' : 'Direct Auto-Print Nonaktif.');
+        }
+    }
+
+    // Listener from driver
+    if (window.posBtPrinter) {
+        window.posBtPrinter.onStatusChange(function(info) {
+            updateBluetoothUiState();
+            if (info.status === 'connected') {
+                showPosToast('success', info.message || `Printer ${info.name} terhubung!`);
+            } else if (info.status === 'disconnected') {
+                showPosToast('warning', info.message || 'Printer Bluetooth terputus.');
+            }
+        });
+
+        // Try Auto Reconnect saved printer on startup
+        setTimeout(async () => {
+            if (!window.posBtPrinter.isConnected) {
+                const reconnected = await window.posBtPrinter.autoReconnect();
+                if (reconnected) {
+                    console.log('Bluetooth printer auto-reconnected to', reconnected);
+                    updateBluetoothUiState();
+                }
+            }
+        }, 800);
+    }
+
+    async function connectBluetoothPrinter() {
+        if (!window.posBtPrinter) {
+            showPosAlert('error', 'Gagal', 'Driver printer Bluetooth belum dimuat.');
+            return;
+        }
+        try {
+            const name = await window.posBtPrinter.connect();
+            updateBluetoothUiState();
+            showPosToast('success', `Berhasil terhubung ke ${name}! Printer tersimpan untuk cetak langsung.`);
+        } catch (err) {
+            if (err.name !== 'NotFoundError') { // Not canceled by user
+                showPosAlert('error', 'Koneksi Bluetooth Gagal', err.message || 'Tidak dapat terhubung ke printer.');
+            }
+        }
+    }
+
+    async function disconnectBluetoothPrinter() {
+        if (window.posBtPrinter) {
+            await window.posBtPrinter.disconnect();
+            updateBluetoothUiState();
+            showPosToast('info', 'Printer Bluetooth diputus.');
+        }
+    }
+
+    function changePrinterPaperWidth(width) {
+        if (window.posBtPrinter) {
+            window.posBtPrinter.setPaperWidth(width);
+            showPosToast('info', `Ukuran kertas diatur ke ${width}mm.`);
+        }
+    }
+
+    async function testPrintBluetooth() {
+        if (!window.posBtPrinter || !window.posBtPrinter.isConnected) {
+            showPosToast('warning', 'Hubungkan printer Bluetooth terlebih dahulu.');
+            return;
+        }
+        try {
+            showPosToast('info', 'Mengirim perintah cetak test...');
+            await window.posBtPrinter.printTestPage();
+            showPosToast('success', 'Halaman tes cetak berhasil dikirim!');
+        } catch (e) {
+            showPosAlert('error', 'Gagal Cetak', e.message);
+        }
+    }
+
+    async function printViaBluetooth(silent = false) {
+        if (!window.posBtPrinter) {
+            if (!silent) showPosAlert('error', 'Driver Error', 'Driver Bluetooth tidak tersedia.');
+            return false;
+        }
+
+        if (!window.posBtPrinter.isConnected) {
+            if (silent) return false; // Don't interrupt if running in silent auto mode
+
+            // Prompt to connect
+            Swal.fire({
+                title: 'Printer Bluetooth Belum Terhubung',
+                text: 'Ingin mencari dan menghubungkan printer Bluetooth sekarang?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Hubungkan Sekarang',
+                cancelButtonText: 'Batal'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    try {
+                        await window.posBtPrinter.connect();
+                        // Recursive print once connected
+                        printViaBluetooth();
+                    } catch (err) {
+                        if (err.name !== 'NotFoundError') {
+                            showPosAlert('error', 'Koneksi Gagal', err.message);
+                        }
+                    }
+                }
+            });
+            return false;
+        }
+
+        const btn = document.getElementById('btnBtPrintModal');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i><span>Mencetak...</span>`;
+        }
+
+        try {
+            if (currentReceiptType === 'sale' && currentSaleData) {
+                await window.posBtPrinter.printSaleReceipt(currentSaleData, {
+                    name: companyName,
+                    tagline: companyTagline,
+                    address: companyAddress,
+                    phone: companyPhone,
+                    showLogo: receiptShowLogo,
+                    logoUrl: companyLogoUrl
+                });
+                showPosToast('success', 'Struk penjualan langsung dicetak via Bluetooth!');
+                return true;
+            } else if (currentReceiptType === 'agent' && currentAgentData) {
+                await window.posBtPrinter.printAgentReceipt(currentAgentData, {
+                    name: companyName,
+                    phone: companyPhone,
+                    showLogo: receiptShowLogo,
+                    logoUrl: companyLogoUrl
+                });
+                showPosToast('success', 'Struk agen langsung dicetak via Bluetooth!');
+                return true;
+            } else {
+                if (!silent) showPosToast('warning', 'Tidak ada data struk aktif untuk dicetak.');
+            }
+        } catch (err) {
+            if (!silent) showPosAlert('error', 'Gagal Cetak Bluetooth', err.message || 'Terjadi gangguan saat mencetak.');
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = `<i data-lucide="bluetooth" class="w-3.5 h-3.5"></i><span>Cetak Bluetooth</span>`;
+                if (window.lucide) lucide.createIcons();
+            }
+        }
+        return false;
     }
 
     // Hold & Recall Cart Management
@@ -2469,13 +2739,40 @@
         lucide.createIcons();
     }
 
+    const agentTransferTiers = @json($agentTransferTiers ?? []);
+    const agentWithdrawTiers = @json($agentWithdrawTiers ?? []);
+    const defaultTransferAdminFee = {{ $agentTransferAdminFee ?? 5000 }};
+    const defaultWithdrawAdminFee = {{ $agentWithdrawAdminFee ?? 5000 }};
+
+    function resolveAdminFeeFromTiers(principal, tiers, defaultFee) {
+        if (principal <= 0) return defaultFee;
+        if (!Array.isArray(tiers) || tiers.length === 0) return defaultFee;
+
+        // Search matching range [min, max]
+        for (const tier of tiers) {
+            const min = parseFloat(tier.min) || 0;
+            const max = parseFloat(tier.max) || 0;
+            const fee = parseFloat(tier.fee) || 0;
+            if (principal >= min && (max === 0 || principal <= max)) {
+                return fee;
+            }
+        }
+        return defaultFee;
+    }
+
     function calculateTransferTotal() {
         const principal = parseFloat(document.getElementById('transfer_principal_amount').value) || 0;
-        const adminFee = parseFloat(document.getElementById('transfer_admin_fee').value) || 0;
-        const costPrice = parseFloat(document.getElementById('transfer_cost_price').value) || 0;
+        
+        // Cari fee berdasarkan tiering range nominal
+        const dynamicFee = resolveAdminFeeFromTiers(principal, agentTransferTiers, defaultTransferAdminFee);
+        const adminFeeInput = document.getElementById('transfer_admin_fee');
+        if (adminFeeInput) {
+            adminFeeInput.value = dynamicFee;
+        }
 
-        const totalPaid = principal + adminFee;
-        const netProfit = Math.max(0, adminFee - costPrice);
+        const costPrice = parseFloat(document.getElementById('transfer_cost_price').value) || 0;
+        const totalPaid = principal + dynamicFee;
+        const netProfit = Math.max(0, dynamicFee - costPrice);
 
         document.getElementById('transfer_total_paid_display').innerText = `Rp ${parseInt(totalPaid).toLocaleString('id-ID')}`;
         document.getElementById('transfer_net_profit_display').innerText = `+ Rp ${parseInt(netProfit).toLocaleString('id-ID')}`;
@@ -2483,14 +2780,20 @@
 
     function calculateWithdrawTotal() {
         const principal = parseFloat(document.getElementById('withdraw_principal_amount').value) || 0;
-        const adminFee = parseFloat(document.getElementById('withdraw_admin_fee').value) || 0;
-        const method = document.querySelector('input[name="withdraw_payment_method"]:checked')?.value || 'deduct_balance';
 
-        const bankIn = method === 'deduct_balance' ? (principal + adminFee) : principal;
+        // Cari fee berdasarkan tiering range nominal
+        const dynamicFee = resolveAdminFeeFromTiers(principal, agentWithdrawTiers, defaultWithdrawAdminFee);
+        const adminFeeInput = document.getElementById('withdraw_admin_fee');
+        if (adminFeeInput) {
+            adminFeeInput.value = dynamicFee;
+        }
+
+        const method = document.querySelector('input[name="withdraw_payment_method"]:checked')?.value || 'deduct_balance';
+        const bankIn = method === 'deduct_balance' ? (principal + dynamicFee) : principal;
 
         document.getElementById('withdraw_cash_out_display').innerText = `- Rp ${parseInt(principal).toLocaleString('id-ID')}`;
         document.getElementById('withdraw_bank_in_display').innerText = `+ Rp ${parseInt(bankIn).toLocaleString('id-ID')}`;
-        document.getElementById('withdraw_net_profit_display').innerText = `+ Rp ${parseInt(adminFee).toLocaleString('id-ID')}`;
+        document.getElementById('withdraw_net_profit_display').innerText = `+ Rp ${parseInt(dynamicFee).toLocaleString('id-ID')}`;
     }
 
     function calculatePpobTotal() {
@@ -2633,6 +2936,9 @@
 
                 // Buka preview & cetak struk agen
                 showAgentReceiptModal(data.data);
+                if (window.posBtPrinter && window.posBtPrinter.isConnected && window.posBtPrinter.autoPrint) {
+                    printViaBluetooth(true);
+                }
             } else {
                 showPosAlert('error', 'Gagal Memproses Transfer', data.message);
             }
@@ -2681,6 +2987,9 @@
 
                 // Buka preview & cetak struk tarik tunai
                 showAgentReceiptModal(data.data);
+                if (window.posBtPrinter && window.posBtPrinter.isConnected && window.posBtPrinter.autoPrint) {
+                    printViaBluetooth(true);
+                }
             } else {
                 showPosAlert('error', 'Gagal Tarik Tunai', data.message);
             }
@@ -2730,6 +3039,9 @@
 
                 // Buka preview & cetak struk PPOB
                 showAgentReceiptModal(data.data);
+                if (window.posBtPrinter && window.posBtPrinter.isConnected && window.posBtPrinter.autoPrint) {
+                    printViaBluetooth(true);
+                }
             } else {
                 showPosAlert('error', 'Gagal Transaksi PPOB', data.message);
             }

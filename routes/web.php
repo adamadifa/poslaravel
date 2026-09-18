@@ -232,6 +232,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/prefixes', [SettingController::class, 'updatePrefixes'])->name('prefixes');
         Route::post('/tax', [SettingController::class, 'updateTaxCurrency'])->name('tax');
         Route::post('/receipt', [SettingController::class, 'updateReceipt'])->name('receipt');
+        Route::post('/agent', [SettingController::class, 'updateAgent'])->name('agent');
     });
 
     // 11. Audit Trail (Phase 6.7)

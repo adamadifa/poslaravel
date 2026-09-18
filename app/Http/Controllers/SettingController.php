@@ -61,6 +61,12 @@ class SettingController extends Controller
         $serviceAutoQueue = Setting::get('service_auto_queue', '1');
         $serviceEnableMaterialUsage = Setting::get('service_enable_material_usage', '0');
 
+        // Agent & PPOB Admin Fee Settings
+        $agentTransferAdminFee = Setting::get('agent_transfer_admin_fee', '5000');
+        $agentWithdrawAdminFee = Setting::get('agent_withdraw_admin_fee', '5000');
+        $agentTransferTiers = json_decode(Setting::get('agent_transfer_fee_tiers', '[]'), true) ?: [];
+        $agentWithdrawTiers = json_decode(Setting::get('agent_withdraw_fee_tiers', '[]'), true) ?: [];
+
         return view('settings.index', compact(
             'tab',
             'companyName',
@@ -98,7 +104,11 @@ class SettingController extends Controller
             'serviceEnableDurationTracking',
             'serviceBookingSlotMinutes',
             'serviceAutoQueue',
-            'serviceEnableMaterialUsage'
+            'serviceEnableMaterialUsage',
+            'agentTransferAdminFee',
+            'agentWithdrawAdminFee',
+            'agentTransferTiers',
+            'agentWithdrawTiers'
         ));
     }
 
@@ -225,5 +235,55 @@ class SettingController extends Controller
         Setting::set('service_enable_material_usage', $request->has('service_enable_material_usage') ? '1' : '0', 'service', 'boolean', 'Tracking Pemakaian Bahan / Material');
 
         return redirect()->route('settings.index', ['tab' => 'business_type'])->with('success', 'Pengaturan jenis usaha berhasil diperbarui.');
+    }
+
+    /**
+     * Save/Update Agent & PPOB Admin Fee Settings.
+     */
+    public function updateAgent(Request $request)
+    {
+        $validated = $request->validate([
+            'agent_transfer_admin_fee' => 'required|numeric|min:0',
+            'agent_withdraw_admin_fee' => 'required|numeric|min:0',
+            'transfer_tiers' => 'nullable|array',
+            'transfer_tiers.*.min' => 'required|numeric|min:0',
+            'transfer_tiers.*.max' => 'required|numeric|min:0',
+            'transfer_tiers.*.fee' => 'required|numeric|min:0',
+            'withdraw_tiers' => 'nullable|array',
+            'withdraw_tiers.*.min' => 'required|numeric|min:0',
+            'withdraw_tiers.*.max' => 'required|numeric|min:0',
+            'withdraw_tiers.*.fee' => 'required|numeric|min:0',
+        ]);
+
+        Setting::set('agent_transfer_admin_fee', $validated['agent_transfer_admin_fee'], 'agent', 'numeric', 'Biaya Admin Transfer Uang (Default)');
+        Setting::set('agent_withdraw_admin_fee', $validated['agent_withdraw_admin_fee'], 'agent', 'numeric', 'Biaya Admin Tarik Tunai (Default)');
+
+        // Format and save tiers sorted by min nominal
+        $transferTiers = collect($request->input('transfer_tiers', []))
+            ->filter(fn ($item) => isset($item['min'], $item['max'], $item['fee']) && is_numeric($item['fee']))
+            ->map(fn ($item) => [
+                'min' => (float) $item['min'],
+                'max' => (float) $item['max'],
+                'fee' => (float) $item['fee'],
+            ])
+            ->sortBy('min')
+            ->values()
+            ->all();
+
+        $withdrawTiers = collect($request->input('withdraw_tiers', []))
+            ->filter(fn ($item) => isset($item['min'], $item['max'], $item['fee']) && is_numeric($item['fee']))
+            ->map(fn ($item) => [
+                'min' => (float) $item['min'],
+                'max' => (float) $item['max'],
+                'fee' => (float) $item['fee'],
+            ])
+            ->sortBy('min')
+            ->values()
+            ->all();
+
+        Setting::set('agent_transfer_fee_tiers', json_encode($transferTiers), 'agent', 'json', 'Tingkatan Biaya Admin Transfer Berdasarkan Range');
+        Setting::set('agent_withdraw_fee_tiers', json_encode($withdrawTiers), 'agent', 'json', 'Tingkatan Biaya Admin Tarik Tunai Berdasarkan Range');
+
+        return redirect()->route('settings.index', ['tab' => 'agent'])->with('success', 'Biaya admin dan skema range agen berhasil disimpan.');
     }
 }

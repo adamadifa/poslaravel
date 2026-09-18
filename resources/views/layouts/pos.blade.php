@@ -57,6 +57,91 @@
             background: #334155;
         }
 
+        /* Dedicated Thermal Printer Print Styles */
+        @media print {
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            body * {
+                visibility: hidden !important;
+            }
+            body {
+                background: #ffffff !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            #receiptModal,
+            #receiptModal * {
+                visibility: visible !important;
+            }
+            #receiptModal {
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: #ffffff !important;
+                box-shadow: none !important;
+                display: block !important;
+            }
+            #receiptModal > div {
+                box-shadow: none !important;
+                border: none !important;
+                max-width: 100% !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: transparent !important;
+            }
+            #receiptModal .border-b,
+            #receiptModal .border-t,
+            #receiptModal button {
+                display: none !important;
+            }
+            #receiptModal .bg-slate-100 {
+                background: transparent !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                display: block !important;
+            }
+            #thermal_receipt_paper {
+                box-shadow: none !important;
+                border: none !important;
+                border-radius: 0 !important;
+                padding: 0 !important;
+                margin: 0 auto !important;
+                width: 100% !important;
+                max-width: 280px !important;
+                font-family: 'JetBrains Mono', monospace, Courier !important;
+                font-size: 11px !important;
+                color: #000000 !important;
+                line-height: 1.3 !important;
+                background: #ffffff !important;
+                display: block !important;
+            }
+            #thermal_receipt_paper img,
+            #receiptModal img {
+                display: block !important;
+                visibility: visible !important;
+                margin: 0 auto 6px auto !important;
+                max-height: 56px !important;
+                max-width: 140px !important;
+                width: auto !important;
+                height: auto !important;
+                object-fit: contain !important;
+                -webkit-filter: grayscale(100%) contrast(150%) !important;
+                filter: grayscale(100%) contrast(150%) !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            @page {
+                margin: 0;
+                size: auto;
+            }
+        }
+
         /* Premium SweetAlert2 Global Theme Overrides */
         .swal2-container.swal2-backdrop-show {
             backdrop-filter: blur(4px) !important;
@@ -441,8 +526,24 @@
                 <span class="font-bold text-slate-800 max-w-[130px] truncate" id="posCashierName">{{ auth()->user()->name ?? 'Kasir' }}</span>
             </div>
 
-            <!-- 4. Quick Action Icons (Shortcuts, Back Office, Dark Mode) -->
+            <!-- 4. Quick Action Icons (Bluetooth Printer, Shortcuts, Back Office, Dark Mode) -->
             <div class="flex items-center gap-1.5">
+                <!-- Bluetooth Thermal Printer Button -->
+                <button 
+                    type="button" 
+                    id="btnBluetoothPrinter" 
+                    onclick="openBluetoothPrinterModal()" 
+                    title="Koneksi Printer Bluetooth (ESC/POS)" 
+                    class="h-9 px-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 hover:border-slate-300 transition shadow-2xs cursor-pointer flex items-center gap-1.5 text-xs font-semibold"
+                >
+                    <span class="relative flex h-2 w-2">
+                        <span id="bt_indicator_ping" class="hidden absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping"></span>
+                        <span id="bt_indicator_dot" class="relative inline-flex rounded-full h-2 w-2 bg-slate-400"></span>
+                    </span>
+                    <i data-lucide="printer" class="w-4 h-4 text-slate-500" id="bt_printer_icon"></i>
+                    <span id="bt_printer_status_label" class="hidden sm:inline text-[11px] font-bold text-slate-600">Printer BT</span>
+                </button>
+
                 <!-- Shortcuts Help Icon Button -->
                 <button 
                     type="button" 
@@ -616,6 +717,7 @@
             }
         });
     </script>
+    <script src="{{ asset('js/escpos-bluetooth.js') }}"></script>
     @stack('scripts')
 </body>
 </html>

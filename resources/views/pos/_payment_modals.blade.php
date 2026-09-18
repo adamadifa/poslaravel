@@ -238,12 +238,120 @@
         </div>
 
         <!-- Print Action Buttons -->
-        <div class="p-4 border-t border-slate-100 bg-white flex items-center justify-end gap-2">
-            <button type="button" onclick="closeModal('receiptModal')" class="px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100">Tutup</button>
-            <button type="button" onclick="printReceipt()" class="px-4 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-bold text-xs shadow-sm transition flex items-center gap-1.5">
-                <i data-lucide="printer" class="w-3.5 h-3.5"></i>
-                <span>Cetak Struk (Enter)</span>
+        <div class="p-4 border-t border-slate-100 bg-white flex items-center justify-between gap-2">
+            <button type="button" onclick="closeModal('receiptModal')" class="px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 cursor-pointer">Tutup</button>
+            <div class="flex items-center gap-2">
+                <!-- Cetak Bluetooth Langsung (ESC/POS) -->
+                <button type="button" onclick="printViaBluetooth()" id="btnBtPrintModal" class="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-sm shadow-blue-500/25 transition flex items-center gap-1.5 cursor-pointer">
+                    <i data-lucide="bluetooth" class="w-3.5 h-3.5"></i>
+                    <span>Cetak Bluetooth</span>
+                </button>
+                <!-- Cetak Browser Biasa (Ctrl+P) -->
+                <button type="button" onclick="printReceipt()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs shadow-sm transition flex items-center gap-1.5 cursor-pointer">
+                    <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+                    <span>Browser (P)</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL KONEKSI & PENGATURAN PRINTER BLUETOOTH -->
+<div id="bluetoothPrinterModal" class="fixed inset-0 z-[130] bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center p-3 sm:p-4 overflow-y-auto">
+    <div class="bg-white border border-slate-200/90 rounded-2xl max-w-md w-full shadow-2xl transition-all my-auto overflow-hidden flex flex-col">
+        <!-- Header -->
+        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-blue-50/80 via-sky-50/50 to-white">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-sm shadow-blue-600/30">
+                    <i data-lucide="printer" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h3 class="font-black text-base text-slate-900 tracking-tight">Printer Bluetooth (ESC/POS)</h3>
+                    <p class="text-[11px] text-slate-500">Cetak struk kasir & agen instan tanpa dialog print browser</p>
+                </div>
+            </div>
+            <button onclick="closeModal('bluetoothPrinterModal')" type="button" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer">
+                <i data-lucide="x" class="w-4 h-4"></i>
             </button>
+        </div>
+
+        <div class="p-6 space-y-5">
+            <!-- Status Card -->
+            <div class="p-4 rounded-2xl border transition" id="bt_printer_status_card" style="background-color: #f8fafc; border-color: #e2e8f0;">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-3 h-3 rounded-full bg-slate-400" id="bt_status_circle"></div>
+                        <div>
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Status Koneksi</span>
+                            <strong class="text-sm font-black text-slate-800 block" id="bt_status_device_name">Belum Terhubung</strong>
+                        </div>
+                    </div>
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-200/70 text-slate-600" id="bt_status_badge">Offline</span>
+                </div>
+            </div>
+
+            <!-- Ukuran Kertas Thermal -->
+            <div class="space-y-1.5">
+                <label class="text-xs font-bold text-slate-700 block">Ukuran Kertas Printer Thermal:</label>
+                <div class="grid grid-cols-2 gap-2.5">
+                    <label class="flex items-center gap-2.5 p-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 cursor-pointer text-xs font-semibold text-slate-800">
+                        <input type="radio" name="bt_paper_width" value="58" checked onchange="changePrinterPaperWidth('58')" class="text-blue-600 focus:ring-blue-500">
+                        <div>
+                            <span class="block font-bold">58 mm</span>
+                            <span class="text-[10px] text-slate-400 font-normal">Mini Mobile / POS (32 char)</span>
+                        </div>
+                    </label>
+                    <label class="flex items-center gap-2.5 p-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 cursor-pointer text-xs font-semibold text-slate-800">
+                        <input type="radio" name="bt_paper_width" value="80" onchange="changePrinterPaperWidth('80')" class="text-blue-600 focus:ring-blue-500">
+                        <div>
+                            <span class="block font-bold">80 mm</span>
+                            <span class="text-[10px] text-slate-400 font-normal">Thermal Desktop (44 char)</span>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Opsi Direct Print Otomatis -->
+            <div class="p-3.5 rounded-2xl border border-slate-200 bg-slate-50/60 flex items-center justify-between">
+                <div>
+                    <span class="text-xs font-bold text-slate-800 block">Direct Auto-Print Setelah Bayar</span>
+                    <span class="text-[10px] text-slate-500 block">Langsung cetak struk otomatis tanpa harus klik cetak lagi</span>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="bt_auto_print_toggle" onchange="toggleBtAutoPrint(this.checked)" class="sr-only peer">
+                    <div class="w-10 h-5.5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4.5 after:w-4.5 after:transition-all peer-checked:bg-emerald-600"></div>
+                </label>
+            </div>
+
+            <!-- Petunjuk Penggunaan -->
+            <div class="p-3 rounded-xl bg-blue-50/70 border border-blue-100 text-xs text-blue-900 space-y-1">
+                <div class="font-bold flex items-center gap-1 text-blue-700">
+                    <i data-lucide="info" class="w-3.5 h-3.5"></i>
+                    <span>Cara Kerja Penyimpanan Printer:</span>
+                </div>
+                <ol class="list-decimal list-inside text-[11px] text-blue-800/90 space-y-0.5 pl-0.5">
+                    <li>Printer yang pernah dihubungkan akan <strong>tersimpan di browser</strong>.</li>
+                    <li>Sistem akan otomatis menyambungkan kembali (Auto-Reconnect) saat halaman POS dimuat.</li>
+                    <li>Jika <strong>Direct Auto-Print</strong> aktif, setiap transaksi selesai struk langsung keluar tanpa klik apa-apa!</li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- Footer Actions -->
+        <div class="px-6 py-4 border-t border-slate-100 bg-slate-50 flex items-center justify-between gap-2 shrink-0">
+            <button type="button" onclick="testPrintBluetooth()" id="btnBtTestPrint" class="px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 font-bold text-xs transition cursor-pointer flex items-center gap-1.5 hidden">
+                <i data-lucide="play" class="w-3.5 h-3.5 text-slate-500"></i>
+                <span>Tes Cetak</span>
+            </button>
+            <div class="flex items-center gap-2 ml-auto">
+                <button type="button" onclick="disconnectBluetoothPrinter()" id="btnBtDisconnect" class="px-3.5 py-2 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 transition cursor-pointer hidden">
+                    Putuskan
+                </button>
+                <button type="button" onclick="connectBluetoothPrinter()" id="btnBtConnect" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-500/25 transition flex items-center gap-1.5 cursor-pointer">
+                    <i data-lucide="bluetooth" class="w-4 h-4"></i>
+                    <span>Cari & Hubungkan Printer</span>
+                </button>
+            </div>
         </div>
     </div>
 </div>
