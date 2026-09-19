@@ -1098,7 +1098,8 @@
         // Initial Qty & Price
         if (isEditing) {
             document.getElementById('modal_item_qty').value = currentCartItem.quantity;
-            document.getElementById('modal_item_price').value = currentCartItem.base_price !== undefined ? currentCartItem.base_price : currentCartItem.price;
+            const initialPrice = currentCartItem.base_price !== undefined ? currentCartItem.base_price : currentCartItem.price;
+            document.getElementById('modal_item_price').value = Math.round(initialPrice || 0).toLocaleString('id-ID');
         } else {
             document.getElementById('modal_item_qty').value = '1';
             await resolveModalPrice();
@@ -1112,6 +1113,9 @@
         if (notesInput) {
             notesInput.value = isEditing ? (currentCartItem.notes || '') : '';
         }
+
+        // Render Dynamic Quick Note Presets based on Product and its Category
+        renderModalNotePresetsUI(product);
 
         calculateModalSubtotal();
 
@@ -1233,9 +1237,89 @@
         if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
+    function renderModalNotePresetsUI(product) {
+        const presetsContainer = document.getElementById('modal_item_notes_presets');
+        if (!presetsContainer) return;
+
+        // Resolve presets: Product default_notes first, then Category default_notes
+        let presets = [];
+        if (product && product.default_notes) {
+            presets = Array.isArray(product.default_notes) ? product.default_notes : (typeof product.default_notes === 'string' ? product.default_notes.split(',').map(s => s.trim()) : []);
+        } else if (product && product.category && product.category.default_notes) {
+            presets = Array.isArray(product.category.default_notes) ? product.category.default_notes : (typeof product.category.default_notes === 'string' ? product.category.default_notes.split(',').map(s => s.trim()) : []);
+        }
+
+        presets = presets.filter(p => p && p.length > 0);
+
+        if (presets.length === 0) {
+            presetsContainer.innerHTML = '';
+            presetsContainer.classList.add('hidden');
+            return;
+        }
+
+        presetsContainer.classList.remove('hidden');
+        const notesInput = document.getElementById('modal_item_notes');
+        const currentText = notesInput ? notesInput.value : '';
+
+        let html = '';
+        presets.forEach(preset => {
+            const isSelected = currentText.includes(preset);
+            html += `
+                <button type="button" 
+                        onclick="toggleNotePreset('${preset.replace(/'/g, "\\'")}')" 
+                        class="px-2.5 py-1 rounded-lg text-[11px] font-semibold transition cursor-pointer ${
+                            isSelected 
+                                ? 'bg-brand-500 text-white shadow-xs' 
+                                : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                        }">
+                    + ${preset}
+                </button>
+            `;
+        });
+        presetsContainer.innerHTML = html;
+    }
+
+    function toggleNotePreset(preset) {
+        const input = document.getElementById('modal_item_notes');
+        if (!input) return;
+
+        let val = input.value.trim();
+        if (!val) {
+            input.value = preset;
+        } else if (val.includes(preset)) {
+            // Remove preset
+            const parts = val.split(',').map(s => s.trim()).filter(s => s !== preset && s.length > 0);
+            input.value = parts.join(', ');
+        } else {
+            // Append preset
+            input.value = `${val}, ${preset}`;
+        }
+
+        if (modalCurrentProduct) {
+            renderModalNotePresetsUI(modalCurrentProduct);
+        }
+    }
+
     async function onModalUnitChange() {
         await resolveModalPrice();
         calculateModalSubtotal();
+    }
+
+    function onModalPriceInput(inputEl) {
+        const raw = inputEl.value.replace(/\D/g, '');
+        if (raw === '') {
+            inputEl.value = '';
+        } else {
+            inputEl.value = parseInt(raw, 10).toLocaleString('id-ID');
+        }
+        calculateModalSubtotal();
+    }
+
+    function getModalBasePrice() {
+        const priceInput = document.getElementById('modal_item_price');
+        if (!priceInput) return 0;
+        const cleanVal = priceInput.value.toString().replace(/\./g, '').replace(/,/g, '.').replace(/[^\d.]/g, '');
+        return parseFloat(cleanVal) || 0;
     }
 
     async function resolveModalPrice() {
@@ -1248,7 +1332,8 @@
             const res = await fetch(`/products/${modalCurrentProduct.id}/get-price?unit_id=${unitId}&quantity=${qty}&customer_id=${customerId || ''}`);
             const data = await res.json();
             if (data.status === 'success') {
-                document.getElementById('modal_item_price').value = data.data.final_unit_price;
+                const finalPrice = Math.round(data.data.final_unit_price || 0);
+                document.getElementById('modal_item_price').value = finalPrice.toLocaleString('id-ID');
             }
         } catch (err) {
             console.error(err);
@@ -1265,7 +1350,7 @@
 
     function calculateModalSubtotal() {
         const qty = parseFloat(document.getElementById('modal_item_qty').value) || 0;
-        const basePrice = parseFloat(document.getElementById('modal_item_price').value) || 0;
+        const basePrice = getModalBasePrice();
         
         let modSum = 0;
         document.querySelectorAll('#modal_modifiers_container input:checked').forEach(inp => {
@@ -1289,7 +1374,7 @@
 
         const unitId = parseInt(document.getElementById('modal_item_unit').value);
         const qty = parseFloat(document.getElementById('modal_item_qty').value) || 1;
-        const basePrice = parseFloat(document.getElementById('modal_item_price').value) || 0;
+        const basePrice = getModalBasePrice();
         const itemNotes = document.getElementById('modal_item_notes') ? document.getElementById('modal_item_notes').value.trim() : '';
 
         // Collect Selected Modifiers
@@ -1850,7 +1935,7 @@
 
         document.getElementById('pay_item_summary_text').innerText = `${cart.length} Item`;
         document.getElementById('pay_grand_total_display').innerText = `Rp ${parseInt(window.currentCartGrandTotal).toLocaleString('id-ID')}`;
-        document.getElementById('pay_cash_received_input').value = window.currentCartGrandTotal;
+        document.getElementById('pay_cash_received_input').value = Math.round(window.currentCartGrandTotal || 0).toLocaleString('id-ID');
         renderSmartCashPresets(window.currentCartGrandTotal);
         calculateChangeAmount();
         onPaymentServiceTypeChange(selectedServiceType || 'takeaway');
@@ -1895,17 +1980,34 @@
         }
     }
 
+    function onPayCashInput(inputEl) {
+        const raw = inputEl.value.replace(/\D/g, '');
+        if (raw === '') {
+            inputEl.value = '';
+        } else {
+            inputEl.value = parseInt(raw, 10).toLocaleString('id-ID');
+        }
+        calculateChangeAmount();
+    }
+
+    function getCashReceivedAmount() {
+        const inp = document.getElementById('pay_cash_received_input');
+        if (!inp) return 0;
+        const cleanVal = inp.value.toString().replace(/\./g, '').replace(/,/g, '.').replace(/[^\d.]/g, '');
+        return parseFloat(cleanVal) || 0;
+    }
+
     function setCashAmount(val) {
         if (val === 'exact') {
-            document.getElementById('pay_cash_received_input').value = window.currentCartGrandTotal;
+            document.getElementById('pay_cash_received_input').value = Math.round(window.currentCartGrandTotal || 0).toLocaleString('id-ID');
         } else {
-            document.getElementById('pay_cash_received_input').value = val;
+            document.getElementById('pay_cash_received_input').value = Math.round(val || 0).toLocaleString('id-ID');
         }
         calculateChangeAmount();
     }
 
     function calculateChangeAmount() {
-        const received = parseFloat(document.getElementById('pay_cash_received_input').value) || 0;
+        const received = getCashReceivedAmount();
         const total = window.currentCartGrandTotal || 0;
         const change = received - total;
 
@@ -1926,7 +2028,7 @@
     async function handleProcessCheckout(e) {
         e.preventDefault();
         const method = document.querySelector('input[name="payment_method"]:checked').value;
-        const rawCashReceived = parseFloat(document.getElementById('pay_cash_received_input').value);
+        const rawCashReceived = getCashReceivedAmount();
         const paidAmount = (!isNaN(rawCashReceived) && rawCashReceived > 0) 
             ? rawCashReceived 
             : window.currentCartGrandTotal;

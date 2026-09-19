@@ -58,24 +58,36 @@
             </div>
 
             <!-- Harga Satuan (Bisa di-edit manual jika diizinkan) -->
-            <div class="relative rounded-xl border border-slate-200 hover:border-slate-300 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/20 bg-white transition px-4 pt-3 pb-2">
-                <label class="absolute -top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold text-slate-700">
-                    Harga Dasar Satuan <span class="text-rose-500">*</span>
+            <div class="relative rounded-xl border {{ $allowManualPriceEdit ? 'border-slate-200 hover:border-slate-300 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/20 bg-white' : 'border-slate-200 bg-slate-50 cursor-not-allowed' }} transition px-4 pt-3 pb-2">
+                <label class="absolute -top-2.5 left-3.5 {{ $allowManualPriceEdit ? 'bg-white' : 'bg-slate-50' }} px-1.5 text-[11px] font-bold text-slate-700 flex items-center gap-1">
+                    <span>Harga Dasar Satuan</span>
+                    @if(!$allowManualPriceEdit)
+                        <i data-lucide="lock" class="w-3 h-3 text-slate-400"></i>
+                    @else
+                        <span class="text-rose-500">*</span>
+                    @endif
                 </label>
                 <div class="flex items-center gap-1.5">
                     <span class="text-xs font-bold text-brand-500">Rp</span>
                     <input 
-                        type="number" 
-                        step="any" 
-                        min="0" 
+                        type="text" 
+                        inputmode="numeric" 
                         id="modal_item_price" 
-                        oninput="calculateModalSubtotal()" 
+                        oninput="onModalPriceInput(this)" 
                         required 
-                        class="w-full bg-transparent border-0 p-0 text-sm font-bold text-slate-900 font-mono-num focus:ring-0 focus:outline-none"
+                        {{ $allowManualPriceEdit ? '' : 'readonly' }}
+                        class="w-full bg-transparent border-0 p-0 text-sm font-bold {{ $allowManualPriceEdit ? 'text-slate-900' : 'text-slate-500 cursor-not-allowed' }} font-mono-num focus:ring-0 focus:outline-none"
                     >
-                    <span id="modal_manual_price_badge" class="hidden px-2 py-0.5 rounded-md text-[9px] font-bold bg-amber-50 text-amber-700 border border-amber-200 whitespace-nowrap">
-                        Manual Edit
-                    </span>
+                    @if($allowManualPriceEdit)
+                        <span id="modal_manual_price_badge" class="hidden px-2 py-0.5 rounded-md text-[9px] font-bold bg-amber-50 text-amber-700 border border-amber-200 whitespace-nowrap">
+                            Manual Edit
+                        </span>
+                    @else
+                        <span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-slate-200 text-slate-600 whitespace-nowrap flex items-center gap-1">
+                            <i data-lucide="lock" class="w-2.5 h-2.5"></i>
+                            Terkunci
+                        </span>
+                    @endif
                 </div>
             </div>
 
@@ -99,17 +111,21 @@
             <!-- ========================================== -->
             <!-- CATATAN KHUSUS RACIKAN / ITEM              -->
             <!-- ========================================== -->
-            <div class="relative rounded-xl border border-slate-200 hover:border-slate-300 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/20 bg-white transition px-4 pt-3 pb-2">
-                <label class="absolute -top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold text-slate-700 flex items-center gap-1">
-                    <i data-lucide="message-square" class="w-3 h-3 text-slate-400"></i>
-                    <span>Catatan Khusus Racikan / Item (Opsional)</span>
-                </label>
-                <input 
-                    type="text" 
-                    id="modal_item_notes" 
-                    placeholder="Misal: Less ice, gula aren pisah, tanpa sambal..." 
-                    class="w-full bg-transparent border-0 p-0 text-xs font-medium text-slate-800 placeholder-slate-400 focus:ring-0 focus:outline-none"
-                >
+            <div>
+                <div class="relative rounded-xl border border-slate-200 hover:border-slate-300 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/20 bg-white transition px-4 pt-3 pb-2">
+                    <label class="absolute -top-2.5 left-3.5 bg-white px-1.5 text-[11px] font-bold text-slate-700 flex items-center gap-1">
+                        <i data-lucide="message-square" class="w-3 h-3 text-slate-400"></i>
+                        <span>Catatan Khusus Racikan / Item (Opsional)</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        id="modal_item_notes" 
+                        placeholder="Misal: Less ice, gula aren pisah, tanpa sambal..." 
+                        class="w-full bg-transparent border-0 p-0 text-xs font-medium text-slate-800 placeholder-slate-400 focus:ring-0 focus:outline-none"
+                    >
+                </div>
+                <!-- Dynamic Quick Note Presets rendered via JS based on Product/Category -->
+                <div id="modal_item_notes_presets" class="mt-2 flex flex-wrap gap-1.5 empty:hidden"></div>
             </div>
 
             <!-- Subtotal Banner -->

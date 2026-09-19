@@ -61,6 +61,9 @@ class SettingController extends Controller
         $serviceAutoQueue = Setting::get('service_auto_queue', '1');
         $serviceEnableMaterialUsage = Setting::get('service_enable_material_usage', '0');
 
+        // POS Operational Security
+        $posAllowManualPriceEdit = Setting::get('pos_allow_manual_price_edit', '1');
+
         // Agent & PPOB Admin Fee Settings
         $agentTransferAdminFee = Setting::get('agent_transfer_admin_fee', '5000');
         $agentWithdrawAdminFee = Setting::get('agent_withdraw_admin_fee', '5000');
@@ -105,6 +108,7 @@ class SettingController extends Controller
             'serviceBookingSlotMinutes',
             'serviceAutoQueue',
             'serviceEnableMaterialUsage',
+            'posAllowManualPriceEdit',
             'agentTransferAdminFee',
             'agentWithdrawAdminFee',
             'agentTransferTiers',
@@ -215,6 +219,9 @@ class SettingController extends Controller
         ]);
 
         Setting::set('business_type', $validated['business_type'], 'business_type', 'string', 'Jenis Model Usaha');
+
+        // POS Operational Security
+        Setting::set('pos_allow_manual_price_edit', $request->has('pos_allow_manual_price_edit') ? '1' : '0', 'pos', 'boolean', 'Izinkan Edit Harga Manual di POS');
 
         // FNB settings
         Setting::set('fnb_enable_table_management', $request->has('fnb_enable_table_management') ? '1' : '0', 'fnb', 'boolean', 'Manajemen Meja');

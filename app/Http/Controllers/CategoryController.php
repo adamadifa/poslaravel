@@ -48,11 +48,19 @@ class CategoryController extends Controller
     {
         $validated = $request->validated();
 
+        $defaultNotes = null;
+        if ($request->filled('default_notes_raw')) {
+            $defaultNotes = array_values(array_filter(array_map('trim', explode(',', (string) $request->input('default_notes_raw')))));
+        } elseif ($request->has('default_notes')) {
+            $defaultNotes = $request->input('default_notes');
+        }
+
         Category::create([
             'name' => $validated['name'],
             'slug' => Str::slug($validated['name']),
             'parent_id' => $validated['parent_id'] ?? null,
             'description' => $validated['description'] ?? null,
+            'default_notes' => $defaultNotes,
             'is_active' => true,
         ]);
 
@@ -66,11 +74,19 @@ class CategoryController extends Controller
     {
         $validated = $request->validated();
 
+        $defaultNotes = null;
+        if ($request->filled('default_notes_raw')) {
+            $defaultNotes = array_values(array_filter(array_map('trim', explode(',', (string) $request->input('default_notes_raw')))));
+        } elseif ($request->has('default_notes')) {
+            $defaultNotes = $request->input('default_notes');
+        }
+
         $category->update([
             'name' => $validated['name'],
             'slug' => Str::slug($validated['name']),
             'parent_id' => $validated['parent_id'] ?? null,
             'description' => $validated['description'] ?? null,
+            'default_notes' => $defaultNotes,
             'is_active' => $request->boolean('is_active'),
         ]);
 

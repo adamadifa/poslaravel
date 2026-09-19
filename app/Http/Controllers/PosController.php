@@ -118,6 +118,7 @@ class PosController extends Controller
             'receiptFooter' => $receiptFooter,
             'receiptPaperSize' => $receiptPaperSize,
             'receiptShowLogo' => $receiptShowLogo,
+            'allowManualPriceEdit' => Setting::get('pos_allow_manual_price_edit', '1') == '1',
         ]);
     }
 

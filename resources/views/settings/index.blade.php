@@ -236,6 +236,25 @@
                             </div>
                         </div>
 
+                        <!-- POS Operational Security & Pricing Control -->
+                        <div class="p-5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/40 space-y-3">
+                            <div class="flex items-center gap-2 text-xs font-bold text-slate-800 dark:text-white">
+                                <i data-lucide="shield-check" class="w-4 h-4 text-brand-500"></i>
+                                <span>Kontrol Keamanan Kasir POS (Web & Mobile)</span>
+                            </div>
+
+                            <div class="flex items-center justify-between p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+                                <div class="pr-4">
+                                    <span class="text-xs font-bold text-slate-800 dark:text-white block">Izinkan Edit / Input Harga Manual</span>
+                                    <span class="text-[11px] text-slate-400 font-medium">Bila dinonaktifkan, kasir di Web dan Mobile tidak bisa mengubah harga satuan barang saat memilih produk atau di keranjang.</span>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer shrink-0">
+                                    <input type="checkbox" name="pos_allow_manual_price_edit" value="1" {{ $posAllowManualPriceEdit == '1' ? 'checked' : '' }} class="sr-only peer">
+                                    <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-emerald-500"></div>
+                                </label>
+                            </div>
+                        </div>
+
                         <!-- FNB SUB-PANEL -->
                         <div id="fnbPanel" class="p-5 rounded-2xl border border-amber-200/80 bg-amber-50/30 dark:bg-slate-800/60 dark:border-slate-700 space-y-4 {{ in_array($businessType, ['fnb', 'hybrid']) ? '' : 'hidden' }}">
                             <div class="flex items-center gap-2 text-xs font-bold text-amber-900 dark:text-amber-400">

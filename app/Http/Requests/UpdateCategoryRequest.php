@@ -40,6 +40,8 @@ class UpdateCategoryRequest extends FormRequest
                 Rule::notIn([$categoryId]), // Cannot set itself as parent
             ],
             'description' => ['nullable', 'string', 'max:500'],
+            'default_notes' => ['nullable', 'array'],
+            'default_notes.*' => ['string', 'max:100'],
             'is_active' => ['nullable', 'boolean'],
         ];
     }

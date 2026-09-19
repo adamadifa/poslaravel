@@ -33,6 +33,8 @@ class StoreCategoryRequest extends FormRequest
             ],
             'parent_id' => ['nullable', 'exists:categories,id'],
             'description' => ['nullable', 'string', 'max:500'],
+            'default_notes' => ['nullable', 'array'],
+            'default_notes.*' => ['string', 'max:100'],
         ];
     }
 

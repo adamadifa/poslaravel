@@ -108,7 +108,7 @@
                     </label>
                     <div class="flex items-center gap-2">
                         <span class="text-sm font-bold text-brand-500">Rp</span>
-                        <input type="number" step="any" id="pay_cash_received_input" oninput="calculateChangeAmount()" placeholder="0" class="w-full bg-transparent border-0 p-0 text-xl font-black text-slate-900 font-mono-num focus:ring-0 focus:outline-none">
+                        <input type="text" inputmode="numeric" id="pay_cash_received_input" oninput="onPayCashInput(this)" placeholder="0" class="w-full bg-transparent border-0 p-0 text-xl font-black text-slate-900 font-mono-num focus:ring-0 focus:outline-none">
                     </div>
                 </div>
 

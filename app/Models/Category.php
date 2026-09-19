@@ -14,11 +14,13 @@ class Category extends Model
         'name',
         'slug',
         'description',
+        'default_notes',
         'is_active',
         'sort_order',
     ];
 
     protected $casts = [
+        'default_notes' => 'array',
         'is_active' => 'boolean',
         'sort_order' => 'integer',
     ];

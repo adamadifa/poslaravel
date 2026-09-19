@@ -36,6 +36,7 @@ class Product extends Model
         'has_expiry',
         'is_active',
         'image_path',
+        'default_notes',
     ];
 
     protected $casts = [
@@ -50,6 +51,7 @@ class Product extends Model
         'tax_rate' => 'decimal:2',
         'has_expiry' => 'boolean',
         'is_active' => 'boolean',
+        'default_notes' => 'array',
     ];
 
     public function category(): BelongsTo

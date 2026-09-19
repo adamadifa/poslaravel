@@ -76,6 +76,18 @@
                             <td class="py-2.5 px-6">
                                 <div class="font-bold text-slate-900 dark:text-white leading-snug">{{ $category->name }}</div>
                                 <div class="text-[10px] text-slate-400 font-mono">{{ $category->slug }}</div>
+                                @if(!empty($category->default_notes) && is_array($category->default_notes))
+                                    <div class="mt-1 flex flex-wrap gap-1">
+                                        @foreach(array_slice($category->default_notes, 0, 3) as $noteTag)
+                                            <span class="inline-flex items-center px-1.5 py-0.2 rounded text-[9px] font-semibold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/40">
+                                                {{ $noteTag }}
+                                            </span>
+                                        @endforeach
+                                        @if(count($category->default_notes) > 3)
+                                            <span class="text-[9px] text-slate-400 font-bold">+{{ count($category->default_notes) - 3 }}</span>
+                                        @endif
+                                    </div>
+                                @endif
                             </td>
                             <td class="py-2.5 px-5">
                                 @if($category->parent)
@@ -158,6 +170,26 @@
         modal.classList.add('hidden');
         modal.classList.remove('flex');
     }
+    function appendCreateNotePreset(notes) {
+        const input = document.getElementById('create_cat_default_notes');
+        if (!input) return;
+        if (!input.value.trim()) {
+            input.value = notes;
+        } else {
+            input.value = input.value.trim() + ', ' + notes;
+        }
+    }
+
+    function appendEditNotePreset(notes) {
+        const input = document.getElementById('edit_cat_default_notes');
+        if (!input) return;
+        if (!input.value.trim()) {
+            input.value = notes;
+        } else {
+            input.value = input.value.trim() + ', ' + notes;
+        }
+    }
+
     function openEditCategoryModal(cat) {
         const form = document.getElementById('editCategoryForm');
         form.action = `/categories/${cat.id}`;
@@ -170,6 +202,17 @@
         document.getElementById('edit_cat_parent_id').value = cat.parent_id || '';
         document.getElementById('edit_cat_description').value = cat.description || '';
         document.getElementById('edit_cat_is_active').checked = cat.is_active ? true : false;
+
+        const defaultNotesInput = document.getElementById('edit_cat_default_notes');
+        if (defaultNotesInput) {
+            if (Array.isArray(cat.default_notes)) {
+                defaultNotesInput.value = cat.default_notes.join(', ');
+            } else if (typeof cat.default_notes === 'string') {
+                defaultNotesInput.value = cat.default_notes;
+            } else {
+                defaultNotesInput.value = '';
+            }
+        }
 
         // Reset edit validation state
         setFieldStatus('edit', 'name', null);
