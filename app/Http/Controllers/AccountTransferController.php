@@ -85,4 +85,19 @@ class AccountTransferController extends Controller
             return redirect()->back()->withInput()->with('error', 'Gagal memproses transfer kas: '.$e->getMessage());
         }
     }
+
+    /**
+     * Remove / Cancel an Account Transfer.
+     */
+    public function destroy(AccountTransfer $accountTransfer)
+    {
+        try {
+            $transferNumber = $accountTransfer->transfer_number;
+            $this->financeService->cancelTransfer($accountTransfer);
+
+            return redirect()->route('account-transfers.index')->with('success', "Transfer {$transferNumber} berhasil dibatalkan dan saldo telah dikembalikan.");
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal membatalkan transfer: '.$e->getMessage());
+        }
+    }
 }

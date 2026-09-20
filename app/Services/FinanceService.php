@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Account;
+use App\Models\AccountMutation;
 use App\Models\AccountTransfer;
 use App\Models\CashFlow;
 use App\Models\Payment;
@@ -126,7 +127,7 @@ class FinanceService
                 'transaction_date' => $payment->payment_date,
                 'reference_type' => Payment::class,
                 'reference_id' => $payment->id,
-                'description' => "Bayar Hutang {$receipt->receipt_number} ({$receipt->supplier?->name})",
+                'description' => "Bayar Hutang {$receipt->grn_number} ({$receipt->supplier?->name})",
                 'created_by' => auth()->id(),
             ]);
 
@@ -196,6 +197,71 @@ class FinanceService
             ]);
 
             return $payment;
+        });
+    }
+
+    /**
+     * Cancel / Void a Payment (Payable or Receivable).
+     * Reverts account balance, updates receipt/sale paid_amount and payment_status,
+     * deletes associated cash flow record, and deletes the payment record.
+     */
+    public function cancelPayment(Payment $payment): bool
+    {
+        return DB::transaction(function () use ($payment) {
+            $account = Account::lockForUpdate()->find($payment->account_id);
+            $amount = (float) $payment->amount;
+
+            // 1. Revert Account Balance
+            if ($account) {
+                if ($payment->payment_type === 'payable') {
+                    // Payable payment previously deducted balance; refund it back
+                    $account->increment('current_balance', $amount);
+                } elseif ($payment->payment_type === 'receivable') {
+                    // Receivable collection previously added balance; deduct it back
+                    if ((float) $account->current_balance < $amount) {
+                        throw new \Exception("Saldo akun '{$account->name}' tidak mencukupi untuk membatalkan penerimaan ini.");
+                    }
+                    $account->decrement('current_balance', $amount);
+                }
+            }
+
+            // 2. Revert Payable (PurchaseReceipt or Sale)
+            $payable = $payment->payable;
+            if ($payable instanceof PurchaseReceipt) {
+                $newPaid = max(0, (float) $payable->paid_amount - $amount);
+                $payable->paid_amount = $newPaid;
+
+                if ($newPaid >= (float) $payable->grand_total && (float) $payable->grand_total > 0) {
+                    $payable->payment_status = 'paid';
+                } elseif ($newPaid > 0) {
+                    $payable->payment_status = 'partial';
+                } else {
+                    $payable->payment_status = 'unpaid';
+                }
+                $payable->save();
+            } elseif ($payable instanceof Sale) {
+                $newPaid = max(0, (float) $payable->paid_amount - $amount);
+                $payable->paid_amount = $newPaid;
+
+                if ($newPaid >= (float) $payable->grand_total && (float) $payable->grand_total > 0) {
+                    $payable->payment_status = 'paid';
+                } elseif ($newPaid > 0) {
+                    $payable->payment_status = 'partial';
+                } else {
+                    $payable->payment_status = 'unpaid';
+                }
+                $payable->save();
+            }
+
+            // 3. Delete CashFlow created for this payment
+            CashFlow::where('reference_type', Payment::class)
+                ->where('reference_id', $payment->id)
+                ->delete();
+
+            // 4. Delete the Payment record
+            $payment->delete();
+
+            return true;
         });
     }
 
@@ -367,6 +433,57 @@ class FinanceService
             ]);
 
             return $transfer;
+        });
+    }
+
+    /**
+     * Cancel / Delete an Account Transfer.
+     * Safely rolls back:
+     * 1. Check destination account has enough balance to refund
+     * 2. Refund amount + fee to fromAccount
+     * 3. Deduct amount from toAccount
+     * 4. Delete AccountMutation records associated with this transfer
+     * 5. Delete CashFlow records associated with this transfer
+     * 6. Delete the AccountTransfer record
+     */
+    public function cancelTransfer(AccountTransfer $transfer): bool
+    {
+        return DB::transaction(function () use ($transfer) {
+            $fromAccount = Account::lockForUpdate()->find($transfer->from_account_id);
+            $toAccount = Account::lockForUpdate()->find($transfer->to_account_id);
+
+            $amount = (float) $transfer->amount;
+            $fee = (float) $transfer->transfer_fee;
+            $totalDeduction = $amount + $fee;
+
+            // Check if destination account has enough balance to return the transferred funds
+            if ($toAccount && (float) $toAccount->current_balance < $amount) {
+                throw new \Exception("Saldo akun tujuan '{$toAccount->name}' tidak mencukupi untuk membatalkan transfer ini (Sisa Saldo: Rp ".number_format($toAccount->current_balance, 0, ',', '.').', Dibutuhkan: Rp '.number_format($amount, 0, ',', '.').').');
+            }
+
+            // 1. Revert Balances
+            if ($fromAccount) {
+                $fromAccount->increment('current_balance', $totalDeduction);
+            }
+
+            if ($toAccount) {
+                $toAccount->decrement('current_balance', $amount);
+            }
+
+            // 2. Delete AccountMutation records
+            AccountMutation::where('reference_type', AccountTransfer::class)
+                ->where('reference_id', $transfer->id)
+                ->delete();
+
+            // 3. Delete CashFlow records
+            CashFlow::where('reference_type', AccountTransfer::class)
+                ->where('reference_id', $transfer->id)
+                ->delete();
+
+            // 4. Delete AccountTransfer record
+            $transfer->delete();
+
+            return true;
         });
     }
 }

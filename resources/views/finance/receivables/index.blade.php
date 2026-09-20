@@ -207,18 +207,34 @@
 
                             <!-- Aksi -->
                             <td class="py-3.5 px-5 text-right">
-                                @if($remaining > 0)
-                                    <button 
-                                        type="button" 
-                                        onclick="openReceiveModal({{ $s->id }}, '{{ $s->invoice_number }}', '{{ addslashes($s->customer?->name ?? 'Pelanggan Umum') }}', {{ $remaining }})"
-                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-bold text-xs shadow-xs transition cursor-pointer"
-                                    >
-                                        <i data-lucide="coins" class="w-3.5 h-3.5"></i>
-                                        <span>Terima</span>
-                                    </button>
-                                @else
-                                    <span class="text-[11px] text-slate-400 font-semibold italic">Selesai</span>
-                                @endif
+                                <div class="flex items-center justify-end gap-1.5">
+                                    @if($s->payments->isNotEmpty())
+                                        <button 
+                                            type="button" 
+                                            onclick='openHistoryModal({{ json_encode($s->invoice_number) }}, {{ json_encode($s->payments) }})'
+                                            class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition cursor-pointer"
+                                            title="Lihat Riwayat & Batal Terima"
+                                        >
+                                            <i data-lucide="history" class="w-3.5 h-3.5 text-slate-500"></i>
+                                            <span class="text-[11px]">{{ $s->payments->count() }}</span>
+                                        </button>
+                                    @endif
+
+                                    @if($remaining > 0)
+                                        <button 
+                                            type="button" 
+                                            onclick="openReceiveModal({{ $s->id }}, '{{ $s->invoice_number }}', '{{ addslashes($s->customer?->name ?? 'Pelanggan Umum') }}', {{ $remaining }})"
+                                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-bold text-xs shadow-xs transition cursor-pointer"
+                                        >
+                                            <i data-lucide="coins" class="w-3.5 h-3.5"></i>
+                                            <span>Terima</span>
+                                        </button>
+                                    @else
+                                        @if($s->payments->isEmpty())
+                                            <span class="text-[11px] text-slate-400 font-semibold italic">Selesai</span>
+                                        @endif
+                                    @endif
+                                </div>
                             </td>
                         </tr>
                     @empty
@@ -246,6 +262,31 @@
 
 @push('modals')
     @include('finance.receivables._receive_modal')
+
+    <!-- PAYMENT HISTORY & CANCEL MODAL -->
+    <div id="historyModal" class="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center p-3 sm:p-6 overflow-y-auto">
+        <div class="bg-white border border-slate-200/90 rounded-2xl max-w-xl w-full shadow-2xl transition-all my-auto overflow-hidden flex flex-col">
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center border border-slate-200 shadow-2xs">
+                        <i data-lucide="history" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-extrabold text-base text-slate-900 tracking-tight">Riwayat Penerimaan Piutang</h3>
+                        <p class="text-xs text-slate-400" id="historyModalSubtitle">Invoice Penjualan</p>
+                    </div>
+                </div>
+                <button onclick="closeModal('historyModal')" type="button" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <div id="historyListContainer" class="space-y-3">
+                    <!-- Populated dynamically by JS -->
+                </div>
+            </div>
+        </div>
+    </div>
 @endpush
 
 @push('scripts')
@@ -268,6 +309,58 @@
                 defaultDate: new Date(),
                 locale: "id"
             });
+        }
+    }
+
+    function openHistoryModal(invoiceNum, payments) {
+        document.getElementById('historyModalSubtitle').innerText = `Invoice ${invoiceNum}`;
+        const container = document.getElementById('historyListContainer');
+        
+        if (!payments || payments.length === 0) {
+            container.innerHTML = '<div class="text-center py-6 text-slate-400 text-xs">Belum ada histori penerimaan untuk invoice ini.</div>';
+        } else {
+            let html = '';
+            payments.forEach(p => {
+                const amountFormatted = 'Rp ' + Number(p.amount).toLocaleString('id-ID');
+                const dateFormatted = p.payment_date ? p.payment_date.substring(0, 10) : '-';
+                const accountName = p.account ? p.account.name : 'Kas/Bank';
+                const method = p.payment_method ? p.payment_method.toUpperCase() : 'CASH';
+
+                html += `
+                    <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50 flex items-center justify-between gap-3">
+                        <div class="space-y-1">
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold text-xs text-slate-900">${p.payment_number}</span>
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700">${method}</span>
+                            </div>
+                            <div class="text-xs text-slate-500 flex items-center gap-2">
+                                <span>Tgl: ${dateFormatted}</span>
+                                <span>•</span>
+                                <span>Akun: ${accountName}</span>
+                            </div>
+                            ${p.notes ? `<div class="text-[11px] text-slate-400 italic">"${p.notes}"</div>` : ''}
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="text-right">
+                                <div class="font-extrabold text-sm text-emerald-600 font-mono-num">${amountFormatted}</div>
+                            </div>
+                            <form action="/payments/${p.id}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin membatalkan penerimaan pembayaran ${p.payment_number}? Saldo akun dan piutang akan dikembalikan.')">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="p-2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition" title="Batalkan Penerimaan Ini">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        openModal('historyModal');
+        if (window.lucide) {
+            lucide.createIcons();
         }
     }
 </script>

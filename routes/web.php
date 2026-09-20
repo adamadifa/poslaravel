@@ -157,8 +157,9 @@ Route::middleware(['auth'])->group(function () {
     Route::post('payables', [PaymentController::class, 'storePayable'])->name('payables.store');
     Route::get('receivables', [PaymentController::class, 'receivables'])->name('receivables.index');
     Route::post('receivables', [PaymentController::class, 'storeReceivable'])->name('receivables.store');
+    Route::delete('payments/{payment}', [PaymentController::class, 'destroy'])->name('payments.destroy');
     Route::resource('cash-flows', CashFlowController::class)->except(['create', 'edit']);
-    Route::resource('account-transfers', AccountTransferController::class)->only(['index', 'store']);
+    Route::resource('account-transfers', AccountTransferController::class)->only(['index', 'store', 'destroy']);
 
     // 7. Penjualan & Retur Penjualan
     Route::resource('sales', SaleController::class)->only(['index', 'show']);

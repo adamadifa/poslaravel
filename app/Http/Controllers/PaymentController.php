@@ -29,8 +29,8 @@ class PaymentController extends Controller
         $paymentStatus = $request->query('payment_status'); // unpaid, partial, paid
         $search = $request->query('search');
 
-        $receipts = PurchaseReceipt::with(['supplier', 'warehouse'])
-            ->where('status', 'completed')
+        $receipts = PurchaseReceipt::with(['supplier', 'warehouse', 'payments.account'])
+            ->whereIn('status', ['confirmed', 'completed'])
             ->when($supplierId, fn ($q) => $q->where('supplier_id', $supplierId))
             ->when($paymentStatus, function ($q, $paymentStatus) {
                 $q->where('payment_status', $paymentStatus);
@@ -42,8 +42,8 @@ class PaymentController extends Controller
             })
             ->when($search, function ($q, $search) {
                 $q->where(function ($sq) use ($search) {
-                    $sq->where('receipt_number', 'like', "%{$search}%")
-                        ->orWhere('invoice_number', 'like', "%{$search}%")
+                    $sq->where('grn_number', 'like', "%{$search}%")
+                        ->orWhere('supplier_invoice_number', 'like', "%{$search}%")
                         ->orWhereHas('supplier', fn ($sp) => $sp->where('name', 'like', "%{$search}%"));
                 });
             })
@@ -55,7 +55,7 @@ class PaymentController extends Controller
         $accounts = Account::where('is_active', true)->orderBy('name')->get();
 
         // Total Outstanding Payables
-        $totalOutstanding = PurchaseReceipt::where('status', 'completed')
+        $totalOutstanding = PurchaseReceipt::whereIn('status', ['confirmed', 'completed'])
             ->whereIn('payment_status', ['unpaid', 'partial'])
             ->selectRaw('SUM(grand_total - paid_amount) as total')
             ->value('total') ?? 0;
@@ -109,7 +109,7 @@ class PaymentController extends Controller
         $paymentStatus = $request->query('payment_status');
         $search = $request->query('search');
 
-        $sales = Sale::with(['customer', 'warehouse', 'user'])
+        $sales = Sale::with(['customer', 'warehouse', 'user', 'payments.account'])
             ->where('status', 'completed')
             ->when($customerId, fn ($q) => $q->where('customer_id', $customerId))
             ->when($paymentStatus, function ($q, $paymentStatus) {
@@ -176,6 +176,24 @@ class PaymentController extends Controller
             return redirect()->route('receivables.index')->with('success', "Penerimaan piutang {$payment->payment_number} sebesar Rp ".number_format($payment->amount, 0, ',', '.').' berhasil dicatat.');
         } catch (\Exception $e) {
             return redirect()->back()->withInput()->with('error', 'Gagal memproses penerimaan piutang: '.$e->getMessage());
+        }
+    }
+
+    /**
+     * Cancel / Delete an existing Payment (AP or AR).
+     */
+    public function destroy(Payment $payment)
+    {
+        try {
+            $paymentNumber = $payment->payment_number;
+            $type = $payment->payment_type;
+            $this->financeService->cancelPayment($payment);
+
+            $route = $type === 'receivable' ? 'receivables.index' : 'payables.index';
+
+            return redirect()->route($route)->with('success', "Pembayaran {$paymentNumber} berhasil dibatalkan dan saldo kas dikembalikan.");
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal membatalkan pembayaran: '.$e->getMessage());
         }
     }
 }

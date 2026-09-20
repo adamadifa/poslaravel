@@ -54,6 +54,25 @@ class Product extends Model
         'default_notes' => 'array',
     ];
 
+    protected $appends = [
+        'total_stock',
+        'stock',
+    ];
+
+    public function getTotalStockAttribute(): float
+    {
+        if ($this->relationLoaded('stocks')) {
+            return (float) $this->stocks->sum('quantity');
+        }
+
+        return (float) $this->stocks()->sum('quantity');
+    }
+
+    public function getStockAttribute(): float
+    {
+        return $this->total_stock;
+    }
+
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);

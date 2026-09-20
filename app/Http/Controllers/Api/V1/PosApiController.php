@@ -7,6 +7,7 @@ use App\Models\HeldTransaction;
 use App\Models\Product;
 use App\Models\Sale;
 use App\Services\DiscountService;
+use App\Services\FinanceService;
 use App\Services\PricingService;
 use App\Services\SaleService;
 use Illuminate\Http\JsonResponse;
@@ -17,7 +18,8 @@ class PosApiController extends BaseApiController
 {
     public function __construct(
         protected SaleService $saleService,
-        protected DiscountService $discountService
+        protected DiscountService $discountService,
+        protected FinanceService $financeService
     ) {}
 
     /**
@@ -28,14 +30,17 @@ class PosApiController extends BaseApiController
         $search = $request->query('q');
         $categoryId = $request->query('category_id');
         $warehouseId = $request->query('warehouse_id');
+        $productType = $request->query('product_type');
 
         $products = Product::with([
             'category',
             'baseUnit',
+            'barcodes.unit',
             'conversions.fromUnit',
             'conversions.toUnit',
             'priceLists.unit',
             'tieredPrices.unit',
+            'tieredPrices.customerGroup',
             'modifierGroups.modifiers',
             'stocks' => function ($q) use ($warehouseId) {
                 if ($warehouseId) {
@@ -44,7 +49,15 @@ class PosApiController extends BaseApiController
             },
         ])
             ->where('is_active', true)
-            ->where('product_type', '!=', 'raw_material')
+            ->when($productType, function ($query, $type) {
+                if ($type === 'raw_material') {
+                    $query->where('product_type', 'raw_material');
+                } else {
+                    $query->where('product_type', $type);
+                }
+            }, function ($query) {
+                $query->where('product_type', '!=', 'raw_material');
+            })
             ->when($search, function ($query, $search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
@@ -58,7 +71,7 @@ class PosApiController extends BaseApiController
             ->when($categoryId, function ($query, $categoryId) {
                 $query->where('category_id', $categoryId);
             })
-            ->take(50)
+            ->take(100)
             ->get();
 
         return $this->sendResponse($products, 'Katalog produk berhasil dimuat.');
@@ -234,5 +247,87 @@ class PosApiController extends BaseApiController
         $priceData = app(PricingService::class)->resolvePrice($product, $unitId, $qty, $customer);
 
         return $this->sendResponse($priceData, 'Harga satuan berhasil dihitung.');
+    }
+
+    /**
+     * Get list of Account Receivables (Piutang Penjualan).
+     */
+    public function getReceivables(Request $request): JsonResponse
+    {
+        $customerId = $request->query('customer_id');
+        $paymentStatus = $request->query('payment_status'); // unpaid, partial, paid, all
+        $search = $request->query('q') ?? $request->query('search');
+
+        $sales = Sale::with(['customer', 'warehouse', 'user', 'payments.account'])
+            ->where('status', 'completed')
+            ->when($customerId, fn ($q) => $q->where('customer_id', $customerId))
+            ->when($paymentStatus && $paymentStatus !== 'all', function ($q) use ($paymentStatus) {
+                $q->where('payment_status', $paymentStatus);
+            }, function ($q) use ($paymentStatus) {
+                if ($paymentStatus !== 'all') {
+                    $q->whereIn('payment_status', ['unpaid', 'partial']);
+                }
+            })
+            ->when($search, function ($q, $search) {
+                $q->where(function ($sq) use ($search) {
+                    $sq->where('invoice_number', 'like', "%{$search}%")
+                        ->orWhereHas('customer', fn ($c) => $c->where('name', 'like', "%{$search}%")->orWhere('phone', 'like', "%{$search}%"));
+                });
+            })
+            ->latest('sale_date')
+            ->latest('id')
+            ->get();
+
+        $totalOutstanding = Sale::where('status', 'completed')
+            ->whereIn('payment_status', ['unpaid', 'partial'])
+            ->selectRaw('SUM(grand_total - paid_amount) as total')
+            ->value('total') ?? 0;
+
+        return $this->sendResponse([
+            'total_outstanding' => (float) $totalOutstanding,
+            'receivables' => $sales,
+        ], 'Data Piutang Usaha berhasil dimuat.');
+    }
+
+    /**
+     * Store AR Collection (Penerimaan Piutang Pelanggan).
+     */
+    public function storeReceivablePayment(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'sale_id' => ['required', 'exists:sales,id'],
+            'account_id' => ['required', 'exists:accounts,id'],
+            'amount' => ['required', 'numeric', 'min:1'],
+            'payment_date' => ['required', 'date'],
+            'payment_method' => ['required', 'in:cash,transfer,check,other'],
+            'reference_number' => ['nullable', 'string'],
+            'notes' => ['nullable', 'string'],
+        ]);
+
+        if ($validator->fails()) {
+            return $this->sendError('Validasi Gagal', $validator->errors()->all(), 422);
+        }
+
+        try {
+            $payment = $this->financeService->processReceivableCollection($validator->validated());
+
+            return $this->sendResponse(
+                $payment->load(['payable.customer', 'account']),
+                "Penerimaan piutang {$payment->payment_number} sebesar Rp ".number_format($payment->amount, 0, ',', '.').' berhasil dicatat.',
+                201
+            );
+        } catch (\Exception $e) {
+            return $this->sendError('Gagal memproses penerimaan piutang: '.$e->getMessage(), [], 500);
+        }
+    }
+
+    /**
+     * Get payment collection history for a specific Sale.
+     */
+    public function getReceivablePayments(Sale $sale): JsonResponse
+    {
+        $payments = $sale->payments()->with(['account', 'creator'])->get();
+
+        return $this->sendResponse($payments, 'Histori penerimaan piutang berhasil dimuat.');
     }
 }

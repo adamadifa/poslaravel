@@ -59,4 +59,19 @@ class PurchaseReceipt extends Model
     {
         return $this->hasMany(PurchaseReceiptItem::class);
     }
+
+    public function payments()
+    {
+        return $this->morphMany(Payment::class, 'payable')->latest('payment_date')->latest('id');
+    }
+
+    public function getReceiptNumberAttribute(): string
+    {
+        return $this->grn_number ?? '';
+    }
+
+    public function getInvoiceNumberAttribute(): ?string
+    {
+        return $this->supplier_invoice_number;
+    }
 }

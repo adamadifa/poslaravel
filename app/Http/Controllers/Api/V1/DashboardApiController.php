@@ -136,22 +136,53 @@ class DashboardApiController extends BaseApiController
     }
 
     /**
-     * Get sales transaction list.
+     * Get sales transaction list with comprehensive filters and summary stats.
      */
     public function sales(Request $request): JsonResponse
     {
-        $query = Sale::with(['customer', 'warehouse', 'items.product'])->latest('id');
+        $warehouseId = $request->query('warehouse_id');
+        $paymentMethod = $request->query('payment_method');
+        $paymentStatus = $request->query('payment_status');
+        $startDate = $request->query('start_date');
+        $endDate = $request->query('end_date');
+        $search = $request->query('search') ?? $request->query('q');
 
-        if ($request->has('search') && ! empty($request->search)) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('invoice_number', 'like', "%{$search}%")
-                    ->orWhereHas('customer', fn ($c) => $c->where('name', 'like', "%{$search}%"));
-            });
-        }
+        $query = Sale::with([
+            'customer',
+            'warehouse',
+            'user',
+            'items.product.baseUnit',
+            'items.unit',
+        ])
+            ->when($warehouseId, fn ($q) => $q->where('warehouse_id', $warehouseId))
+            ->when($paymentMethod && $paymentMethod !== 'all', fn ($q) => $q->where('payment_method', $paymentMethod))
+            ->when($paymentStatus && $paymentStatus !== 'all', fn ($q) => $q->where('payment_status', $paymentStatus))
+            ->when($startDate, fn ($q) => $q->whereDate('sale_date', '>=', $startDate))
+            ->when($endDate, fn ($q) => $q->whereDate('sale_date', '<=', $endDate))
+            ->when($search, function ($q, $search) {
+                $q->where(function ($sq) use ($search) {
+                    $sq->where('invoice_number', 'like', "%{$search}%")
+                        ->orWhere('payment_method', 'like', "%{$search}%")
+                        ->orWhereHas('customer', fn ($c) => $c->where('name', 'like', "%{$search}%")->orWhere('phone', 'like', "%{$search}%"));
+                });
+            })
+            ->latest('id');
 
-        $sales = $query->paginate($request->get('per_page', 15));
+        $totalSalesAmount = (float) (clone $query)->sum('grand_total');
+        $totalCashAmount = (float) (clone $query)->where('payment_method', 'cash')->sum('grand_total');
+        $totalNonCashAmount = $totalSalesAmount - $totalCashAmount;
+        $totalCount = (clone $query)->count();
 
-        return $this->sendResponse($sales, 'Daftar transaksi penjualan.');
+        $sales = $query->paginate($request->get('per_page', 50));
+
+        return $this->sendResponse([
+            'sales' => $sales,
+            'summary' => [
+                'total_sales_amount' => $totalSalesAmount,
+                'total_transactions_count' => $totalCount,
+                'total_cash_amount' => $totalCashAmount,
+                'total_non_cash_amount' => $totalNonCashAmount,
+            ],
+        ], 'Daftar transaksi penjualan berhasil dimuat.');
     }
 }
