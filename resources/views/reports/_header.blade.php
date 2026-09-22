@@ -102,6 +102,15 @@
         <i data-lucide="user-check" class="w-4 h-4"></i>
         <span>Rekap Shift Kasir</span>
     </a>
+
+    @if(in_array(\App\Models\Setting::get('business_type', 'retail'), ['service', 'hybrid']))
+    <div class="h-5 w-px bg-slate-200 dark:bg-slate-700 mx-1 shrink-0"></div>
+
+    <a href="{{ route('reports.commissions') }}" class="px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition flex items-center gap-2 {{ $currentRoute === 'reports.commissions' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800' }}">
+        <i data-lucide="badge-percent" class="w-4 h-4 text-emerald-500 {{ $currentRoute === 'reports.commissions' ? 'text-white' : '' }}"></i>
+        <span>Komisi Staf & Jasa</span>
+    </a>
+    @endif
 </div>
 <script>
     (function() {

@@ -50,6 +50,7 @@ class MasterDataApiController extends BaseApiController
             'parent_id' => ['nullable', 'exists:categories,id'],
             'description' => ['nullable', 'string'],
             'default_notes' => ['nullable'],
+            'send_to_kitchen' => ['nullable', 'boolean'],
             'is_active' => ['nullable', 'boolean'],
         ]);
 
@@ -77,6 +78,7 @@ class MasterDataApiController extends BaseApiController
             'parent_id' => $validated['parent_id'] ?? null,
             'description' => $validated['description'] ?? null,
             'default_notes' => $defaultNotes,
+            'send_to_kitchen' => $request->has('send_to_kitchen') ? $request->boolean('send_to_kitchen') : true,
             'is_active' => $request->boolean('is_active', true),
         ]);
 
@@ -93,6 +95,7 @@ class MasterDataApiController extends BaseApiController
             'parent_id' => ['nullable', 'exists:categories,id'],
             'description' => ['nullable', 'string'],
             'default_notes' => ['nullable'],
+            'send_to_kitchen' => ['nullable', 'boolean'],
             'is_active' => ['nullable', 'boolean'],
         ]);
 
@@ -120,7 +123,8 @@ class MasterDataApiController extends BaseApiController
             'parent_id' => $validated['parent_id'] ?? null,
             'description' => $validated['description'] ?? null,
             'default_notes' => $defaultNotes,
-            'is_active' => $request->boolean('is_active', true),
+            'send_to_kitchen' => $request->has('send_to_kitchen') ? $request->boolean('send_to_kitchen') : $category->send_to_kitchen,
+            'is_active' => $request->has('is_active') ? $request->boolean('is_active') : $category->is_active,
         ]);
 
         return $this->sendResponse($category->load('parent')->loadCount('products'), 'Kategori berhasil diperbarui.');

@@ -66,6 +66,7 @@
                         <th class="pt-1.5 pb-2.5 px-6">Nama Kategori</th>
                         <th class="pt-1.5 pb-2.5 px-5">Induk Kategori</th>
                         <th class="pt-1.5 pb-2.5 px-5 text-center">Jumlah Produk</th>
+                        <th class="pt-1.5 pb-2.5 px-5 text-center">Layar Dapur</th>
                         <th class="pt-1.5 pb-2.5 px-5 text-center">Status</th>
                         <th class="pt-1.5 pb-2.5 px-6 text-right">Aksi</th>
                     </tr>
@@ -100,6 +101,19 @@
                             </td>
                             <td class="py-2.5 px-5 text-center font-mono font-bold text-slate-800 dark:text-slate-200">
                                 {{ $category->products_count }}
+                            </td>
+                            <td class="py-2.5 px-5 text-center">
+                                @if($category->send_to_kitchen)
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800" title="Item kategori ini masuk ke antrian KDS">
+                                        <i data-lucide="chef-hat" class="w-3 h-3"></i>
+                                        <span>Dapur/Bar</span>
+                                    </span>
+                                @else
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-500" title="Item kategori ini langsung diserahkan tanpa antrian dapur">
+                                        <i data-lucide="ban" class="w-3 h-3"></i>
+                                        <span>Tidak</span>
+                                    </span>
+                                @endif
                             </td>
                             <td class="py-2.5 px-5 text-center">
                                 @if($category->is_active)
@@ -201,7 +215,8 @@
         nameInput.value = cat.name || '';
         document.getElementById('edit_cat_parent_id').value = cat.parent_id || '';
         document.getElementById('edit_cat_description').value = cat.description || '';
-        document.getElementById('edit_cat_is_active').checked = cat.is_active ? true : false;
+        document.getElementById('edit_cat_is_active').checked = Boolean(cat.is_active);
+        document.getElementById('edit_cat_send_to_kitchen').checked = Boolean(cat.send_to_kitchen);
 
         const defaultNotesInput = document.getElementById('edit_cat_default_notes');
         if (defaultNotesInput) {

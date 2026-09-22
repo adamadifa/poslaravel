@@ -7,6 +7,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -31,5 +32,15 @@ class User extends Authenticatable
             'password' => 'hashed',
             'is_active' => 'boolean',
         ];
+    }
+
+    public function serviceStaffs(): HasMany
+    {
+        return $this->hasMany(ServiceStaff::class, 'user_id');
+    }
+
+    public function serviceAssignments(): HasMany
+    {
+        return $this->hasMany(SaleItemAssignment::class, 'staff_user_id');
     }
 }

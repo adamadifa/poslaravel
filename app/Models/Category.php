@@ -16,12 +16,14 @@ class Category extends Model
         'description',
         'default_notes',
         'is_active',
+        'send_to_kitchen',
         'sort_order',
     ];
 
     protected $casts = [
         'default_notes' => 'array',
         'is_active' => 'boolean',
+        'send_to_kitchen' => 'boolean',
         'sort_order' => 'integer',
     ];
 

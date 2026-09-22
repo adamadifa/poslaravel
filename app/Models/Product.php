@@ -35,6 +35,7 @@ class Product extends Model
         'tax_rate',
         'has_expiry',
         'is_active',
+        'send_to_kitchen',
         'image_path',
         'default_notes',
     ];
@@ -51,6 +52,7 @@ class Product extends Model
         'tax_rate' => 'decimal:2',
         'has_expiry' => 'boolean',
         'is_active' => 'boolean',
+        'send_to_kitchen' => 'boolean',
         'default_notes' => 'array',
     ];
 

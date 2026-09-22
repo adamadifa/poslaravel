@@ -1299,6 +1299,111 @@ class ReportExportService
     }
 
     /**
+     * Export Commissions to formatted Excel (.xlsx)
+     */
+    public function exportCommissions($assignments, array $meta = []): StreamedResponse
+    {
+        $spreadsheet = new Spreadsheet;
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Laporan Komisi');
+        $sheet->setShowGridLines(true);
+
+        $appName = Setting::get('app_name', 'POS Pro');
+        $title = 'LAPORAN KOMISI STAF & TEKNISI LAYANAN';
+
+        // 1. Header
+        $this->writeReportHeader($sheet, $appName, $title, $meta, 'K');
+
+        // 2. Table Headers
+        $headers = [
+            'A5' => 'No',
+            'B5' => 'No. Faktur',
+            'C5' => 'Tanggal & Waktu',
+            'D5' => 'Staf / Teknisi',
+            'E5' => 'Layanan / Jasa',
+            'F5' => 'Pelanggan',
+            'G5' => 'Cabang',
+            'H5' => 'Status Pengerjaan',
+            'I5' => 'Durasi (Menit)',
+            'J5' => 'Harga Layanan (Rp)',
+            'K5' => 'Komisi Staf (Rp)',
+        ];
+
+        $tableStartRow = 5;
+        $this->styleHeaderRow($sheet, $headers, $tableStartRow);
+
+        // 3. Populate Data Rows
+        $row = 6;
+        $no = 1;
+        $startDataRow = 6;
+
+        foreach ($assignments as $assignment) {
+            $saleItem = $assignment->saleItem;
+            $sale = $saleItem?->sale;
+            $product = $saleItem?->product;
+            $staff = $assignment->staff;
+            $customer = $sale?->customer;
+            $warehouse = $sale?->warehouse;
+
+            $statusLabel = match ($assignment->status) {
+                'completed' => 'Selesai',
+                'in_progress' => 'Dikerjakan',
+                default => 'Menunggu'
+            };
+
+            $sheet->setCellValue("A{$row}", $no);
+            $sheet->setCellValue("B{$row}", $sale?->invoice_number ?? '-');
+            $sheet->setCellValue("C{$row}", $sale?->sale_date ? Carbon::parse($sale->sale_date)->format('d/m/Y H:i') : '-');
+            $sheet->setCellValue("D{$row}", $staff?->name ?? 'Belum Ditugaskan');
+            $sheet->setCellValue("E{$row}", $product?->name ?? ($saleItem?->notes ?? '-'));
+            $sheet->setCellValue("F{$row}", $customer?->name ?? 'Pelanggan Umum');
+            $sheet->setCellValue("G{$row}", $warehouse?->name ?? '-');
+            $sheet->setCellValue("H{$row}", $statusLabel);
+            $sheet->setCellValue("I{$row}", $assignment->duration_actual_minutes ?? 0);
+            $sheet->setCellValue("J{$row}", (float) ($saleItem?->subtotal ?? 0));
+            $sheet->setCellValue("K{$row}", (float) ($assignment->commission_amount ?? 0));
+
+            $isEven = ($row % 2 === 0);
+            $this->styleDataRow($sheet, $row, 'K', $isEven);
+
+            $sheet->getStyle("A{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle("B{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle("C{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle("H{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle("I{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+            $sheet->getStyle("J{$row}:K{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+            $sheet->getStyle("J{$row}:K{$row}")->getNumberFormat()->setFormatCode('#,##0');
+
+            $row++;
+            $no++;
+        }
+
+        $endDataRow = max($startDataRow, $row - 1);
+
+        // 4. Summary Row
+        if (count($assignments) > 0) {
+            $sheet->setCellValue("A{$row}", 'TOTAL KESELURUHAN:');
+            $sheet->mergeCells("A{$row}:H{$row}");
+            $sheet->setCellValue("I{$row}", "=AVERAGE(I{$startDataRow}:I{$endDataRow})");
+            $sheet->setCellValue("J{$row}", "=SUM(J{$startDataRow}:J{$endDataRow})");
+            $sheet->setCellValue("K{$row}", "=SUM(K{$startDataRow}:K{$endDataRow})");
+
+            $this->styleSummaryRow($sheet, $row, 'K');
+            $sheet->getStyle("A{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+            $sheet->getStyle("I{$row}")->getNumberFormat()->setFormatCode('#,##0');
+            $sheet->getStyle("J{$row}:K{$row}")->getNumberFormat()->setFormatCode('#,##0');
+            $sheet->getStyle("K{$row}")->getFont()->getColor()->setRGB('059669'); // Green for commission
+        }
+
+        $sheet->freezePane('A'.($tableStartRow + 1));
+        $this->autoFitColumns($sheet, 'A', 'K');
+
+        $filename = 'Laporan_Komisi_Staf_'.($meta['start_date'] ?? now()->format('Y-m-d')).'.xlsx';
+
+        return $this->streamSpreadsheet($spreadsheet, $filename);
+    }
+
+    /**
      * Helper to write structured report header metadata
      */
     protected function writeReportHeader(Worksheet $sheet, string $appName, string $title, array $meta, string $maxCol): void

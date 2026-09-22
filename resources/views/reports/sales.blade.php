@@ -200,8 +200,10 @@
                 <tbody class="divide-y divide-slate-100">
                     @forelse($sales as $s)
                     <tr class="hover:bg-slate-50/80 transition">
-                        <td class="py-3 px-5 font-mono font-bold text-brand-600">
-                            {{ $s->invoice_number }}
+                        <td class="py-3 px-5 font-mono font-bold">
+                            <a href="{{ route('sales.show', $s->id) }}" class="text-brand-600 hover:underline">
+                                {{ $s->invoice_number }}
+                            </a>
                         </td>
                         <td class="py-3 px-4 text-slate-600">
                             {{ $s->sale_date ? \Carbon\Carbon::parse($s->sale_date)->format('d/m/Y H:i') : '-' }}

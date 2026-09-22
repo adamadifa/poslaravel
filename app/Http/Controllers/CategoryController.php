@@ -61,6 +61,7 @@ class CategoryController extends Controller
             'parent_id' => $validated['parent_id'] ?? null,
             'description' => $validated['description'] ?? null,
             'default_notes' => $defaultNotes,
+            'send_to_kitchen' => $request->boolean('send_to_kitchen', true),
             'is_active' => true,
         ]);
 
@@ -87,6 +88,7 @@ class CategoryController extends Controller
             'parent_id' => $validated['parent_id'] ?? null,
             'description' => $validated['description'] ?? null,
             'default_notes' => $defaultNotes,
+            'send_to_kitchen' => $request->boolean('send_to_kitchen'),
             'is_active' => $request->boolean('is_active'),
         ]);
 

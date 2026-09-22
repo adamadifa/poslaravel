@@ -21,31 +21,44 @@ class ServiceQueueController extends Controller
     {
         $warehouseId = $request->get('warehouse_id', Warehouse::first()?->id);
         $warehouses = Warehouse::where('is_active', true)->get();
-        $staffMembers = User::orderBy('name')->get();
+        $staffMembers = User::where('is_active', true)->orderBy('name')->get();
+        $isKiosk = $request->has('kiosk') || $request->get('mode') === 'kiosk';
 
         $today = today()->toDateString();
 
-        $waitingOrders = Sale::with(['items.product', 'items.assignment.staff', 'assignedStaff', 'customer'])
+        $waitingOrders = Sale::with(['items.product', 'items.assignment.staff', 'assignedStaff', 'customer', 'diningTable'])
             ->where('warehouse_id', $warehouseId)
-            ->whereDate('sale_date', $today)
             ->where('service_status', 'waiting')
             ->orderBy('created_at', 'asc')
             ->get();
 
-        $inProgressOrders = Sale::with(['items.product', 'items.assignment.staff', 'assignedStaff', 'customer'])
+        $inProgressOrders = Sale::with(['items.product', 'items.assignment.staff', 'assignedStaff', 'customer', 'diningTable'])
             ->where('warehouse_id', $warehouseId)
-            ->whereDate('sale_date', $today)
             ->where('service_status', 'in_progress')
             ->orderBy('service_started_at', 'asc')
             ->get();
 
-        $completedOrders = Sale::with(['items.product', 'items.assignment.staff', 'assignedStaff', 'customer'])
+        $completedOrders = Sale::with(['items.product', 'items.assignment.staff', 'assignedStaff', 'customer', 'diningTable'])
             ->where('warehouse_id', $warehouseId)
-            ->whereDate('sale_date', $today)
             ->where('service_status', 'completed')
+            ->whereDate('service_completed_at', $today)
             ->latest('service_completed_at')
-            ->limit(10)
+            ->limit(15)
             ->get();
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'waiting' => $waitingOrders,
+                'inProgress' => $inProgressOrders,
+                'completed' => $completedOrders,
+                'counts' => [
+                    'waiting' => $waitingOrders->count(),
+                    'inProgress' => $inProgressOrders->count(),
+                    'completed' => $completedOrders->count(),
+                ],
+            ]);
+        }
 
         return view('service-queue.index', compact(
             'waitingOrders',
@@ -53,7 +66,8 @@ class ServiceQueueController extends Controller
             'completedOrders',
             'warehouses',
             'warehouseId',
-            'staffMembers'
+            'staffMembers',
+            'isKiosk'
         ));
     }
 
@@ -63,7 +77,14 @@ class ServiceQueueController extends Controller
     public function start(Request $request, Sale $sale)
     {
         $staffId = $request->input('staff_id');
-        $this->serviceService->startService($sale->id, $staffId);
+        $result = $this->serviceService->startService($sale->id, $staffId ? (int) $staffId : null);
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => $result,
+                'message' => $result ? 'Pengerjaan layanan telah dimulai.' : 'Gagal memulai layanan.',
+            ]);
+        }
 
         return redirect()->back()->with('success', 'Pengerjaan layanan telah dimulai.');
     }
@@ -71,9 +92,16 @@ class ServiceQueueController extends Controller
     /**
      * Complete an order.
      */
-    public function complete(Sale $sale)
+    public function complete(Request $request, Sale $sale)
     {
-        $this->serviceService->completeService($sale->id);
+        $result = $this->serviceService->completeService($sale->id);
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => $result,
+                'message' => $result ? 'Pengerjaan layanan selesai dan komisi telah dihitung.' : 'Gagal menyelesaikan layanan.',
+            ]);
+        }
 
         return redirect()->back()->with('success', 'Pengerjaan layanan selesai dan komisi telah dihitung.');
     }

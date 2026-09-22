@@ -223,6 +223,11 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/cashier-shifts', [ReportController::class, 'cashierShifts'])->name('cashier-shifts');
         Route::get('/cashier-shifts/export-pdf', [ReportController::class, 'exportCashierShiftsPdf'])->name('cashier-shifts.export-pdf');
         Route::get('/cashier-shifts/export-excel', [ReportController::class, 'exportCashierShiftsExcel'])->name('cashier-shifts.export-excel');
+
+        // 6.5 Laporan Komisi Staf & Teknisi Jasa
+        Route::get('/commissions', [ReportController::class, 'commissions'])->name('commissions');
+        Route::get('/commissions/export-pdf', [ReportController::class, 'exportCommissionsPdf'])->name('commissions.export-pdf');
+        Route::get('/commissions/export-excel', [ReportController::class, 'exportCommissionsExcel'])->name('commissions.export-excel');
     });
 
     // 10. Pengaturan Toko & Konfigurasi (Phase 6.6)

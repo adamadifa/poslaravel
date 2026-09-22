@@ -11,6 +11,7 @@ use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\SaleItemAssignment;
 use App\Models\SaleItemModifier;
+use App\Models\Setting;
 use App\Models\UnitConversion;
 use App\Models\Warehouse;
 use Illuminate\Support\Facades\DB;
@@ -99,6 +100,17 @@ class SaleService
                 $paymentStatus = $paidAmount <= 0 ? 'unpaid' : 'partial';
             }
 
+            // Determine order_status (for Kitchen Display System & F&B flow)
+            $businessType = Setting::get('business_type', 'retail');
+            $hasKitchenFlow = in_array($businessType, ['fnb', 'hybrid']) || ! empty($payload['dining_table_id']) || in_array($payload['service_type'] ?? '', ['dine_in', 'takeaway', 'take_away', 'delivery']);
+            $defaultOrderStatus = $hasKitchenFlow ? 'new_order' : 'completed';
+            $orderStatus = $payload['order_status'] ?? $defaultOrderStatus;
+
+            // Determine service_status (for Service Queue & Workshop / Laundry / Salon flow)
+            $productIds = collect($items)->pluck('product_id')->filter()->unique();
+            $hasServiceItems = Product::whereIn('id', $productIds)->where('product_type', 'service')->exists();
+            $serviceStatus = $payload['service_status'] ?? (! empty($payload['service_booking_id']) || $hasServiceItems ? 'waiting' : null);
+
             // 2. Create Sale Record
             $sale = Sale::create([
                 'invoice_number' => $this->generateInvoiceNumber(),
@@ -111,12 +123,12 @@ class SaleService
                 'service_type' => $payload['service_type'] ?? null,
                 'dining_table_id' => $payload['dining_table_id'] ?? null,
                 'queue_number' => $payload['queue_number'] ?? null,
-                'order_status' => $payload['order_status'] ?? 'completed',
+                'order_status' => $orderStatus,
                 'guest_count' => $payload['guest_count'] ?? null,
                 'service_booking_id' => $payload['service_booking_id'] ?? null,
                 'assigned_staff_id' => $payload['assigned_staff_id'] ?? null,
-                'service_status' => $payload['service_status'] ?? null,
-                'service_started_at' => ! empty($payload['service_status']) && $payload['service_status'] === 'in_progress' ? now() : null,
+                'service_status' => $serviceStatus,
+                'service_started_at' => ! empty($serviceStatus) && $serviceStatus === 'in_progress' ? now() : null,
                 'subtotal' => $subtotal,
                 'discount_amount' => $discountAmount,
                 'tax_amount' => $taxAmount,
@@ -136,8 +148,8 @@ class SaleService
                 $table = DiningTable::find($payload['dining_table_id']);
                 if ($table) {
                     $table->update([
-                        'status' => ($payload['order_status'] ?? 'completed') === 'completed' ? 'available' : 'occupied',
-                        'current_sale_id' => ($payload['order_status'] ?? 'completed') === 'completed' ? null : $sale->id,
+                        'status' => $orderStatus === 'completed' ? 'available' : 'occupied',
+                        'current_sale_id' => $orderStatus === 'completed' ? null : $sale->id,
                     ]);
                 }
             }
@@ -185,7 +197,7 @@ class SaleService
                     'discount_amount' => $itemDiscount,
                     'subtotal' => $lineSubtotal,
                     'notes' => $item['notes'] ?? null,
-                    'item_status' => ($payload['order_status'] ?? 'completed') === 'completed' ? 'served' : 'pending',
+                    'item_status' => $orderStatus === 'completed' ? 'served' : 'pending',
                 ]);
 
                 // Modifiers attachments

@@ -100,6 +100,23 @@
                 </div>
             </div>
 
+            <!-- Kirim ke Layar Dapur (KDS) Toggle -->
+            <div class="flex items-center justify-between p-3.5 rounded-xl bg-slate-50/80 border border-slate-200/80">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+                        <i data-lucide="chef-hat" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <span class="block text-xs font-bold text-slate-800">Kirim ke Layar Dapur (KDS)</span>
+                        <span class="block text-[11px] text-slate-400">Pesanan kategori ini akan masuk ke antrian masak layar dapur</span>
+                    </div>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="edit_cat_send_to_kitchen" name="send_to_kitchen" value="1" {{ (old('_method') === 'PUT' ? old('send_to_kitchen') : true) ? 'checked' : '' }} class="sr-only peer">
+                    <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+                </label>
+            </div>
+
             <!-- Status Aktif Checkbox Styled -->
             <div class="flex items-center justify-between p-3.5 rounded-xl bg-slate-50/80 border border-slate-200/80">
                 <div class="flex items-center gap-3">
@@ -113,7 +130,7 @@
                 </div>
                 <label class="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" id="edit_cat_is_active" name="is_active" value="1" {{ (old('_method') === 'PUT' ? old('is_active') : true) ? 'checked' : '' }} class="sr-only peer">
-                    <div class="w-10 h-5.5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4.5 after:w-4.5 after:transition-all peer-checked:bg-emerald-500"></div>
+                    <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
                 </label>
             </div>
 

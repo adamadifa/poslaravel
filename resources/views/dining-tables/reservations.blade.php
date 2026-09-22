@@ -37,11 +37,11 @@
         </div>
     @endif
 
-    <!-- Filter Card -->
-    <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-xs">
-        <form method="GET" action="{{ route('tables.reservations') }}" class="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 gap-3 items-center">
+    <!-- Filter Card (Full Width) -->
+    <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-xs w-full">
+        <form method="GET" action="{{ route('tables.reservations') }}" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-3.5 items-center w-full">
             <!-- Outlet -->
-            <div class="relative rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 pt-3 pb-2">
+            <div class="relative w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 pt-3 pb-2">
                 <label class="absolute -top-2.5 left-3.5 bg-white dark:bg-slate-900 px-1.5 text-[11px] font-bold text-slate-700 dark:text-slate-300">Outlet</label>
                 <div class="flex items-center gap-2">
                     <i data-lucide="warehouse" class="w-4 h-4 text-slate-400 shrink-0"></i>
@@ -54,7 +54,7 @@
             </div>
 
             <!-- Date -->
-            <div class="relative rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 pt-3 pb-2">
+            <div class="relative w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 pt-3 pb-2">
                 <label class="absolute -top-2.5 left-3.5 bg-white dark:bg-slate-900 px-1.5 text-[11px] font-bold text-slate-700 dark:text-slate-300">Tanggal Booking</label>
                 <div class="flex items-center gap-2">
                     <i data-lucide="calendar" class="w-4 h-4 text-slate-400 shrink-0"></i>
@@ -63,26 +63,28 @@
             </div>
 
             <!-- Status -->
-            <div class="relative rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 pt-3 pb-2">
-                <label class="absolute -top-2.5 left-3.5 bg-white dark:bg-slate-900 px-1.5 text-[11px] font-bold text-slate-700 dark:text-slate-300">Status</label>
-                <div class="flex items-center gap-2">
-                    <i data-lucide="check-circle" class="w-4 h-4 text-slate-400 shrink-0"></i>
-                    <select name="status" onchange="this.form.submit()" class="select2-filter w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 dark:text-white focus:ring-0 cursor-pointer">
-                        <option value="">Semua Status</option>
-                        <option value="pending" {{ $status == 'pending' ? 'selected' : '' }}>Menunggu (Pending)</option>
-                        <option value="confirmed" {{ $status == 'confirmed' ? 'selected' : '' }}>Dikonfirmasi</option>
-                        <option value="seated" {{ $status == 'seated' ? 'selected' : '' }}>Sudah Duduk (Seated)</option>
-                        <option value="completed" {{ $status == 'completed' ? 'selected' : '' }}>Selesai</option>
-                        <option value="cancelled" {{ $status == 'cancelled' ? 'selected' : '' }}>Dibatalkan</option>
-                    </select>
+            <div class="flex items-center gap-2 w-full">
+                <div class="relative flex-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 pt-3 pb-2">
+                    <label class="absolute -top-2.5 left-3.5 bg-white dark:bg-slate-900 px-1.5 text-[11px] font-bold text-slate-700 dark:text-slate-300">Status</label>
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="check-circle" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                        <select name="status" onchange="this.form.submit()" class="select2-filter w-full bg-transparent border-0 p-0 text-xs font-bold text-slate-800 dark:text-white focus:ring-0 cursor-pointer">
+                            <option value="">Semua Status</option>
+                            <option value="pending" {{ $status == 'pending' ? 'selected' : '' }}>Menunggu (Pending)</option>
+                            <option value="confirmed" {{ $status == 'confirmed' ? 'selected' : '' }}>Dikonfirmasi</option>
+                            <option value="seated" {{ $status == 'seated' ? 'selected' : '' }}>Sudah Duduk (Seated)</option>
+                            <option value="completed" {{ $status == 'completed' ? 'selected' : '' }}>Selesai</option>
+                            <option value="cancelled" {{ $status == 'cancelled' ? 'selected' : '' }}>Dibatalkan</option>
+                        </select>
+                    </div>
                 </div>
-            </div>
 
-            @if(request()->hasAny(['date', 'status']))
-                <a href="{{ route('tables.reservations') }}" class="p-2.5 text-slate-400 hover:text-rose-600 rounded-xl border border-slate-200 hover:bg-rose-50 transition w-fit" title="Reset Filter">
-                    <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
-                </a>
-            @endif
+                @if(request()->hasAny(['date', 'status']))
+                    <a href="{{ route('tables.reservations') }}" class="p-3 text-slate-400 hover:text-rose-600 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition shrink-0" title="Reset Filter">
+                        <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                    </a>
+                @endif
+            </div>
         </form>
     </div>
 
@@ -187,8 +189,10 @@
     </div>
 
 </div>
+@endsection
 
-<!-- Modal Tambah Reservasi -->
+@push('modals')
+<!-- Modal Tambah Reservasi (Rendered to top-level body for seamless full-screen backdrop) -->
 <div id="createReservationModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center p-4">
     <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl">
         <div class="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800 mb-4">
@@ -246,7 +250,9 @@
         </form>
     </div>
 </div>
+@endpush
 
+@push('scripts')
 <script>
     function openReservationModal() {
         document.getElementById('createReservationModal').classList.remove('hidden');
@@ -257,4 +263,4 @@
         document.getElementById('createReservationModal').classList.remove('flex');
     }
 </script>
-@endsection
+@endpush

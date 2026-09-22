@@ -494,6 +494,13 @@
                             <span class="nav-text truncate">Staff & Komisi Jasa</span>
                         </a>
                         @endcan
+
+                        @can('reports.view')
+                        <a href="{{ route('reports.commissions') }}" title="Laporan Komisi" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->routeIs('reports.commissions*') ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
+                            <i data-lucide="badge-percent" class="w-4 h-4 shrink-0 text-emerald-500"></i>
+                            <span class="nav-text truncate">Laporan Komisi</span>
+                        </a>
+                        @endcan
                     </div>
                     @endcanany
                     @endif

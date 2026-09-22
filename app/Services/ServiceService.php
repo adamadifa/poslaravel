@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Sale;
+use App\Models\SaleItemAssignment;
 use App\Models\ServiceStaff;
 use Illuminate\Support\Facades\DB;
 
@@ -18,15 +19,25 @@ class ServiceService
             return false;
         }
 
+        $effectiveStaffId = $staffId ?? $sale->assigned_staff_id;
+
         $sale->update([
             'service_status' => 'in_progress',
             'service_started_at' => now(),
-            'assigned_staff_id' => $staffId ?? $sale->assigned_staff_id,
+            'assigned_staff_id' => $effectiveStaffId,
         ]);
 
         foreach ($sale->items as $item) {
             if ($item->assignment) {
                 $item->assignment->update([
+                    'staff_user_id' => $effectiveStaffId ?? $item->assignment->staff_user_id,
+                    'status' => 'in_progress',
+                    'started_at' => now(),
+                ]);
+            } elseif ($effectiveStaffId) {
+                SaleItemAssignment::create([
+                    'sale_item_id' => $item->id,
+                    'staff_user_id' => $effectiveStaffId,
                     'status' => 'in_progress',
                     'started_at' => now(),
                 ]);
@@ -49,7 +60,7 @@ class ServiceService
 
             $completedAt = now();
             $startedAt = $sale->service_started_at ?? $sale->created_at;
-            $durationMinutes = max(1, $startedAt->diffInMinutes($completedAt));
+            $durationMinutes = max(1, (int) $startedAt->diffInMinutes($completedAt));
 
             $sale->update([
                 'service_status' => 'completed',
@@ -57,16 +68,31 @@ class ServiceService
             ]);
 
             foreach ($sale->items as $item) {
-                if ($item->assignment) {
-                    $staffId = $item->assignment->staff_user_id;
-                    $commission = $this->calculateCommission($item->product_id, $staffId, $item->subtotal);
+                $assignment = $item->assignment;
+                $staffId = $assignment?->staff_user_id ?? $sale->assigned_staff_id;
 
-                    $item->assignment->update([
-                        'status' => 'completed',
-                        'completed_at' => $completedAt,
-                        'duration_actual_minutes' => $durationMinutes,
-                        'commission_amount' => $commission,
-                    ]);
+                if ($staffId) {
+                    $commission = $this->calculateCommission($item->product_id, $staffId, (float) $item->subtotal);
+
+                    if ($assignment) {
+                        $assignment->update([
+                            'staff_user_id' => $staffId,
+                            'status' => 'completed',
+                            'completed_at' => $completedAt,
+                            'duration_actual_minutes' => $durationMinutes,
+                            'commission_amount' => $commission,
+                        ]);
+                    } else {
+                        SaleItemAssignment::create([
+                            'sale_item_id' => $item->id,
+                            'staff_user_id' => $staffId,
+                            'status' => 'completed',
+                            'started_at' => $startedAt,
+                            'completed_at' => $completedAt,
+                            'duration_actual_minutes' => $durationMinutes,
+                            'commission_amount' => $commission,
+                        ]);
+                    }
                 }
             }
 

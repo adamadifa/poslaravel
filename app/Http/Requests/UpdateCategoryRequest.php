@@ -43,6 +43,7 @@ class UpdateCategoryRequest extends FormRequest
             'default_notes' => ['nullable', 'array'],
             'default_notes.*' => ['string', 'max:100'],
             'is_active' => ['nullable', 'boolean'],
+            'send_to_kitchen' => ['nullable', 'boolean'],
         ];
     }
 

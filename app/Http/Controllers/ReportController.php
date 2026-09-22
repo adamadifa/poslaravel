@@ -13,6 +13,7 @@ use App\Models\PurchaseOrder;
 use App\Models\PurchaseReceipt;
 use App\Models\Sale;
 use App\Models\SaleItem;
+use App\Models\SaleItemAssignment;
 use App\Models\StockOpname;
 use App\Models\Supplier;
 use App\Models\User;
@@ -1947,5 +1948,204 @@ class ReportController extends Controller
         ))->setPaper('a4', 'landscape');
 
         return $pdf->stream("Laporan_Rekap_Shift_Kasir_{$startDate}_sampai_{$endDate}.pdf");
+    }
+
+    /**
+     * 6.5 Laporan Komisi Staf & Teknisi Jasa
+     */
+    public function commissions(Request $request)
+    {
+        $startDate = $request->get('start_date', Carbon::now()->startOfMonth()->toDateString());
+        $endDate = $request->get('end_date', Carbon::now()->toDateString());
+        $staffUserId = $request->get('staff_user_id');
+        $warehouseId = $request->get('warehouse_id');
+        $status = $request->get('status');
+
+        $query = SaleItemAssignment::with([
+            'staff',
+            'saleItem.product',
+            'saleItem.unit',
+            'saleItem.sale.customer',
+            'saleItem.sale.warehouse',
+        ])
+            ->whereHas('saleItem.sale', function ($q) use ($startDate, $endDate, $warehouseId) {
+                $q->whereDate('sale_date', '>=', $startDate)
+                    ->whereDate('sale_date', '<=', $endDate)
+                    ->where('status', '!=', 'void');
+
+                if ($warehouseId) {
+                    $q->where('warehouse_id', $warehouseId);
+                }
+            });
+
+        if ($staffUserId) {
+            $query->where('staff_user_id', $staffUserId);
+        }
+
+        if ($status) {
+            $query->where('status', $status);
+        }
+
+        // Paginated assignments log
+        $assignments = (clone $query)->latest('id')->paginate(15)->withQueryString();
+
+        // KPIs
+        $kpiQuery = clone $query;
+        $totalCommission = (clone $kpiQuery)->where('status', 'completed')->sum('commission_amount');
+        $totalServicesCompleted = (clone $kpiQuery)->where('status', 'completed')->count();
+        $totalServicesInProgress = (clone $kpiQuery)->where('status', 'in_progress')->count();
+
+        // Total Omset Layanan
+        $assignmentIds = (clone $kpiQuery)->pluck('id');
+        $totalServiceRevenue = SaleItem::whereHas('assignment', function ($q) use ($assignmentIds) {
+            $q->whereIn('id', $assignmentIds);
+        })->sum('subtotal');
+
+        // Avg duration minutes for completed
+        $avgDurationMinutes = (clone $kpiQuery)->where('status', 'completed')->whereNotNull('duration_actual_minutes')->avg('duration_actual_minutes') ?? 0;
+
+        // Per-Staff Summary Aggregation
+        $staffSummary = (clone $kpiQuery)
+            ->select(
+                'staff_user_id',
+                DB::raw('COUNT(id) as total_tasks'),
+                DB::raw("SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed_tasks"),
+                DB::raw("SUM(CASE WHEN status = 'completed' THEN commission_amount ELSE 0 END) as total_commission_amount"),
+                DB::raw("AVG(CASE WHEN status = 'completed' THEN duration_actual_minutes ELSE NULL END) as avg_duration")
+            )
+            ->groupBy('staff_user_id')
+            ->with('staff')
+            ->get();
+
+        $staffUsers = User::whereHas('roles', function ($q) {
+            $q->whereIn('name', ['staff', 'teknisi', 'admin', 'manager', 'cashier']);
+        })->orWhereHas('serviceStaffs')->orderBy('name')->get();
+
+        $warehouses = Warehouse::where('is_active', true)->orderBy('name')->get();
+
+        return view('reports.commissions', compact(
+            'assignments',
+            'staffSummary',
+            'totalCommission',
+            'totalServicesCompleted',
+            'totalServicesInProgress',
+            'totalServiceRevenue',
+            'avgDurationMinutes',
+            'startDate',
+            'endDate',
+            'staffUserId',
+            'warehouseId',
+            'status',
+            'staffUsers',
+            'warehouses'
+        ));
+    }
+
+    /**
+     * Export Commissions to Excel (.xlsx)
+     */
+    public function exportCommissionsExcel(Request $request)
+    {
+        $startDate = $request->get('start_date', Carbon::now()->startOfMonth()->toDateString());
+        $endDate = $request->get('end_date', Carbon::now()->toDateString());
+        $staffUserId = $request->get('staff_user_id');
+        $warehouseId = $request->get('warehouse_id');
+        $status = $request->get('status');
+
+        $query = SaleItemAssignment::with([
+            'staff',
+            'saleItem.product',
+            'saleItem.unit',
+            'saleItem.sale.customer',
+            'saleItem.sale.warehouse',
+        ])
+            ->whereHas('saleItem.sale', function ($q) use ($startDate, $endDate, $warehouseId) {
+                $q->whereDate('sale_date', '>=', $startDate)
+                    ->whereDate('sale_date', '<=', $endDate)
+                    ->where('status', '!=', 'void');
+
+                if ($warehouseId) {
+                    $q->where('warehouse_id', $warehouseId);
+                }
+            });
+
+        if ($staffUserId) {
+            $query->where('staff_user_id', $staffUserId);
+        }
+
+        if ($status) {
+            $query->where('status', $status);
+        }
+
+        $assignments = $query->latest('id')->get();
+        $staff = $staffUserId ? User::find($staffUserId) : null;
+        $warehouse = $warehouseId ? Warehouse::find($warehouseId) : null;
+
+        $meta = [
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'staff' => $staff ? $staff->name : 'Semua Staf / Teknisi',
+            'warehouse' => $warehouse ? $warehouse->name : 'Semua Cabang',
+            'status' => $status ? ucfirst($status) : 'Semua Status',
+        ];
+
+        return $this->exportService->exportCommissions($assignments, $meta);
+    }
+
+    /**
+     * Export Commissions to PDF
+     */
+    public function exportCommissionsPdf(Request $request)
+    {
+        $startDate = $request->get('start_date', Carbon::now()->startOfMonth()->toDateString());
+        $endDate = $request->get('end_date', Carbon::now()->toDateString());
+        $staffUserId = $request->get('staff_user_id');
+        $warehouseId = $request->get('warehouse_id');
+        $status = $request->get('status');
+
+        $query = SaleItemAssignment::with([
+            'staff',
+            'saleItem.product',
+            'saleItem.unit',
+            'saleItem.sale.customer',
+            'saleItem.sale.warehouse',
+        ])
+            ->whereHas('saleItem.sale', function ($q) use ($startDate, $endDate, $warehouseId) {
+                $q->whereDate('sale_date', '>=', $startDate)
+                    ->whereDate('sale_date', '<=', $endDate)
+                    ->where('status', '!=', 'void');
+
+                if ($warehouseId) {
+                    $q->where('warehouse_id', $warehouseId);
+                }
+            });
+
+        if ($staffUserId) {
+            $query->where('staff_user_id', $staffUserId);
+        }
+
+        if ($status) {
+            $query->where('status', $status);
+        }
+
+        $assignments = $query->latest('id')->get();
+        $staff = $staffUserId ? User::find($staffUserId) : null;
+        $warehouse = $warehouseId ? Warehouse::find($warehouseId) : null;
+
+        $totalCommission = $assignments->where('status', 'completed')->sum('commission_amount');
+        $totalCompleted = $assignments->where('status', 'completed')->count();
+
+        $pdf = Pdf::loadView('reports.commissions_pdf', compact(
+            'assignments',
+            'startDate',
+            'endDate',
+            'staff',
+            'warehouse',
+            'status',
+            'totalCommission',
+            'totalCompleted'
+        ))->setPaper('a4', 'landscape');
+
+        return $pdf->stream("Laporan_Komisi_Staf_{$startDate}_sampai_{$endDate}.pdf");
     }
 }

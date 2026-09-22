@@ -21,14 +21,43 @@ class KitchenController extends Controller
     {
         $warehouseId = $request->get('warehouse_id', Warehouse::first()?->id);
         $warehouses = Warehouse::where('is_active', true)->get();
+        $isKiosk = $request->has('kiosk') || $request->get('mode') === 'kiosk';
 
-        $activeOrders = Sale::with(['items.product.category', 'items.modifiers', 'diningTable', 'waiter', 'customer'])
+        $activeOrders = Sale::with([
+            'items' => function ($q) {
+                $q->whereHas('product', function ($pq) {
+                    $pq->where(function ($sq) {
+                        $sq->where('send_to_kitchen', true)
+                            ->orWhere(function ($cq) {
+                                $cq->whereNull('send_to_kitchen')
+                                    ->whereHas('category', function ($catq) {
+                                        $catq->where('send_to_kitchen', true);
+                                    });
+                            });
+                    });
+                })->with(['product.category', 'modifiers']);
+            },
+            'diningTable',
+            'waiter',
+            'customer',
+        ])
             ->where('warehouse_id', $warehouseId)
             ->whereIn('order_status', ['new_order', 'preparing', 'ready'])
+            ->whereHas('items.product', function ($pq) {
+                $pq->where(function ($sq) {
+                    $sq->where('send_to_kitchen', true)
+                        ->orWhere(function ($cq) {
+                            $cq->whereNull('send_to_kitchen')
+                                ->whereHas('category', function ($catq) {
+                                    $catq->where('send_to_kitchen', true);
+                                });
+                        });
+                });
+            })
             ->orderBy('created_at', 'asc')
             ->get();
 
-        return view('kitchen.index', compact('activeOrders', 'warehouses', 'warehouseId'));
+        return view('kitchen.index', compact('activeOrders', 'warehouses', 'warehouseId', 'isKiosk'));
     }
 
     /**
@@ -38,9 +67,36 @@ class KitchenController extends Controller
     {
         $warehouseId = $request->get('warehouse_id', Warehouse::first()?->id);
 
-        $orders = Sale::with(['items.product', 'items.modifiers', 'diningTable', 'customer'])
+        $orders = Sale::with([
+            'items' => function ($q) {
+                $q->whereHas('product', function ($pq) {
+                    $pq->where(function ($sq) {
+                        $sq->where('send_to_kitchen', true)
+                            ->orWhere(function ($cq) {
+                                $cq->whereNull('send_to_kitchen')
+                                    ->whereHas('category', function ($catq) {
+                                        $catq->where('send_to_kitchen', true);
+                                    });
+                            });
+                    });
+                })->with(['product.category', 'modifiers']);
+            },
+            'diningTable',
+            'customer',
+        ])
             ->where('warehouse_id', $warehouseId)
             ->whereIn('order_status', ['new_order', 'preparing', 'ready'])
+            ->whereHas('items.product', function ($pq) {
+                $pq->where(function ($sq) {
+                    $sq->where('send_to_kitchen', true)
+                        ->orWhere(function ($cq) {
+                            $cq->whereNull('send_to_kitchen')
+                                ->whereHas('category', function ($catq) {
+                                    $catq->where('send_to_kitchen', true);
+                                });
+                        });
+                });
+            })
             ->orderBy('created_at', 'asc')
             ->get();
 
