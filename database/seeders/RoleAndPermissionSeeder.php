@@ -53,6 +53,9 @@ class RoleAndPermissionSeeder extends Seeder
             // Pembelian (Purchasing)
             'purchases.view', 'purchases.create', 'purchases.edit', 'purchases.receive', 'purchases.return',
 
+            // Konsinyasi (Consignment)
+            'consignments.view', 'consignments.receive', 'consignments.settle', 'consignments.return', 'consignments.reports',
+
             // Penjualan (POS / Sales)
             'sales.pos', 'sales.view', 'sales.hold', 'sales.void', 'sales.return',
             'shifts.manage',
@@ -87,12 +90,13 @@ class RoleAndPermissionSeeder extends Seeder
             'tables.view', 'tables.reservations', 'modifiers.view', 'kitchen.view',
             'service_queue.view', 'service_bookings.view', 'service_staff.view',
             'pricing.view', 'discounts.view', 'stocks.view', 'purchases.view', 'sales.view',
+            'consignments.view', 'consignments.receive', 'consignments.settle', 'consignments.return', 'consignments.reports',
             'finance.accounts', 'finance.payable', 'finance.receivable', 'finance.cashflow', 'finance.transfer',
             'reports.sales', 'reports.purchases', 'reports.inventory', 'reports.finance', 'reports.shifts',
             'audit.view',
         ]);
 
-        // Manager (Operasional, Stok, Kasir, Pembelian, Diskon, FNB, Service)
+        // Manager (Operasional, Stok, Kasir, Pembelian, Konsinyasi, Diskon, FNB, Service)
         $manager = Role::firstOrCreate(['name' => 'manager']);
         $manager->syncPermissions([
             'dashboard.view',
@@ -111,6 +115,7 @@ class RoleAndPermissionSeeder extends Seeder
             'discounts.view', 'discounts.manage',
             'stocks.view', 'stocks.opname', 'stocks.transfer', 'stocks.adjust',
             'purchases.view', 'purchases.create', 'purchases.edit', 'purchases.receive', 'purchases.return',
+            'consignments.view', 'consignments.receive', 'consignments.settle', 'consignments.return', 'consignments.reports',
             'sales.pos', 'sales.view', 'sales.hold', 'sales.void', 'sales.return',
             'shifts.manage',
             'reports.sales', 'reports.purchases', 'reports.inventory',

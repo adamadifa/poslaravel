@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             RoleAndPermissionSeeder::class,
             MasterDataSeeder::class,
             FnbMasterDataSeeder::class,
+            ConsignmentSeeder::class,
         ]);
     }
 }

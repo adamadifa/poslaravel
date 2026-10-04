@@ -538,6 +538,35 @@
                         </a>
                         @endcan
 
+                        <!-- Konsinyasi (Titip Jual) Links -->
+                        @can('consignments.receive')
+                        <a href="{{ route('consignments.receipts.index') }}" title="Penerimaan Konsinyasi" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->is('consignments/receipts*') ? 'bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
+                            <i data-lucide="package-plus" class="w-4 h-4 shrink-0 text-purple-500"></i>
+                            <span class="nav-text truncate">Penerimaan Konsinyasi</span>
+                        </a>
+                        @endcan
+
+                        @can('consignments.settle')
+                        <a href="{{ route('consignments.settlements.index') }}" title="Settlement Konsinyasi" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->is('consignments/settlements*') ? 'bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
+                            <i data-lucide="hand-coins" class="w-4 h-4 shrink-0 text-purple-500"></i>
+                            <span class="nav-text truncate">Settlement Bagi Hasil</span>
+                        </a>
+                        @endcan
+
+                        @can('consignments.return')
+                        <a href="{{ route('consignments.returns.index') }}" title="Retur Konsinyasi" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->is('consignments/returns*') ? 'bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
+                            <i data-lucide="undo-2" class="w-4 h-4 shrink-0 text-purple-500"></i>
+                            <span class="nav-text truncate">Retur Konsinyasi</span>
+                        </a>
+                        @endcan
+
+                        @can('consignments.reports')
+                        <a href="{{ route('consignments.reports.index') }}" title="Laporan Konsinyasi" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->is('consignments/reports*') ? 'bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
+                            <i data-lucide="pie-chart" class="w-4 h-4 shrink-0 text-purple-500"></i>
+                            <span class="nav-text truncate">Laporan Konsinyasi</span>
+                        </a>
+                        @endcan
+
                         @can('stocks.view')
                         <a href="{{ route('stocks.index') }}" title="Kartu Stok" class="nav-item flex items-center gap-3.5 px-3.5 py-2 rounded-xl font-medium text-xs transition {{ request()->is('stocks*') ? 'bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/60' }}">
                             <i data-lucide="boxes" class="w-4 h-4 shrink-0 text-slate-400"></i>
@@ -738,14 +767,19 @@
                 </div>
 
                 <div class="flex items-center gap-3.5 ml-auto">
-                    <!-- Search Input -->
-                    <div class="relative hidden sm:flex items-center">
-                        <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 pointer-events-none"></i>
-                        <input type="text" placeholder="Search" class="pl-10 pr-16 py-2 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100/80 focus:bg-white dark:focus:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition w-64">
-                        <div class="absolute right-3 flex items-center gap-0.5 text-[10px] font-semibold text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-1.5 py-0.5 rounded-md shadow-2xs">
-                            ⌘ + F
+                    <!-- Mobile Search Trigger Button -->
+                    <button type="button" id="navSearchMobileTrigger" title="Cari Menu (Ctrl + K)" class="sm:hidden p-2 text-slate-500 dark:text-slate-300 hover:text-slate-700 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200/70 dark:border-slate-700 rounded-xl transition flex items-center justify-center">
+                        <i data-lucide="search" class="w-4 h-4"></i>
+                    </button>
+
+                    <!-- Desktop Search Trigger Bar (Mac Spotlight / Command Palette) -->
+                    <button type="button" id="navSearchTrigger" title="Cari Menu & Navigasi Cepat (Ctrl + K)" class="relative hidden sm:flex items-center text-left pl-10 pr-16 py-2 bg-slate-50 dark:bg-slate-800/90 hover:bg-slate-100/90 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-500 dark:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition w-64 lg:w-72 shadow-2xs group cursor-pointer">
+                        <i data-lucide="search" class="w-4 h-4 text-slate-400 group-hover:text-brand-500 transition-colors absolute left-3.5 pointer-events-none"></i>
+                        <span class="truncate">Cari menu & aksi cepat...</span>
+                        <div class="absolute right-2.5 flex items-center gap-0.5 text-[10px] font-bold text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-1.5 py-0.5 rounded-md shadow-2xs transition-colors">
+                            <span class="text-[9px]">⌘</span> K
                         </div>
-                    </div>
+                    </button>
 
                     <!-- Dark / Light Theme Toggle Button -->
                     <button id="themeToggleBtn" title="Toggle Tema Gelap / Terang" class="p-2 text-slate-500 dark:text-slate-300 hover:text-slate-700 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200/70 dark:border-slate-700 rounded-xl transition flex items-center justify-center">
@@ -805,6 +839,9 @@
 
     <!-- Modals Portal (Rendered at top-level body to ensure full screen overlay) -->
     @stack('modals')
+
+    <!-- Spotlight Command Palette Partial -->
+    @include('layouts._command_palette')
 
     <!-- Interactive Scripts for Sidebar & Theme Toggle -->
     <script>

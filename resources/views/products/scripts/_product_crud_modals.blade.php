@@ -54,6 +54,18 @@
         }
     }
 
+    function toggleConsignmentFields(mode) {
+        const isChecked = document.getElementById(`${mode}_input_is_consignment`).checked;
+        const container = document.getElementById(`${mode}_consignment_fields`);
+        if (container) {
+            if (isChecked) {
+                container.classList.remove('hidden');
+            } else {
+                container.classList.add('hidden');
+            }
+        }
+    }
+
     // Modal Edit Handlers
     function openEditProductModal(product) {
         const form = document.getElementById('editProductForm');
@@ -69,6 +81,14 @@
         document.getElementById('edit_input_min_stock').value = product.min_stock || '5';
         document.getElementById('edit_input_brand').value = product.brand || '';
         document.getElementById('edit_input_is_active').checked = product.is_active ? true : false;
+
+        // Consignment Fields
+        const isConsignment = product.is_consignment ? true : false;
+        document.getElementById('edit_input_is_consignment').checked = isConsignment;
+        document.getElementById('edit_input_consignment_supplier_id').value = product.consignment_supplier_id || '';
+        document.getElementById('edit_input_consignment_type').value = product.consignment_type || 'fixed_cost';
+        document.getElementById('edit_input_consignment_rate').value = product.consignment_rate || '0';
+        toggleConsignmentFields('edit');
 
         // Populate and initialize Select2 for Edit Modal
         $('#edit_input_category_id').val(product.category_id || '').select2({

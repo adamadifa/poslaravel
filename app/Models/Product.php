@@ -35,6 +35,10 @@ class Product extends Model
         'tax_rate',
         'has_expiry',
         'is_active',
+        'is_consignment',
+        'consignment_supplier_id',
+        'consignment_type',
+        'consignment_rate',
         'send_to_kitchen',
         'image_path',
         'default_notes',
@@ -52,6 +56,8 @@ class Product extends Model
         'tax_rate' => 'decimal:2',
         'has_expiry' => 'boolean',
         'is_active' => 'boolean',
+        'is_consignment' => 'boolean',
+        'consignment_rate' => 'decimal:2',
         'send_to_kitchen' => 'boolean',
         'default_notes' => 'array',
     ];
@@ -78,6 +84,11 @@ class Product extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function consignmentSupplier(): BelongsTo
+    {
+        return $this->belongsTo(Supplier::class, 'consignment_supplier_id');
     }
 
     public function baseUnit(): BelongsTo
@@ -163,5 +174,10 @@ class Product extends Model
     public function scopeForSale($query)
     {
         return $query->where('product_type', '!=', 'raw_material');
+    }
+
+    public function scopeConsignment($query)
+    {
+        return $query->where('is_consignment', true);
     }
 }

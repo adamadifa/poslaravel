@@ -59,6 +59,10 @@ class UpdateProductRequest extends FormRequest
             'tax_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'has_expiry' => ['nullable', 'boolean'],
             'is_active' => ['nullable', 'boolean'],
+            'is_consignment' => ['nullable', 'boolean'],
+            'consignment_supplier_id' => ['nullable', 'required_if:is_consignment,1,true', 'exists:suppliers,id'],
+            'consignment_type' => ['nullable', 'in:fixed_cost,percentage_commission'],
+            'consignment_rate' => ['nullable', 'numeric', 'min:0'],
             'image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
 
             // Multi-Barcode array

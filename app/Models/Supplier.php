@@ -23,4 +23,34 @@ class Supplier extends Model
         'payment_term_days' => 'integer',
         'is_active' => 'boolean',
     ];
+
+    public function consignmentProducts()
+    {
+        return $this->hasMany(Product::class, 'consignment_supplier_id');
+    }
+
+    public function consignmentReceipts()
+    {
+        return $this->hasMany(ConsignmentReceipt::class);
+    }
+
+    public function consignmentSettlements()
+    {
+        return $this->hasMany(ConsignmentSettlement::class);
+    }
+
+    public function consignmentReturns()
+    {
+        return $this->hasMany(ConsignmentReturn::class);
+    }
+
+    public function purchaseOrders()
+    {
+        return $this->hasMany(PurchaseOrder::class);
+    }
+
+    public function purchaseReceipts()
+    {
+        return $this->hasMany(PurchaseReceipt::class);
+    }
 }

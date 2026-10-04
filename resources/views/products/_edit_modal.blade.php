@@ -247,6 +247,49 @@
                         </label>
                     </div>
 
+                    <!-- Status Konsinyasi (Titip Jual) Switch -->
+                    <div class="p-3 rounded-xl bg-purple-50/50 border border-purple-200/90 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-7 h-7 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center">
+                                    <i data-lucide="hand-coins" class="w-3.5 h-3.5"></i>
+                                </div>
+                                <div>
+                                    <span class="block text-xs font-bold text-slate-800">Produk Konsinyasi (Titip Jual)</span>
+                                    <span class="block text-[10px] text-slate-400">Barang titipan pihak ketiga/mitra UMKM</span>
+                                </div>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="is_consignment" id="edit_input_is_consignment" value="1" onchange="toggleConsignmentFields('edit')" class="sr-only peer">
+                                <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-600"></div>
+                            </label>
+                        </div>
+
+                        <!-- Sub-form Konsinyasi -->
+                        <div id="edit_consignment_fields" class="hidden pt-2 border-t border-purple-100 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-600 mb-1">Supplier Penitip <span class="text-rose-500">*</span></label>
+                                <select name="consignment_supplier_id" id="edit_input_consignment_supplier_id" class="w-full text-xs font-semibold text-slate-800 rounded-lg border border-purple-200 bg-white p-2 focus:ring-purple-500 focus:border-purple-500">
+                                    <option value="">Pilih Supplier</option>
+                                    @foreach($suppliers as $s)
+                                        <option value="{{ $s->id }}">{{ $s->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-600 mb-1">Tipe Bagi Hasil</label>
+                                <select name="consignment_type" id="edit_input_consignment_type" class="w-full text-xs font-semibold text-slate-800 rounded-lg border border-purple-200 bg-white p-2 focus:ring-purple-500 focus:border-purple-500">
+                                    <option value="fixed_cost">Harga Setor Tetap (Rp)</option>
+                                    <option value="percentage_commission">Komisi Toko (%)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-600 mb-1">Tarif Setor / Komisi</label>
+                                <input type="number" step="any" name="consignment_rate" id="edit_input_consignment_rate" placeholder="0" class="w-full text-xs font-bold text-slate-800 rounded-lg border border-purple-200 bg-white p-2 focus:ring-purple-500 focus:border-purple-500">
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Status Aktif Switch Compact -->
                     <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50/50 border border-slate-200/90">
                         <div class="flex items-center gap-2.5">

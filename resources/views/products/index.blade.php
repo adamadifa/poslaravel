@@ -165,6 +165,14 @@
                                                     <span
                                                         class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-purple-50 text-purple-700 border border-purple-200">Jasa</span>
                                                 @endif
+                                                @if($product->is_consignment)
+                                                    <span
+                                                        class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-purple-50 text-purple-700 border border-purple-300 flex items-center gap-0.5"
+                                                        title="Penitip: {{ $product->consignmentSupplier?->name ?? 'Supplier' }}">
+                                                        <i data-lucide="hand-coins" class="w-2.5 h-2.5"></i>
+                                                        Konsinyasi
+                                                    </span>
+                                                @endif
                                                 @if($product->recipes && $product->recipes->count() > 0)
                                                     <span
                                                         class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-0.5"

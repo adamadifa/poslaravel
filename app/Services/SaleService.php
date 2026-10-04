@@ -186,6 +186,20 @@ class SaleService
 
                 $lineSubtotal = ($unitPrice * $qty) - $itemDiscount;
 
+                // Consignment item calculation
+                $isConsignment = (bool) $product->is_consignment;
+                $consignmentSupplierId = $isConsignment ? $product->consignment_supplier_id : null;
+                $consignmentCost = 0;
+                if ($isConsignment) {
+                    if ($product->consignment_type === 'percentage_commission' && (float) $product->consignment_rate > 0) {
+                        $consignmentCost = $unitPrice * (1 - ((float) $product->consignment_rate / 100));
+                    } else {
+                        $consignmentCost = (float) $product->consignment_rate > 0
+                            ? (float) $product->consignment_rate * $conversionRatio
+                            : (float) $product->purchase_price * $conversionRatio;
+                    }
+                }
+
                 $saleItem = SaleItem::create([
                     'sale_id' => $sale->id,
                     'product_id' => $product->id,
@@ -193,10 +207,13 @@ class SaleService
                     'conversion_ratio' => $conversionRatio,
                     'quantity' => $qty,
                     'unit_price' => $unitPrice,
-                    'unit_cost' => $unitCost,
+                    'unit_cost' => $isConsignment ? $consignmentCost : $unitCost,
                     'discount_amount' => $itemDiscount,
                     'subtotal' => $lineSubtotal,
                     'notes' => $item['notes'] ?? null,
+                    'is_consignment' => $isConsignment,
+                    'consignment_supplier_id' => $consignmentSupplierId,
+                    'consignment_cost' => $consignmentCost,
                     'item_status' => $orderStatus === 'completed' ? 'served' : 'pending',
                 ]);
 

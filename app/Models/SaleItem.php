@@ -20,6 +20,10 @@ class SaleItem extends Model
         'discount_amount',
         'subtotal',
         'notes',
+        'is_consignment',
+        'consignment_supplier_id',
+        'consignment_cost',
+        'consignment_settlement_id',
         'item_status',
         'prepared_at',
         'served_at',
@@ -32,6 +36,8 @@ class SaleItem extends Model
         'unit_cost' => 'decimal:2',
         'discount_amount' => 'decimal:2',
         'subtotal' => 'decimal:2',
+        'is_consignment' => 'boolean',
+        'consignment_cost' => 'decimal:2',
         'prepared_at' => 'datetime',
         'served_at' => 'datetime',
     ];
@@ -44,6 +50,16 @@ class SaleItem extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function consignmentSupplier(): BelongsTo
+    {
+        return $this->belongsTo(Supplier::class, 'consignment_supplier_id');
+    }
+
+    public function consignmentSettlement(): BelongsTo
+    {
+        return $this->belongsTo(ConsignmentSettlement::class, 'consignment_settlement_id');
     }
 
     public function unit(): BelongsTo

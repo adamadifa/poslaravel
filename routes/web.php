@@ -7,6 +7,10 @@ use App\Http\Controllers\AuditTrailController;
 use App\Http\Controllers\CashFlowController;
 use App\Http\Controllers\CashierShiftController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\ConsignmentReceiptController;
+use App\Http\Controllers\ConsignmentReportController;
+use App\Http\Controllers\ConsignmentReturnController;
+use App\Http\Controllers\ConsignmentSettlementController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\CustomerGroupController;
 use App\Http\Controllers\DashboardController;
@@ -133,6 +137,28 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('purchase-orders', PurchaseOrderController::class)->except(['create', 'show', 'edit']);
     Route::resource('purchase-receipts', PurchaseReceiptController::class)->except(['create', 'show', 'edit']);
     Route::resource('purchase-returns', PurchaseReturnController::class)->except(['create', 'show', 'edit']);
+
+    // 4.1 Consignment / Titip Jual Routes
+    Route::prefix('consignments')->name('consignments.')->group(function () {
+        // Penerimaan Konsinyasi
+        Route::get('receipts/{receipt}/print', [ConsignmentReceiptController::class, 'print'])->name('receipts.print');
+        Route::resource('receipts', ConsignmentReceiptController::class)->only(['index', 'store', 'show']);
+
+        // Settlement & Bagi Hasil
+        Route::post('settlements/calculate', [ConsignmentSettlementController::class, 'calculate'])->name('settlements.calculate');
+        Route::post('settlements/{settlement}/pay', [ConsignmentSettlementController::class, 'pay'])->name('settlements.pay');
+        Route::get('settlements/{settlement}/print', [ConsignmentSettlementController::class, 'print'])->name('settlements.print');
+        Route::get('settlements/{settlement}/export-pdf', [ConsignmentSettlementController::class, 'exportPdf'])->name('settlements.export-pdf');
+        Route::resource('settlements', ConsignmentSettlementController::class)->only(['index', 'store', 'show']);
+
+        // Retur Konsinyasi
+        Route::get('returns/{return}/print', [ConsignmentReturnController::class, 'print'])->name('returns.print');
+        Route::resource('returns', ConsignmentReturnController::class)->only(['index', 'store', 'show']);
+
+        // Laporan Konsinyasi
+        Route::get('reports', [ConsignmentReportController::class, 'index'])->name('reports.index');
+        Route::get('reports/export-pdf', [ConsignmentReportController::class, 'exportPdf'])->name('reports.export-pdf');
+    });
 
     // 5. Inventory, Kartu Stok, Opname, Transfer, Adjustment & Alerts (Phase 4)
     Route::get('stocks', [StockMovementController::class, 'index'])->name('stocks.index');

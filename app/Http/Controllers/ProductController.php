@@ -11,6 +11,7 @@ use App\Models\Product;
 use App\Models\ProductBarcode;
 use App\Models\ProductStock;
 use App\Models\Setting;
+use App\Models\Supplier;
 use App\Models\TieredPrice;
 use App\Models\Unit;
 use App\Models\UnitConversion;
@@ -43,6 +44,7 @@ class ProductController extends Controller
             'tieredPrices.unit',
             'tieredPrices.customerGroup',
             'recipes.ingredient',
+            'consignmentSupplier',
         ])
             ->when($search, function ($query, $search) {
                 $query->where(function ($q) use ($search) {
@@ -58,6 +60,8 @@ class ProductController extends Controller
             ->when($type, function ($query, $type) {
                 if ($type === 'fnb') {
                     $query->whereIn('product_type', ['food', 'beverage']);
+                } elseif ($type === 'consignment') {
+                    $query->where('is_consignment', true);
                 } else {
                     $query->where('product_type', $type);
                 }
@@ -70,6 +74,7 @@ class ProductController extends Controller
 
         $categories = Category::where('is_active', true)->orderBy('name')->get();
         $units = Unit::where('is_active', true)->orderBy('name')->get();
+        $suppliers = Supplier::where('is_active', true)->orderBy('name')->get();
         $customerGroups = CustomerGroup::orderBy('name')->get();
         $storeName = Setting::get('store_name', config('app.name', 'POS Retail Pro'));
 
@@ -82,6 +87,7 @@ class ProductController extends Controller
             'products' => $products,
             'categories' => $categories,
             'units' => $units,
+            'suppliers' => $suppliers,
             'customerGroups' => $customerGroups,
             'search' => $search,
             'categoryId' => $categoryId,
@@ -216,6 +222,11 @@ class ProductController extends Controller
             $validated['has_expiry'] = $request->has('has_expiry') ? true : false;
             $validated['is_bookable'] = $request->has('is_bookable') ? true : false;
             $validated['require_staff_assignment'] = $request->has('require_staff_assignment') ? true : false;
+            $validated['is_consignment'] = $request->has('is_consignment') ? true : false;
+            if (! $validated['is_consignment']) {
+                $validated['consignment_supplier_id'] = null;
+                $validated['consignment_rate'] = 0;
+            }
 
             // 4. Create Product
             $product = Product::create($validated);
@@ -303,6 +314,11 @@ class ProductController extends Controller
             $validated['has_expiry'] = $request->has('has_expiry') ? true : false;
             $validated['is_bookable'] = $request->has('is_bookable') ? true : false;
             $validated['require_staff_assignment'] = $request->has('require_staff_assignment') ? true : false;
+            $validated['is_consignment'] = $request->has('is_consignment') ? true : false;
+            if (! $validated['is_consignment']) {
+                $validated['consignment_supplier_id'] = null;
+                $validated['consignment_rate'] = 0;
+            }
 
             // 3. Update Product
             $product->update($validated);
