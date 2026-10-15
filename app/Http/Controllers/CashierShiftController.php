@@ -213,6 +213,10 @@ class CashierShiftController extends Controller
      */
     public function close(Request $request, CashierShift $shift): JsonResponse|RedirectResponse
     {
+        if (! $request->has('closing_cash') && $request->has('actual_cash')) {
+            $request->merge(['closing_cash' => $request->input('actual_cash')]);
+        }
+
         $validated = $request->validate([
             'closing_cash' => ['required', 'numeric', 'min:0'],
             'notes' => ['nullable', 'string', 'max:255'],

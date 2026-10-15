@@ -274,9 +274,16 @@ class ShiftApiController extends BaseApiController
      */
     public function close(Request $request, CashierShift $shift): JsonResponse
     {
+        $closingCash = $request->input('closing_cash', $request->input('actual_cash'));
+        $request->merge(['closing_cash' => $closingCash]);
+
         $validator = Validator::make($request->all(), [
             'closing_cash' => ['required', 'numeric', 'min:0'],
             'notes' => ['nullable', 'string', 'max:255'],
+        ], [
+            'closing_cash.required' => 'Penghitungan fisik kas aktual wajib diisi.',
+            'closing_cash.numeric' => 'Nominal kas akhir harus berupa angka valid.',
+            'closing_cash.min' => 'Nominal kas akhir tidak boleh bernilai negatif.',
         ]);
 
         if ($validator->fails()) {
@@ -301,7 +308,7 @@ class ShiftApiController extends BaseApiController
         ]);
 
         return $this->sendResponse(
-            $shift->fresh(['warehouse', 'user', 'expenses', 'agentTransactions']),
+            $this->formatShiftData($shift->fresh(['warehouse', 'user', 'expenses.user', 'agentTransactions.account'])),
             'Sesi shift kasir berhasil ditutup.'
         );
     }

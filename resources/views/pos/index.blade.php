@@ -588,8 +588,12 @@
 
     function openNewCustomerModal() {
         closeModal('customerModal');
+        clearCustomerFormErrors();
         document.getElementById('quick_cust_name').value = '';
         document.getElementById('quick_cust_phone').value = '';
+        if (document.getElementById('quick_cust_email')) document.getElementById('quick_cust_email').value = '';
+        if (document.getElementById('quick_cust_group_id')) document.getElementById('quick_cust_group_id').value = '';
+        if (document.getElementById('quick_cust_credit_limit')) document.getElementById('quick_cust_credit_limit').value = '';
         document.getElementById('quick_cust_address').value = '';
         openModal('newCustomerModal');
         setTimeout(() => {
@@ -598,17 +602,82 @@
         }, 100);
     }
 
+    function cancelNewCustomerModal() {
+        closeModal('newCustomerModal');
+        clearCustomerFormErrors();
+        openCustomerModal();
+    }
+
+    function clearSingleCustomerError(fieldId) {
+        const inputEl = document.getElementById(fieldId);
+        const errEl = document.getElementById('err_' + fieldId);
+        const container = inputEl ? inputEl.closest('.cust-input-container') : null;
+        if (container) {
+            container.classList.remove('border-rose-400', 'ring-2', 'ring-rose-400/20');
+            container.classList.add('border-slate-200');
+        }
+        if (errEl) {
+            errEl.textContent = '';
+            errEl.classList.add('hidden');
+        }
+    }
+
+    function setCustomerFieldError(fieldId, message) {
+        const inputEl = document.getElementById(fieldId);
+        const errEl = document.getElementById('err_' + fieldId);
+        const container = inputEl ? inputEl.closest('.cust-input-container') : null;
+        if (container) {
+            container.classList.add('border-rose-400', 'ring-2', 'ring-rose-400/20');
+            container.classList.remove('border-slate-200');
+        }
+        if (errEl) {
+            errEl.innerHTML = `<i data-lucide="alert-circle" class="w-3 h-3 shrink-0"></i><span>${message}</span>`;
+            errEl.classList.remove('hidden');
+            if (window.lucide) lucide.createIcons();
+        }
+    }
+
+    function clearCustomerFormErrors() {
+        document.querySelectorAll('.cust-input-container').forEach(c => {
+            c.classList.remove('border-rose-400', 'ring-2', 'ring-rose-400/20');
+            c.classList.add('border-slate-200');
+        });
+        document.querySelectorAll('[id^="err_quick_cust_"]').forEach(e => {
+            e.textContent = '';
+            e.classList.add('hidden');
+        });
+    }
+
     async function handleQuickCreateCustomer(e) {
         e.preventDefault();
-        const name = document.getElementById('quick_cust_name').value.trim();
-        const phone = document.getElementById('quick_cust_phone').value.trim();
-        const groupId = document.getElementById('quick_cust_group_id').value;
-        const address = document.getElementById('quick_cust_address').value.trim();
+        clearCustomerFormErrors();
+
+        const nameInput = document.getElementById('quick_cust_name');
+        const phoneInput = document.getElementById('quick_cust_phone');
+        const emailInput = document.getElementById('quick_cust_email');
+        const groupInput = document.getElementById('quick_cust_group_id');
+        const creditLimitInput = document.getElementById('quick_cust_credit_limit');
+        const addressInput = document.getElementById('quick_cust_address');
         const btn = document.getElementById('btn_save_quick_cust');
+
+        const name = nameInput ? nameInput.value.trim() : '';
+        const phone = phoneInput ? phoneInput.value.trim() : '';
+        const email = emailInput ? emailInput.value.trim() : '';
+        const groupId = groupInput ? groupInput.value : '';
+        const creditLimit = creditLimitInput ? creditLimitInput.value.replace(/[^0-9]/g, '') : 0;
+        const address = addressInput ? addressInput.value.trim() : '';
+
+        // Validasi Wajib Nama Lengkap
+        if (!name) {
+            setCustomerFieldError('quick_cust_name', 'Nama pelanggan wajib diisi.');
+            if (nameInput) nameInput.focus();
+            return;
+        }
 
         try {
             btn.disabled = true;
             btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span>Menyimpan...</span>`;
+            if (window.lucide) lucide.createIcons();
 
             const res = await fetch('{{ route("customers.store") }}', {
                 method: 'POST',
@@ -619,29 +688,47 @@
                 },
                 body: JSON.stringify({
                     name: name,
-                    phone: phone,
+                    phone: phone || null,
+                    email: email || null,
                     customer_group_id: groupId || null,
-                    address: address,
+                    credit_limit: creditLimit ? parseFloat(creditLimit) : 0,
+                    address: address || null,
                     is_active: 1
                 })
             });
 
             const data = await res.json();
             btn.disabled = false;
-            btn.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i><span>Simpan & Pilih</span>`;
+            btn.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i><span>Simpan & Pilih Pelanggan</span>`;
+            if (window.lucide) lucide.createIcons();
 
-            if (data.status === 'success') {
-                const newCustomer = data.data;
+            if (res.ok && (data.status === 'success' || data.id)) {
+                const newCustomer = data.data || data;
                 allCustomers.unshift(newCustomer);
                 closeModal('newCustomerModal');
                 selectCustomerFromModal(newCustomer.id);
                 showPosToast('success', `Pelanggan ${newCustomer.name} berhasil didaftarkan.`);
             } else {
-                showPosAlert('error', 'Gagal Menyimpan', data.message);
+                if (data.errors) {
+                    let firstFocused = false;
+                    Object.keys(data.errors).forEach(field => {
+                        const elId = 'quick_cust_' + field;
+                        const msg = data.errors[field][0];
+                        setCustomerFieldError(elId, msg);
+                        if (!firstFocused) {
+                            const errEl = document.getElementById(elId);
+                            if (errEl) { errEl.focus(); firstFocused = true; }
+                        }
+                    });
+                    showPosToast('error', data.message || 'Harap periksa isian data pelanggan.');
+                } else {
+                    showPosAlert('error', 'Gagal Menyimpan', data.message || 'Terjadi kesalahan sistem.');
+                }
             }
         } catch (err) {
             btn.disabled = false;
-            btn.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i><span>Simpan & Pilih</span>`;
+            btn.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i><span>Simpan & Pilih Pelanggan</span>`;
+            if (window.lucide) lucide.createIcons();
             showPosAlert('error', 'Terjadi Kesalahan', err.message);
         }
     }

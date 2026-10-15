@@ -25,7 +25,7 @@ class StoreCustomerRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:200'],
             'code' => ['nullable', 'string', 'max:50', 'unique:customers,code'],
-            'customer_group_id' => ['required', 'exists:customer_groups,id'],
+            'customer_group_id' => ['nullable', 'exists:customer_groups,id'],
             'phone' => ['nullable', 'string', 'max:25'],
             'email' => ['nullable', 'email', 'max:100'],
             'address' => ['nullable', 'string'],

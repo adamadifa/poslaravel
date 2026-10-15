@@ -53,7 +53,14 @@ class AgentTransactionController extends Controller
             ->where('status', 'open')
             ->first();
 
-        $validated['cashier_shift_id'] = $activeShift?->id;
+        if (! $activeShift) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Shift kasir belum dibuka. Silakan buka shift kasir terlebih dahulu.',
+            ], 422);
+        }
+
+        $validated['cashier_shift_id'] = $activeShift->id;
         $validated['user_id'] = auth()->id();
         $validated['payment_method'] = 'cash'; // Pelanggan setor tunai di kasir
 
@@ -95,7 +102,14 @@ class AgentTransactionController extends Controller
             ->where('status', 'open')
             ->first();
 
-        $validated['cashier_shift_id'] = $activeShift?->id;
+        if (! $activeShift) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Shift kasir belum dibuka. Silakan buka shift kasir terlebih dahulu.',
+            ], 422);
+        }
+
+        $validated['cashier_shift_id'] = $activeShift->id;
         $validated['user_id'] = auth()->id();
         $validated['destination_target'] = 'EDC / Tarik Tunai';
 
@@ -148,7 +162,14 @@ class AgentTransactionController extends Controller
             ->where('status', 'open')
             ->first();
 
-        $validated['cashier_shift_id'] = $activeShift?->id;
+        if (! $activeShift) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Shift kasir belum dibuka. Silakan buka shift kasir terlebih dahulu.',
+            ], 422);
+        }
+
+        $validated['cashier_shift_id'] = $activeShift->id;
         $validated['user_id'] = auth()->id();
 
         try {

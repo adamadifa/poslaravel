@@ -60,6 +60,7 @@ Route::middleware(['auth'])->group(function () {
 
     // 2. POS Routes
     Route::get('pos', [PosController::class, 'index'])->name('pos.index');
+    Route::get('kasir', [PosController::class, 'index'])->name('kasir.index');
     Route::get('pos/products', [PosController::class, 'searchProducts'])->name('pos.products');
     Route::post('pos/calculate-cart', [PosController::class, 'calculateCart'])->name('pos.calculate-cart');
     Route::post('pos/checkout', [PosController::class, 'checkout'])->name('pos.checkout');

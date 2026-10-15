@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Models\CashierShift;
 use App\Models\Customer;
 use App\Models\HeldTransaction;
 use App\Models\Product;
@@ -146,6 +147,14 @@ class PosApiController extends BaseApiController
 
         if ($validator->fails()) {
             return $this->sendError('Validasi Checkout Gagal', $validator->errors()->all(), 422);
+        }
+
+        $activeShift = CashierShift::where('user_id', auth()->id())
+            ->where('status', 'open')
+            ->first();
+
+        if (! $activeShift) {
+            return $this->sendError('Shift kasir belum dibuka. Silakan buka shift kasir terlebih dahulu sebelum memproses transaksi.', [], 422);
         }
 
         try {

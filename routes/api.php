@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AgentTransactionController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\DashboardApiController;
 use App\Http\Controllers\Api\V1\FinanceApiController;
@@ -62,6 +63,13 @@ Route::prefix('v1')->group(function () {
         Route::post('/shifts/{shift}/close', [ShiftApiController::class, 'close']);
         Route::post('/shifts/{shift}/expenses', [ShiftApiController::class, 'addExpense']);
         Route::delete('/shifts/{shift}/expenses/{expense}', [ShiftApiController::class, 'deleteExpense']);
+
+        // Agen Bank & Layanan Digital PPOB
+        Route::get('/agent/balances', [AgentTransactionController::class, 'getBalances']);
+        Route::get('/agent/recent', [AgentTransactionController::class, 'getRecent']);
+        Route::post('/agent/transfer', [AgentTransactionController::class, 'storeBankTransfer']);
+        Route::post('/agent/withdraw', [AgentTransactionController::class, 'storeCashWithdrawal']);
+        Route::post('/agent/ppob', [AgentTransactionController::class, 'storePpob']);
 
         // Buku Arus Kas Masuk & Kas Keluar (Cash Flow)
         Route::get('/cash-flows', [FinanceApiController::class, 'getCashFlows']);
